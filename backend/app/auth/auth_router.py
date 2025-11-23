@@ -13,7 +13,12 @@ def register(user: UserCreate):
         raise HTTPException(400, "Email already registered")
 
     hashed = hash_password(user.password)
-    users_collection.insert_one({"email": user.email, "password": hashed})
+    # Add default role as 'user', can be changed manually to 'admin' in DB
+    users_collection.insert_one({
+        "email": user.email, 
+        "password": hashed,
+        "role": "user"  # Default role
+    })
 
     return {"message": "User registered successfully"}
 
