@@ -1,0 +1,74 @@
+{
+  "model_used": "Calibrated Ensemble",
+  "methodology": {
+    "approach": "Structural fairness analysis using real pre-hire data",
+    "fairness_groups": [
+      "region",
+      "university_tier",
+      "has_career_gap"
+    ],
+    "note": "NO synthetic demographics (gender, age) used - only objectively available CV features"
+  },
+  "region": {
+    "selection_rate": {
+      "central": 0.38144329896907214,
+      "colombo_metro": 0.32075471698113206,
+      "other_provinces": 0.28354430379746837,
+      "southern": 0.34782608695652173,
+      "western_other": 0.34375
+    },
+    "demographic_parity_difference": 0.09789899517160378,
+    "equalized_odds_difference": 0.04503943545039435,
+    "interpretation": "acceptable",
+    "sample_sizes": {
+      "colombo_metro": 424,
+      "other_provinces": 395,
+      "western_other": 192,
+      "central": 97,
+      "southern": 92
+    }
+  },
+  "university_tier": {
+    "selection_rate": {
+      "other_state_university": 0.31220657276995306,
+      "private_university": 0.3297180043383948,
+      "top_state_university": 0.31309904153354634
+    },
+    "demographic_parity_difference": 0.01751143156844176,
+    "equalized_odds_difference": 0.037173202614379064,
+    "interpretation": "acceptable",
+    "sample_sizes": {
+      "private_university": 461,
+      "other_state_university": 426,
+      "top_state_university": 313
+    }
+  },
+  "career_gap": {
+    "selection_rate": {
+      "No Gap": 0.31954887218045114,
+      "With Gap": 0.3161764705882353
+    },
+    "demographic_parity_difference": 0.0033724015922158568,
+    "equalized_odds_difference": 0.007677902621722854,
+    "interpretation": "acceptable",
+    "sample_sizes": {
+      "No Gap": 1064,
+      "With Gap": 136
+    }
+  },
+  "overall_assessment": {
+    "region_fair": true,
+    "university_fair": true,
+    "career_gap_fair": true
+  },
+  "fairness_thresholds": {
+    "demographic_parity": "< 0.1 considered acceptable",
+    "equalized_odds": "< 0.1 considered acceptable"
+  },
+  "ethical_note": [
+    "This analysis uses REAL structural factors from CVs (location, education, career history)",
+    "NO inference of protected characteristics (gender, ethnicity, religion)",
+    "Aligns with ethical AI and anti-discrimination best practices",
+    "All fairness groups are objectively identifiable from resume data"
+  ]
+}

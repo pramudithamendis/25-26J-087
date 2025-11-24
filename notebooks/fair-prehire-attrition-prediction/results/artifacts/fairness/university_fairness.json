@@ -1,0 +1,15 @@
+{
+  "selection_rate": {
+    "other_state_university": 0.31220657276995306,
+    "private_university": 0.3297180043383948,
+    "top_state_university": 0.31309904153354634
+  },
+  "demographic_parity_difference": 0.01751143156844176,
+  "equalized_odds_difference": 0.037173202614379064,
+  "interpretation": "acceptable",
+  "sample_sizes": {
+    "private_university": 461,
+    "other_state_university": 426,
+    "top_state_university": 313
+  }
+}

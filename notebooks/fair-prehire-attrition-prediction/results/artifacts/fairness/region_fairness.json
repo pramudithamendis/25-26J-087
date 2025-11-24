@@ -1,0 +1,19 @@
+{
+  "selection_rate": {
+    "central": 0.38144329896907214,
+    "colombo_metro": 0.32075471698113206,
+    "other_provinces": 0.28354430379746837,
+    "southern": 0.34782608695652173,
+    "western_other": 0.34375
+  },
+  "demographic_parity_difference": 0.09789899517160378,
+  "equalized_odds_difference": 0.04503943545039435,
+  "interpretation": "acceptable",
+  "sample_sizes": {
+    "colombo_metro": 424,
+    "other_provinces": 395,
+    "western_other": 192,
+    "central": 97,
+    "southern": 92
+  }
+}
