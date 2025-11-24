@@ -1,0 +1,83 @@
+{
+  "cv_scores": {
+    "LogisticRegression": 0.7628518686420708,
+    "RandomForest": 0.9055118830443207,
+    "XGBoost": 0.9300666900155555,
+    "CatBoost": 0.9290435713643455,
+    "EBM": 0.9404349209392037
+  },
+  "test_metrics": {
+    "LogisticRegression": {
+      "f1": 0.7519034450911168,
+      "auc": 0.9047758506952054
+    },
+    "RandomForest": {
+      "f1": 0.9144664095241826,
+      "auc": 0.978169429638401
+    },
+    "XGBoost": {
+      "f1": 0.9345286905185625,
+      "auc": 0.9838281206337566
+    },
+    "CatBoost": {
+      "f1": 0.936291708240795,
+      "auc": 0.985031795455367
+    },
+    "EBM": {
+      "f1": 0.9434354074816524,
+      "auc": 0.9854310418601399
+    },
+    "Ensemble": {
+      "f1": 0.9420166770914316,
+      "auc": 0.9844126236511753
+    },
+    "Ensemble_Calibrated": {
+      "f1": 0.9402753123894952,
+      "auc": 0.9843935822809197
+    }
+  },
+  "weights": {
+    "LogisticRegression": 0.17074027832898994,
+    "RandomForest": 0.20267017145348773,
+    "XGBoost": 0.2081659816534889,
+    "CatBoost": 0.20793698918265746,
+    "EBM": 0.21048657938137597
+  },
+  "features_used": {
+    "num_cols": [
+      "skill_match_score",
+      "title_match_score",
+      "exp_match_score",
+      "edu_match_score",
+      "location_match_score",
+      "overall_match_score",
+      "is_overqualified",
+      "is_underqualified",
+      "total_jobs",
+      "total_exp_years",
+      "avg_tenure_months",
+      "current_job_tenure",
+      "short_stints_count",
+      "job_hopping_rate",
+      "has_progression",
+      "has_masters",
+      "n_skills",
+      "n_certifications",
+      "is_remote_cv",
+      "is_remote_jd",
+      "work_mode_mismatch",
+      "is_remote_preference"
+    ],
+    "cat_cols": [],
+    "total_features": 22
+  },
+  "fairness_metadata": {
+    "columns": [
+      "region",
+      "university_tier",
+      "has_career_gap",
+      "career_gap_months"
+    ],
+    "note": "Using real structural fairness metadata (not synthetic demographics)"
+  }
+}
