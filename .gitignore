@@ -48,3 +48,6 @@ temp.txt
 
 # Notebook checkpoints
 .ipynb_checkpoints/
+
+# backend mypart
+backend-mypart/
