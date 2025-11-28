@@ -1,3 +1,6 @@
-from app.database import db
+from app.database import get_database
 
-users_collection = db["users"]
+def get_users_collection():
+    """Get users collection (lazy initialization)"""
+    db = get_database()
+    return db["users"]
