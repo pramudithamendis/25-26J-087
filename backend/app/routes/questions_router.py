@@ -13,6 +13,8 @@ import ollama
 from app.models.questions_model import questions_collection
 from app.schemas.questions_schema import QuestionCreate, QuestionResponse
 
+import urllib.parse
+
 router = APIRouter(prefix="/api/items", tags=["Items"])
 
 @router.get("", response_model=List[QuestionResponse])
@@ -68,10 +70,22 @@ async def extract_github(file: UploadFile = File(...)):
             if link not in clean_links:
                 clean_links.append(link)
 
-        if clean_links:
-            return {"github_link": clean_links[0], "all_links": clean_links}
-        else:
+        if not clean_links:
             return {"github_link": None, "message": "No GitHub link found in the PDF."}
+
+        # Take first repo link
+        repo = clean_links[0]
+
+        # Extract GitHub username
+        parsed_url = urllib.parse.urlparse(repo)
+        path_parts = parsed_url.path.strip("/").split("/")
+        username = path_parts[0] if len(path_parts) > 0 else None
+
+        return {
+            "github_link": repo,
+            "username": username,
+            "all_links": clean_links
+        }
 
     except Exception as e:
         raise HTTPException(
