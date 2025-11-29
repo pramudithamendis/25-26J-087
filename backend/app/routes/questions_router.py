@@ -13,10 +13,14 @@ import ollama
 from app.models.questions_model import questions_collection
 from app.models.questions_readme_model import questions_readme_collection
 from app.schemas.questions_schema import QuestionCreate, QuestionResponse
+from app.schemas.questions_cloneRepo import CloneRequest
 
 import urllib.parse
 import base64
 import httpx
+
+import os
+from git import Repo
 
 router = APIRouter(prefix="/api/items", tags=["Items"])
 
@@ -235,16 +239,58 @@ async def get_public_repos(username: str):
             detail=f"Error fetching repositories: {str(e)}"
         )
 
+@router.post("/clone")
+def clone_repo(payload: CloneRequest):
+    repo_url = payload.repo_url
+    dest = os.path.abspath(payload.dest)
+
+    try:
+        
+        if os.path.exists(dest):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Destination path already exists: {dest}"
+            )
+
+        Repo.clone_from(repo_url, dest)
+        return {"status": "success", "repo": repo_url, "destination": dest}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 client = ollama.Client()
 MODEL_NAME = "llama3.2:1b"
 
 @router.post("/ask")
-async def ask_model(payload: dict):
-    prompt = payload.get("prompt")
-    if not prompt:
-        raise HTTPException(status_code=400, detail="Missing 'prompt' in request body")
+async def generate_questions(payload: dict):
+    folder = payload.get("folder")
+    filename = payload.get("filename")
 
+    if not folder or not filename:
+        raise HTTPException(status_code=400, detail="Missing 'folder' or 'filename'.")
+
+    filepath = os.path.join(folder, filename)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="File not found.")
+
+    # Read file content
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            file_content = f.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
+
+    # Build model prompt
+    prompt = (
+        "Read the following text and generate a list of clear, helpful questions "
+        "that someone might ask to better understand it.\n\n"
+        f"--- TEXT START ---\n{file_content}\n--- TEXT END ---\n\n"
+        "Questions:"
+    )
+
+    # Call the model
     response = client.generate(model=MODEL_NAME, prompt=prompt)
 
-    return {"response": response.response}
+    return {"questions": response.response}
