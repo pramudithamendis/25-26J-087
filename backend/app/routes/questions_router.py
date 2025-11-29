@@ -14,6 +14,8 @@ from app.models.questions_model import questions_collection
 from app.schemas.questions_schema import QuestionCreate, QuestionResponse
 
 import urllib.parse
+import base64
+import httpx
 
 router = APIRouter(prefix="/api/items", tags=["Items"])
 
@@ -41,6 +43,17 @@ async def add_item(item: QuestionCreate):
         )
 
 
+async def fetch_readme(username: str, repo_name: str):
+    url = f"https://api.github.com/repos/{username}/{repo_name}/readme"
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            content = base64.b64decode(data.get("content", "")).decode("utf-8")
+            return content
+        return None
+
+        
 @router.post("/extract-github")
 async def extract_github(file: UploadFile = File(...)):
     try:
@@ -73,26 +86,29 @@ async def extract_github(file: UploadFile = File(...)):
         if not clean_links:
             return {"github_link": None, "message": "No GitHub link found in the PDF."}
 
-        # Take first repo link
-        repo = clean_links[0]
+        # Fetch README content for all repos
+        repos_with_readme = []
+        for repo_url in clean_links:
+            parsed_url = urllib.parse.urlparse(repo_url)
+            path_parts = parsed_url.path.strip("/").split("/")
+            if len(path_parts) < 2:
+                continue
+            username, repo_name = path_parts[0], path_parts[1]
+            readme_content = await fetch_readme(username, repo_name)
+            repos_with_readme.append({
+                "github_link": repo_url,
+                "username": username,
+                "repo_name": repo_name,
+                "readme": readme_content
+            })
 
-        # Extract GitHub username
-        parsed_url = urllib.parse.urlparse(repo)
-        path_parts = parsed_url.path.strip("/").split("/")
-        username = path_parts[0] if len(path_parts) > 0 else None
-
-        return {
-            "github_link": repo,
-            "username": username,
-            "all_links": clean_links
-        }
+        return {"repos": repos_with_readme}
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Error extracting GitHub links: {str(e)}"
         )
-
 
 GITHUB_API = "https://api.github.com/repos"
 
