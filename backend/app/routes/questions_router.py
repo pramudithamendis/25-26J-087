@@ -1,15 +1,19 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Request
 from typing import List
 from bson import ObjectId
 import io
 import re
 import PyPDF2
+import requests
+
+from sentence_transformers import SentenceTransformer, util
+import numpy as np
+import ollama
 
 from app.models.questions_model import questions_collection
 from app.schemas.questions_schema import QuestionCreate, QuestionResponse
 
 router = APIRouter(prefix="/api/items", tags=["Items"])
-
 
 @router.get("", response_model=List[QuestionResponse])
 async def get_items():
@@ -34,6 +38,7 @@ async def add_item(item: QuestionCreate):
             detail=f"Error adding item: {str(e)}"
         )
 
+
 @router.post("/extract-github")
 async def extract_github(file: UploadFile = File(...)):
     try:
@@ -41,15 +46,12 @@ async def extract_github(file: UploadFile = File(...)):
         reader = PyPDF2.PdfReader(pdf_stream)
         github_links = []
 
-        # Regex for GitHub links
         github_pattern = r'(?:https?://)?(?:www\.)?github\.com/[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)?'
 
         for page in reader.pages:
-            # Extract text links
             text = page.extract_text() or ""
             github_links += re.findall(github_pattern, text, re.IGNORECASE)
 
-            # Extract annotation links
             if "/Annots" in page:
                 for annot in page["/Annots"]:
                     obj = annot.get_object()
@@ -58,7 +60,6 @@ async def extract_github(file: UploadFile = File(...)):
                         if re.match(github_pattern, url, re.IGNORECASE):
                             github_links.append(url)
 
-        # Cleanup
         clean_links = []
         for link in github_links:
             link = link.rstrip('/.')
@@ -77,3 +78,85 @@ async def extract_github(file: UploadFile = File(...)):
             status_code=500,
             detail=f"Error extracting GitHub links: {str(e)}"
         )
+
+
+GITHUB_API = "https://api.github.com/repos"
+
+
+@router.get("/readme")
+async def get_readme(user: str, repo: str):
+    if not user or not repo:
+        raise HTTPException(status_code=400, detail="Provide user & repo parameters")
+
+    url = f"{GITHUB_API}/{user}/{repo}/readme"
+    headers = {"Accept": "application/vnd.github.v3.raw"}
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail={"error": "Could not fetch README", "details": response.json()}
+        )
+
+    return response.text
+
+
+
+client = ollama.Client()
+MODEL_NAME = "llama3.2:1b"
+
+@router.post("/ask")
+async def ask_model(payload: dict):
+    prompt = payload.get("prompt")
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Missing 'prompt' in request body")
+
+    response = client.generate(model=MODEL_NAME, prompt=prompt)
+
+    return {"response": response.response}
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+def find_best_matching_project(job_description, projects):
+    job_embedding = model.encode(job_description, convert_to_tensor=True)
+    project_texts = [p["title"] + " - " + p["description"] for p in projects]
+    project_embeddings = model.encode(project_texts, convert_to_tensor=True)
+
+    similarities = util.cos_sim(job_embedding, project_embeddings)[0].cpu().numpy()
+
+    best_index = int(np.argmax(similarities))
+    best_project = projects[best_index]
+    best_score = float(similarities[best_index])
+
+    return best_project, best_score, similarities
+
+
+@router.post("/match-project")
+async def match_project(payload: dict):
+    if "job_description" not in payload or "projects" not in payload:
+        raise HTTPException(
+            status_code=400,
+            detail="Request must include job_description and projects"
+        )
+
+    job_description = payload["job_description"]
+    projects = payload["projects"]
+
+    best_project, best_score, similarities = find_best_matching_project(job_description, projects)
+
+    ranking = [
+        {"title": projects[i]["title"], "score": float(similarities[i])}
+        for i in range(len(projects))
+    ]
+
+    ranking_sorted = sorted(ranking, key=lambda x: x["score"], reverse=True)
+
+    return {
+        "best_project": {
+            "title": best_project["title"],
+            "description": best_project["description"],
+            "score": round(best_score, 4)
+        },
+        "ranking": ranking_sorted
+    }
