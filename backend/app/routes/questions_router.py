@@ -160,3 +160,50 @@ async def match_project(payload: dict):
         },
         "ranking": ranking_sorted
     }
+
+@router.get("/repos/{username}")
+async def get_public_repos(username: str):
+    """
+    Fetch all public GitHub repositories for a given user.
+    """
+    try:
+        url = f"https://api.github.com/users/{username}/repos"
+        headers = {"Accept": "application/vnd.github.v3+json"}
+
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail={
+                    "error": "Could not fetch repositories",
+                    "details": response.json()
+                }
+            )
+
+        repos = response.json()
+
+        # Clean important fields
+        cleaned = [
+            {
+                "name": repo["name"],
+                "full_name": repo["full_name"],
+                "html_url": repo["html_url"],
+                "description": repo.get("description"),
+                "language": repo.get("language"),
+                "created_at": repo.get("created_at"),
+                "updated_at": repo.get("updated_at"),
+                "stargazers_count": repo.get("stargazers_count"),
+                "forks_count": repo.get("forks_count"),
+            }
+            for repo in repos
+        ]
+
+        return {"user": username, "repo_count": len(cleaned), "repos": cleaned}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error fetching repositories: {str(e)}"
+        )
+
