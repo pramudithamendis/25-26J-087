@@ -124,23 +124,23 @@ async def extract_github_and_store(file: UploadFile = File(...)):
 GITHUB_API = "https://api.github.com/repos"
 
 
-@router.get("/readme")
-async def get_readme(user: str, repo: str):
-    if not user or not repo:
-        raise HTTPException(status_code=400, detail="Provide user & repo parameters")
+# @router.get("/readme")
+# async def get_readme(user: str, repo: str):
+#     if not user or not repo:
+#         raise HTTPException(status_code=400, detail="Provide user & repo parameters")
 
-    url = f"{GITHUB_API}/{user}/{repo}/readme"
-    headers = {"Accept": "application/vnd.github.v3.raw"}
+#     url = f"{GITHUB_API}/{user}/{repo}/readme"
+#     headers = {"Accept": "application/vnd.github.v3.raw"}
 
-    response = requests.get(url, headers=headers)
+#     response = requests.get(url, headers=headers)
 
-    if response.status_code != 200:
-        raise HTTPException(
-            status_code=response.status_code,
-            detail={"error": "Could not fetch README", "details": response.json()}
-        )
+#     if response.status_code != 200:
+#         raise HTTPException(
+#             status_code=response.status_code,
+#             detail={"error": "Could not fetch README", "details": response.json()}
+#         )
 
-    return response.text
+#     return response.text
 
 
 
