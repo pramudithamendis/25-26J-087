@@ -161,7 +161,7 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def find_best_matching_project(job_description, projects):
     job_embedding = model.encode(job_description, convert_to_tensor=True)
-    project_texts = [p["title"] + " - " + p["description"] for p in projects]
+    project_texts = [p["readme"] for p in projects]
     project_embeddings = model.encode(project_texts, convert_to_tensor=True)
 
     similarities = util.cos_sim(job_embedding, project_embeddings)[0].cpu().numpy()
@@ -175,19 +175,20 @@ def find_best_matching_project(job_description, projects):
 
 @router.post("/match-project")
 async def match_project(payload: dict):
-    if "job_description" not in payload or "projects" not in payload:
+    if "job_description" not in payload:
         raise HTTPException(
             status_code=400,
-            detail="Request must include job_description and projects"
+            detail="Request must include job_description"
         )
 
     job_description = payload["job_description"]
-    projects = payload["projects"]
+
+    projects = list(questions_readme_collection.find({}))
 
     best_project, best_score, similarities = find_best_matching_project(job_description, projects)
 
     ranking = [
-        {"title": projects[i]["title"], "score": float(similarities[i])}
+        {"repo": projects[i]["repo"], "score": float(similarities[i]), "github_url": projects[i]["github_url"]}
         for i in range(len(projects))
     ]
 
@@ -195,8 +196,9 @@ async def match_project(payload: dict):
 
     return {
         "best_project": {
-            "title": best_project["title"],
-            "description": best_project["description"],
+            "repo": best_project["repo"],
+            "readme": best_project["readme"],
+            "github_url": best_project["github_url"],
             "score": round(best_score, 4)
         },
         "ranking": ranking_sorted
