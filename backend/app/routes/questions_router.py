@@ -11,6 +11,7 @@ import numpy as np
 import ollama
 
 from app.models.questions_model import questions_collection
+from app.models.questions_readme_model import questions_readme_collection
 from app.schemas.questions_schema import QuestionCreate, QuestionResponse
 
 import urllib.parse
@@ -106,7 +107,7 @@ async def extract_github_and_store(file: UploadFile = File(...)):
                     "github_url": link,
                     "readme": readme_content
                 }
-                questions_collection.insert_one(doc)
+                questions_readme_collection.insert_one(doc)
                 stored_repos.append(link)
 
         return {
