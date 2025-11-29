@@ -142,21 +142,6 @@ GITHUB_API = "https://api.github.com/repos"
 
 #     return response.text
 
-
-
-client = ollama.Client()
-MODEL_NAME = "llama3.2:1b"
-
-@router.post("/ask")
-async def ask_model(payload: dict):
-    prompt = payload.get("prompt")
-    if not prompt:
-        raise HTTPException(status_code=400, detail="Missing 'prompt' in request body")
-
-    response = client.generate(model=MODEL_NAME, prompt=prompt)
-
-    return {"response": response.response}
-
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def find_best_matching_project(job_description, projects):
@@ -250,3 +235,16 @@ async def get_public_repos(username: str):
             detail=f"Error fetching repositories: {str(e)}"
         )
 
+
+client = ollama.Client()
+MODEL_NAME = "llama3.2:1b"
+
+@router.post("/ask")
+async def ask_model(payload: dict):
+    prompt = payload.get("prompt")
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Missing 'prompt' in request body")
+
+    response = client.generate(model=MODEL_NAME, prompt=prompt)
+
+    return {"response": response.response}
