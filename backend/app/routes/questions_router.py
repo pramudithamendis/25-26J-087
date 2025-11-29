@@ -43,19 +43,23 @@ async def add_item(item: QuestionCreate):
         )
 
 
-async def fetch_readme(username: str, repo_name: str):
-    url = f"https://api.github.com/repos/{username}/{repo_name}/readme"
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            content = base64.b64decode(data.get("content", "")).decode("utf-8")
-            return content
+async def fetch_readme(user: str, repo: str):
+    """
+    Fetch the README content for a given GitHub repo.
+    """
+    url = f"{GITHUB_API}/{user}/{repo}/readme"
+    headers = {"Accept": "application/vnd.github.v3.raw"}
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
         return None
+    return response.text
 
-        
-@router.post("/extract-github")
-async def extract_github(file: UploadFile = File(...)):
+
+@router.post("/extract-github-readme")
+async def extract_github_and_store(file: UploadFile = File(...)):
+    """
+    Extract GitHub links from PDF, fetch README content, and store in MongoDB.
+    """
     try:
         pdf_stream = io.BytesIO(await file.read())
         reader = PyPDF2.PdfReader(pdf_stream)
@@ -63,6 +67,7 @@ async def extract_github(file: UploadFile = File(...)):
 
         github_pattern = r'(?:https?://)?(?:www\.)?github\.com/[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)?'
 
+        # Extract links from text and annotations
         for page in reader.pages:
             text = page.extract_text() or ""
             github_links += re.findall(github_pattern, text, re.IGNORECASE)
@@ -84,32 +89,37 @@ async def extract_github(file: UploadFile = File(...)):
                 clean_links.append(link)
 
         if not clean_links:
-            return {"github_link": None, "message": "No GitHub link found in the PDF."}
+            return {"message": "No GitHub links found in the PDF."}
 
-        # Fetch README content for all repos
-        repos_with_readme = []
-        for repo_url in clean_links:
-            parsed_url = urllib.parse.urlparse(repo_url)
-            path_parts = parsed_url.path.strip("/").split("/")
-            if len(path_parts) < 2:
+        # Fetch README and store in MongoDB
+        stored_repos = []
+        for link in clean_links:
+            parts = link.replace("https://github.com/", "").split("/")
+            if len(parts) < 2:
                 continue
-            username, repo_name = path_parts[0], path_parts[1]
-            readme_content = await fetch_readme(username, repo_name)
-            repos_with_readme.append({
-                "github_link": repo_url,
-                "username": username,
-                "repo_name": repo_name,
-                "readme": readme_content
-            })
+            user, repo = parts[0], parts[1]
+            readme_content = await fetch_readme(user, repo)
+            if readme_content:
+                doc = {
+                    "user": user,
+                    "repo": repo,
+                    "github_url": link,
+                    "readme": readme_content
+                }
+                questions_collection.insert_one(doc)
+                stored_repos.append(link)
 
-        return {"repos": repos_with_readme}
+        return {
+            "message": f"Stored README content for {len(stored_repos)} repositories",
+            "repos_stored": stored_repos
+        }
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error extracting GitHub links: {str(e)}"
+            detail=f"Error extracting GitHub links or storing README: {str(e)}"
         )
-
+                
 GITHUB_API = "https://api.github.com/repos"
 
 
