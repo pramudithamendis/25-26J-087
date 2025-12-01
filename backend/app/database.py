@@ -1,9 +1,11 @@
+# backend/app/database.py
 from motor.motor_asyncio import AsyncIOMotorClient
+from typing import Optional, Any
 from .config import settings
 
 # Global variables
-client: AsyncIOMotorClient = None
-db = None
+client: Optional[AsyncIOMotorClient] = None
+db: Optional[Any] = None
 
 async def connect_to_mongo():
     """Establish asynchronous MongoDB connection"""
@@ -23,18 +25,17 @@ async def connect_to_mongo():
         print(f" MongoDB connected: {settings.MONGO_DB}")
     except Exception as e:
         print(f" MongoDB connection failed: {e}")
-        raise  # Re-raise to prevent app from starting with broken DB
+        raise
 
 async def close_mongo_connection():
     """Close MongoDB connection"""
     global client
     
     if client:
-        print("Closing MongoDB connection...")
+        print(" Closing MongoDB connection...")
         client.close()
         print(" MongoDB closed")
 
-# Helper for routers
 def get_cv_collection():
     """Get CVs collection"""
     if db is None:
