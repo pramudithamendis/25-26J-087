@@ -10,9 +10,10 @@ from app.auth.auth_router import auth_router
 from app.routes.user_router import router as user_router
 from app.routes.cv_routes import router as cv_router
 from app.routes.turnover_router import router as turnover_router
-from app.routes.geocoding_router import router as geocoding_router 
+from app.routes.geocoding_router import router as geocoding_router
 
 # Model loading
+from app.services.model_downloader import ensure_model_files
 from app.services.model_loader import load_model, load_preprocessor
 
 @asynccontextmanager
@@ -20,13 +21,24 @@ async def lifespan(app: FastAPI):
     """
     Startup and shutdown events
     - Connect to MongoDB
+    - Download models if missing
     - Load ML models
     """
     # Startup
-    print("Starting up...")
+    print(" Starting up...")
     
     # Connect to MongoDB
-    await connect_to_mongo()
+    try:
+        await connect_to_mongo()
+    except Exception as e:
+        print(f"  MongoDB connection failed: {e}")
+        print("   Application will start but database features won't work")
+    
+    #  Ensure model files are present (download if missing)
+    try:
+        ensure_model_files()
+    except Exception as e:
+        print(f"  Model download check failed: {e}")
     
     # Load ML models
     try:
@@ -34,8 +46,9 @@ async def lifespan(app: FastAPI):
         load_preprocessor()
         print(" Models loaded successfully")
     except Exception as e:
-        print(f"Model loading error: {e}")
+        print(f"  Model loading error: {e}")
         print("   Application will start but predictions will fail")
+        print("   Check if model files are present in models/ folder")
     
     print(" Application ready")
     
@@ -68,7 +81,7 @@ app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(cv_router)
 app.include_router(turnover_router)
-app.include_router(geocoding_router) 
+app.include_router(geocoding_router)
 
 @app.get("/")
 def home():
@@ -90,7 +103,7 @@ def home():
                 "predict": "POST /turnover/predict",
                 "health": "GET /turnover/health"
             },
-            "geocoding": { 
+            "geocoding": {
                 "test": "GET /geocoding/test",
                 "geocode": "GET /geocoding/geocode",
                 "distance": "GET /geocoding/distance",
