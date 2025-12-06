@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-3.5-turbo"
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-ada-002"
+
+    # GNews API
+    GNEWS_API_KEY: str = ""
     
     # Provider choices
     LLM_PROVIDER: str = "openai"  # 'openai' or 'heuristic' (fallback)
