@@ -4,9 +4,11 @@ from newspaper import Article
 import time
 import re
 from typing import List, Dict
-from app.config import settings
+#from app.config import settings
+from datetime import datetime
+import json
 
-GNEWS_API_KEY = settings.GNEWS_API_KEY
+GNEWS_API_KEY="dff26edec4353fecfdfeeb50ebec103c"
 RSS_FEEDS = {
     "tech_news": [
         "https://medium.com/feed/topic/technology",
@@ -86,8 +88,16 @@ def fetch_rss_articles(max_per_feed=20) -> List[Dict]:
                 time.sleep(0.1)
     return articles
 
-def fetch_all_articles(topics: List[str]) -> List[Dict]:
+def fetch_all_articles(topics: List[str], save_to_file: bool = True) -> List[Dict]:
     articles = fetch_gnews_articles(topics)
     articles += fetch_rss_articles()
     print(f"Total articles fetched: {len(articles)}")
+
+    if save_to_file:
+        week_str = datetime.utcnow().strftime("%Y-%m-%d")
+        filename = f"app/data/articles/articles_{week_str}.json"
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(articles, f, ensure_ascii=False, indent=2)
+        print(f"Saved articles to {filename}")
+
     return articles
