@@ -202,7 +202,7 @@ EMAIL_RE = re.compile(
     r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 )
 
-# CORRECT PHONE REGEX (non-capturing groups!!)
+# CORRECT PHONE REGEX
 PHONE_RE = re.compile(
     r"(?:\+?\d{1,3}[\s\-\.]?)?"      # optional country code
     r"(?:\(?\d{2,4}\)?[\s\-\.]?)?"   # optional area/initial code

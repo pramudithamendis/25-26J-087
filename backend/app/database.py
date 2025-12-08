@@ -1,4 +1,3 @@
-# backend/app/database.py
 from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Optional, Any
 from .config import settings

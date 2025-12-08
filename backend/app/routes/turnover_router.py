@@ -20,7 +20,8 @@ async def predict_turnover_api(
     3. System retrieves parsed CV from MongoDB
     4. Calculates commute distance using geocoding API (geocode.maps.co)
     5. Extracts features aligned with ML model
-    6. Returns prediction with risk factors
+    6. Generates counterfactual "what-if" scenarios
+    7. Returns prediction with risk factors and counterfactuals
     
     **Commute Distance Feature:**
     - Uses geocode.maps.co API (free tier: 25,000 requests)
@@ -35,6 +36,13 @@ async def predict_turnover_api(
     - 0: High Risk (leaves within 6 months)
     - 1: Medium Risk (leaves in 6-12 months)  
     - 2: Low Risk (stays longer than 1 year)
+    
+    **Counterfactual Explanations**
+    - Provides 3-5 "what-if" scenarios
+    - Shows how changing key features affects risk prediction
+    - Examples:
+      * "If candidate had 2 more years experience, risk would drop to Medium"
+      * "If skill match improved by 30%, confidence would increase by 25%"
     """
     
     if not cv_id:
@@ -43,7 +51,7 @@ async def predict_turnover_api(
     if not job_description or len(job_description.strip()) < 50:
         raise HTTPException(400, "Job description must be at least 50 characters")
     
-    # Call prediction service (uses MongoDB data + geocoding)
+    # Call prediction service (uses MongoDB data + geocoding + counterfactuals)
     result = await predict_turnover_from_cv_id(cv_id, job_description, job_location)
     
     return result
