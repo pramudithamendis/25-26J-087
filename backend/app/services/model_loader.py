@@ -1,4 +1,3 @@
-# backend/app/services/model_loader.py
 import joblib
 import os
 from pathlib import Path
@@ -57,7 +56,7 @@ def get_model_directory() -> Path:
     if _model_dir is None:
         current_file = Path(__file__).resolve()
         backend_dir = current_file.parent.parent.parent  # Go to backend/
-        project_root = backend_dir.parent  # Go to 25-26J-087/
+        project_root = backend_dir.parent  
         _model_dir = project_root / "notebooks" / "fair-prehire-attrition-prediction" / "models"
     
     return _model_dir
@@ -73,15 +72,15 @@ def load_model():
     
     # Try loading models in order of preference
     model_candidates = [
-        "final_ensemble.pkl",
         "ensemble_soft_weighted_calibrated.joblib",
         "ensemble_soft_weighted.joblib",
+        #"final_ensemble.pkl",
         "cat.pkl",
         "xgb.pkl",
         "rf.pkl",
     ]
     
-    print(f"📦 Looking for models in: {model_dir}")
+    print(f"Looking for models in: {model_dir}")
     
     for model_file in model_candidates:
         model_path = model_dir / model_file
@@ -89,10 +88,10 @@ def load_model():
             try:
                 print(f"   Loading model: {model_file}")
                 _model = joblib.load(model_path)
-                print(f"✅ Model loaded successfully: {model_file}")
+                print(f" Model loaded successfully: {model_file}")
                 return _model
             except Exception as e:
-                print(f"⚠️  Failed to load {model_file}: {e}")
+                print(f"  Failed to load {model_file}: {e}")
                 continue
     
     # If no model found, raise error
@@ -100,7 +99,7 @@ def load_model():
     raise FileNotFoundError(
         f"No trained model found in {model_dir}\n"
         f"Available files: {[f.name for f in available_files]}\n"
-        f"Please run the training notebook (04_model_training.py)"
+        
     )
 
 def load_preprocessor():
@@ -114,17 +113,17 @@ def load_preprocessor():
     preprocessor_path = model_dir / "scaler.pkl"
     
     if not preprocessor_path.exists():
-        print(f"⚠️  Preprocessor not found at: {preprocessor_path}")
+        print(f"  Preprocessor not found at: {preprocessor_path}")
         print("   Model will work without preprocessing if features are already scaled")
         return None
     
     try:
-        print(f"📦 Loading preprocessor: scaler.pkl")
+        print(f" Loading preprocessor: scaler.pkl")
         _preprocessor = joblib.load(preprocessor_path)
-        print(f"✅ Preprocessor loaded successfully")
+        print(f" Preprocessor loaded successfully")
         return _preprocessor
     except Exception as e:
-        print(f"⚠️  Failed to load preprocessor: {e}")
+        print(f"  Failed to load preprocessor: {e}")
         return None
 
 def get_model():
@@ -168,7 +167,7 @@ def predict_with_model(features: Dict[str, float]) -> tuple:
         return int(prediction), probabilities
         
     except Exception as e:
-        print(f"❌ Prediction error: {e}")
+        print(f" Prediction error: {e}")
         print(f"   Model type: {type(model)}")
         print(f"   Features shape: {feature_df.shape}")
         raise
