@@ -1,22 +1,13 @@
 import re
 import numpy as np
 from typing import Dict, Any
+from datetime import datetime
 from difflib import SequenceMatcher
 
 async def create_feature_vector_from_mongo(cv_document: Dict, jd_text: str, jd_location: str = None) -> Dict[str, float]:
     """
-    Create feature vector from MongoDB CV document + JD text
+    Create feature vector from MongoDB CV document and JD text
     
-    MongoDB CV structure:
-    {
-        "name": "John Doe",
-        "sections": {
-            "education": "...",
-            "experience": "...",
-            "skills": "..."
-        },
-        "raw_text": "full CV text"
-    }
     """
     
     # Extract from MongoDB sections
@@ -33,14 +24,15 @@ async def create_feature_vector_from_mongo(cv_document: Dict, jd_text: str, jd_l
     n_jobs = max(job_markers, 1)
     
     # Extract years of experience (look for date patterns)
-    year_ranges = re.findall(r'(\d{4})\s*(?:to|-|–)\s*(\d{4}|present|current)', 
+    year_ranges = re.findall(r'(\d{4})\s*(?:to|-|--)\s*(\d{4}|present|current)', 
                               experience_text, re.IGNORECASE)
-    
     total_exp_years = 0
+    current_year = datetime.now().year
+    
     for start, end in year_ranges:
         start_year = int(start)
         if 'present' in end.lower() or 'current' in end.lower():
-            end_year = 2025
+            end_year = current_year 
         else:
             end_year = int(end)
         total_exp_years += max(0, end_year - start_year)
@@ -61,7 +53,7 @@ async def create_feature_vector_from_mongo(cv_document: Dict, jd_text: str, jd_l
     job_hopping_rate = min(n_jobs, 3) / max(n_jobs, 1)
     
     # Matching scores
-    skill_match = compute_skill_match(skills_text, jd_text)
+    skill_match = compute_skill_match_with_esco(skills_text, jd_text) 
     title_match = compute_title_similarity(raw_text, jd_text)
     exp_match = compute_experience_match(total_exp_years, jd_text)
     edu_match = compute_education_match(education_text, jd_text)
@@ -126,11 +118,103 @@ async def create_feature_vector_from_mongo(cv_document: Dict, jd_text: str, jd_l
     
     return features
 
-def compute_skill_match(cv_skills: str, jd_text: str) -> float:
-    """Compute skill overlap between CV and JD"""
-    common_skills = ['python', 'java', 'sql', 'javascript', 'react', 'node',
-                     'machine learning', 'data analysis', 'project management',
-                     'agile', 'docker', 'kubernetes', 'aws', 'azure', 'gcp']
+def compute_skill_match_with_esco(cv_skills: str, jd_text: str) -> float:
+    """
+    Compute skill overlap between CV and JD using ESCO semantic matching
+    Falls back to traditional matching if ESCO unavailable or no matches
+    """
+    try:
+        from app.services.esco_mapper import get_esco_mapper
+        
+        esco = get_esco_mapper()
+        
+        if esco is None:
+            print("  ESCO unavailable, using traditional skill matching")
+            return compute_skill_match_original(cv_skills, jd_text)
+        
+        # Extract skills from CV
+        cv_skills_list = [s.strip() for s in cv_skills.split(',') if s.strip()]
+        
+        # Extract skills from JD (enhanced extraction)
+        jd_skills_list = extract_skills_from_jd(jd_text)
+        
+        # Use ESCO semantic matching
+        esco_score = esco.calculate_esco_skill_match(
+            cv_skills_list,
+            jd_skills_list,
+            threshold=70 
+        )
+        
+        # If ESCO returns 0 (no matches), fall back to traditional
+        if esco_score == 0:
+            print("  ESCO found no matches, using traditional matching")
+            return compute_skill_match_original(cv_skills, jd_text)
+        
+        print(f"  ESCO Skill Match: {esco_score:.3f} (CV: {len(cv_skills_list)} skills, JD: {len(jd_skills_list)} skills)")
+        return esco_score
+        
+    except Exception as e:
+        print(f"  ESCO matching failed: {e}, using fallback")
+        return compute_skill_match_original(cv_skills, jd_text)
+
+
+def extract_skills_from_jd(jd_text: str) -> list:
+    """
+    Extract skills from job description text
+    """
+    jd_lower = jd_text.lower()
+    
+    # Common tech skills
+    common_skills = [
+        # Programming Languages
+        'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'go', 'rust',
+        'php', 'ruby', 'swift', 'kotlin', 'scala', 'r', 'matlab',
+        
+        # Web Frameworks
+        'react', 'angular', 'vue', 'node.js', 'django', 'flask', 'spring boot',
+        'express', 'fastapi', 'asp.net', 'laravel', 'rails',
+        
+        # Databases
+        'sql', 'mysql', 'postgresql', 'mongodb', 'redis', 'elasticsearch',
+        'cassandra', 'oracle', 'sql server', 'dynamodb', 'firebase',
+        
+        # Cloud & DevOps
+        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'gitlab ci', 
+        'github actions', 'terraform', 'ansible', 'ci/cd', 'devops',
+
+        # Data Science & ML
+        'machine learning', 'deep learning', 'data analysis', 'data science',
+        'nlp', 'computer vision', 'tensorflow', 'pytorch', 'scikit-learn',
+        'pandas', 'numpy', 'spark', 'hadoop', 'tableau', 'power bi',
+        
+        # Mobile
+        'android', 'ios', 'react native', 'flutter', 'xamarin',
+        
+        # Other
+        'agile', 'scrum', 'project management', 'leadership',
+        'git', 'linux', 'rest api', 'graphql', 'microservices',
+        'sre', 'monitoring', 'logging', 'security', 'testing',
+        'etl', 'data warehouse', 'api design', 'system design'
+    ]
+    
+    detected_skills = []
+    for skill in common_skills:
+        if skill in jd_lower:
+            detected_skills.append(skill)
+    
+    return detected_skills
+
+
+def compute_skill_match_original(cv_skills: str, jd_text: str) -> float:
+    """
+    Original skill matching method (fallback if ESCO fails)
+    Uses simple keyword matching
+    """
+    common_skills = [
+        'python', 'java', 'sql', 'javascript', 'react', 'node',
+        'machine learning', 'data analysis', 'project management',
+        'agile', 'docker', 'kubernetes', 'aws', 'azure', 'gcp'
+    ]
     
     cv_lower = cv_skills.lower()
     jd_lower = jd_text.lower()
@@ -146,6 +230,7 @@ def compute_skill_match(cv_skills: str, jd_text: str) -> float:
     
     return intersection / union if union > 0 else 0.3
 
+
 def compute_title_similarity(cv_text: str, jd_text: str) -> float:
     """Compute similarity between CV job title and JD title"""
     cv_lines = cv_text.strip().split('\n')
@@ -156,6 +241,7 @@ def compute_title_similarity(cv_text: str, jd_text: str) -> float:
         return 0.5
     
     return SequenceMatcher(None, cv_title.lower(), jd_title.lower()).ratio()
+
 
 def compute_experience_match(cv_exp: float, jd_text: str) -> float:
     """Compute experience match score"""
@@ -176,6 +262,7 @@ def compute_experience_match(cv_exp: float, jd_text: str) -> float:
     else:
         return 1.0
 
+
 def compute_education_match(cv_edu_text: str, jd_text: str) -> int:
     """0 = under-qualified, 1 = qualified/over-qualified"""
     jd_lower = jd_text.lower()
@@ -193,9 +280,10 @@ def compute_education_match(cv_edu_text: str, jd_text: str) -> int:
     
     return 1  # Qualified
 
+
 def extract_location_from_cv(raw_text: str, sections: Dict) -> str:
     """Extract candidate location from CV"""
-    # Try to find location in raw text (usually near top)
+    # Try to find location in raw text 
     lines = raw_text.split('\n')[:10]  # Check first 10 lines
     
     # Common Sri Lankan cities
@@ -213,6 +301,7 @@ def extract_location_from_cv(raw_text: str, sections: Dict) -> str:
     # Default to Colombo if not found
     return "Colombo, Sri Lanka"
 
+
 def extract_location_from_jd(jd_text: str) -> str:
     """Extract job location from job description"""
     # Look for location patterns
@@ -229,6 +318,7 @@ def extract_location_from_jd(jd_text: str) -> str:
     
     # Default
     return "Colombo, Sri Lanka"
+
 
 async def compute_location_match_with_geocoding(cv_location: str, jd_location: str) -> float:
     """
@@ -248,5 +338,5 @@ async def compute_location_match_with_geocoding(cv_location: str, jd_location: s
         return geocoding.get_location_match_score(distance_km, risk)
         
     except Exception as e:
-        print(f" Geocoding failed, using default: {e}")
+        print(f"  Geocoding failed, using default: {e}")
         return 0.7  # Default moderate match if geocoding fails
