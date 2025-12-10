@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import re
 from typing import Tuple, Optional
 from math import radians, sin, cos, sqrt, atan2
 from app.config import settings
@@ -8,17 +9,98 @@ class GeocodingService:
     """
     Service to geocode addresses and calculate commute distances
     Using geocode.maps.co API
-    
-    Free tier: 25,000 requests @ 5 requests/second
-    Then: 1 request/second
     """
     
     BASE_URL = "https://geocode.maps.co/search"
+    
+    # Common Sri Lankan cities for address cleaning
+    SL_CITIES = [
+        'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo',
+        'Anuradhapura', 'Trincomalee', 'Batticaloa', 'Matara',
+        'Moratuwa', 'Maharagama', 'Nugegoda', 'Dehiwala', 'Kurunegala',
+        'Ratnapura', 'Badulla', 'Kegalle', 'Kalutara', 'Gampaha',
+        'Kelaniya', 'Malabe', 'Kaduwela', 'Panadura', 'Homagama',
+        'Kadawatha', 'Wattala', 'Ja-Ela', 'Piliyandala', 'Horana',
+        'Katugastota', 'Peradeniya', 'Matale', 'Nuwara Eliya',
+        'Hambantota', 'Unawatuna', 'Weligama', 'Kilinochchi',
+        'Vavuniya', 'Ampara', 'Kalmunai', 'Chilaw', 'Kuliyapitiya',
+        'Polonnaruwa', 'Bandarawela', 'Ella', 'Pannipitiya', 'Arawwala', 'Battaramulla', 'Rajagiriya', 
+        'Nawala', 'Boralesgamuwa', 'Kotte', 'Sri Jayawardenepura Kotte',
+        'Mount Lavinia', 'Dehiwala-Mount Lavinia', 'Ratmalana',
+        'Kalubowila', 'Wellawatte', 'Bambalapitiya', 'Maradana',
+        'Kollupitiya', 'Kotahena', 'Pettah', 'Fort', 'Slave Island',
+        'Cinnamon Gardens', 'Havelock Town', 'Kirulapone', 'Pamankada',
+        'Thimbirigasyaya', 'Narahenpita', 'Pelawatte', 'Thalawathugoda',
+        'Athurugiriya', 'Hokandara', 'Godagama', 'Pitakotte',
+        'Kohuwala', 'Mirihana', 'Kottawa', 'Udahamulla'
+    ]
     
     def __init__(self):
         self.api_key = settings.GEOCODING_API_KEY
         self.cache = {}  # Simple in-memory cache to save API calls
     
+    def clean_address_for_geocoding(self, address: str) -> str:
+        """
+        Simplify address to just city name for better geocoding success
+        """
+        if not address:
+            return "Colombo, Sri Lanka"
+        
+        # Convert to lowercase for matching
+        address_lower = address.lower()
+        
+        # Check if it's already in simple format
+        for city in self.SL_CITIES:
+            city_lower = city.lower()
+            # If address is already "City, Sri Lanka" format, return as is
+            if address_lower == f"{city_lower}, sri lanka":
+                return address
+        
+        # Remove common business/organization identifiers
+        address_clean = re.sub(
+            r'\b(PLC|Ltd|Limited|Pvt|Private|Inc|Corporation|Company|Group)\b',
+            '',
+            address,
+            flags=re.IGNORECASE
+        )
+        
+        # Remove street-level details
+        address_clean = re.sub(
+            r'\b(Road|Street|Mawatha|Lane|Avenue|Drive|Place|Gardens)\b',
+            '',
+            address_clean,
+            flags=re.IGNORECASE
+        )
+        
+        # Remove P.O. Box, building numbers, and floor numbers
+        address_clean = re.sub(r'P\.?\s*O\.?\s*Box\s*\d+', '', address_clean, flags=re.IGNORECASE)
+        address_clean = re.sub(r'\bNo\.?\s*\d+[A-Za-z]?[,\s]*', '', address_clean)
+        address_clean = re.sub(r'\b\d+(?:st|nd|rd|th)?\s+Floor\b', '', address_clean, flags=re.IGNORECASE)
+        address_clean = re.sub(r'\b\d+/\d+\b', '', address_clean)  # Remove 148/15 format
+        
+        # Try to find a city name in the cleaned address
+        # Check each word/phrase against city list
+        words = [w.strip() for w in address_clean.split(',')]
+        for word in words:
+            word_clean = word.strip()
+            for city in self.SL_CITIES:
+                if city.lower() in word_clean.lower():
+                    return f"{city}, Sri Lanka"
+        
+        # If still no match, try partial matching on original address
+        for city in self.SL_CITIES:
+            if city.lower() in address_lower:
+                return f"{city}, Sri Lanka"
+        
+        # Check for postal codes (e.g., "Colombo 01", "Colombo 10")
+        colombo_match = re.search(r'colombo\s+\d{1,2}', address_lower, re.IGNORECASE)
+        if colombo_match:
+            return "Colombo, Sri Lanka"
+        
+        # Default fallback
+        print(f"  Could not extract city from address: {address}, using Colombo as default")
+        return "Colombo, Sri Lanka"
+        
     async def geocode_address(self, address: str) -> Optional[Tuple[float, float]]:
         """
         Convert address to (latitude, longitude) coordinates
@@ -30,9 +112,12 @@ class GeocodingService:
             Tuple of (lat, lon) or None if geocoding fails
         """
         
-        # Check cache first
-        if address in self.cache:
-            return self.cache[address]
+        # Clean address for better geocoding success
+        clean_address = self.clean_address_for_geocoding(address)
+        
+        # Check cache first (use cleaned address as key)
+        if clean_address in self.cache:
+            return self.cache[clean_address]
         
         if not self.api_key:
             print("  Geocoding API key not configured")
@@ -40,7 +125,7 @@ class GeocodingService:
         
         try:
             params = {
-                "q": address,
+                "q": clean_address,
                 "api_key": self.api_key
             }
             
@@ -55,10 +140,15 @@ class GeocodingService:
                             lat = float(result.get("lat"))
                             lon = float(result.get("lon"))
                             
-                            # Cache result
-                            self.cache[address] = (lat, lon)
+                            # Cache result (using cleaned address as key)
+                            self.cache[clean_address] = (lat, lon)
+                            
+                            print(f" Geocoded: {clean_address} → ({lat}, {lon})")
                             
                             return (lat, lon)
+                        else:
+                            print(f" No results for: {clean_address}")
+                            return None
                     
                     elif response.status == 429:
                         # Rate limited
@@ -66,11 +156,11 @@ class GeocodingService:
                         return None
                     
                     else:
-                        print(f"  Geocoding failed: HTTP {response.status}")
+                        print(f"  Geocoding failed: HTTP {response.status} for {clean_address}")
                         return None
         
         except Exception as e:
-            print(f" Geocoding error: {e}")
+            print(f" Geocoding error for '{clean_address}': {e}")
             return None
     
     def calculate_distance(
@@ -128,6 +218,7 @@ class GeocodingService:
         
         # Handle remote jobs
         if "remote" in job_location.lower() or "remote" in cv_location.lower():
+            print(" Remote job detected, distance = 0")
             return (0.0, "low")
         
         # Geocode both locations
@@ -136,7 +227,8 @@ class GeocodingService:
         
         if not cv_coords or not job_coords:
             # Geocoding failed - return default moderate risk
-            print(f"  Could not geocode: CV={cv_location}, Job={job_location}")
+            print(f"  Geocoding failed: CV={cv_location}, Job={job_location}")
+            print(f"   Using default: distance=0, risk=medium")
             return (0.0, "medium")  # Unknown distance = moderate risk
         
         # Calculate distance
@@ -155,6 +247,8 @@ class GeocodingService:
             risk = "high"  # 15-30 km - Long commute (especially in Colombo traffic)
         else:
             risk = "very_high"  # > 30 km - Very long commute
+        
+        print(f" Distance calculated: {distance} km ({risk} risk)")
         
         return (distance, risk)
     
