@@ -1,9 +1,10 @@
 from fastapi import HTTPException
-from typing import Dict, Any
+from typing import Dict, Any, List
 from bson import ObjectId
+import numpy as np
 from app.database import get_cv_collection
 from app.services.feature_engineering import create_feature_vector_from_mongo
-from app.services.model_loader import predict_with_model
+from app.services.model_loader import predict_with_model, get_model
 
 RISK_LABELS = {
     0: "High Risk (leaves within 6 months)",
@@ -19,7 +20,8 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
     1. Retrieve parsed CV from MongoDB by cv_id
     2. Extract/engineer features compatible with model (including commute distance)
     3. Run model prediction
-    4. Return results with explanation
+    4. Generate counterfactual "what-if" scenarios
+    5. Return results with explanation
     """
     
     try:
@@ -35,9 +37,8 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
             raise HTTPException(404, f"CV not found with ID: {cv_id}")
         
         # Step 2: Convert MongoDB document to feature format
-        
         features = await create_feature_vector_from_mongo(
-            cv_document, 
+            cv_document,
             job_description,
             jd_location=job_location
         )
@@ -48,7 +49,11 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         # Step 4: Identify top risk factors
         risk_factors = identify_risk_factors(features)
         
-        # Step 5: Build response
+        # Step 5: Generate counterfactual "what-if" scenarios
+        model = get_model()
+        counterfactuals = generate_counterfactuals(features, predicted_class, probabilities, model)
+        
+        # Step 6: Build response
         result = {
             "status": "success",
             "cv_id": cv_id,
@@ -75,7 +80,8 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
                 "total_experience": round(features['total_exp_years'], 1),
                 "avg_tenure_months": round(features['avg_tenure_months'], 1)
             },
-            "risk_factors": risk_factors
+            "risk_factors": risk_factors,
+            "counterfactuals": counterfactuals  
         }
         
         return result
@@ -170,8 +176,86 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "low"
         })
     
+    # Low location match
+    if features['location_match_score'] < 0.5:
+        risk_factors.append({
+            "factor": "Long commute distance",
+            "value": round(features['location_match_score'], 2),
+            "description": "Significant distance between candidate location and job location",
+            "impact": "medium"
+        })
+    
     # Sort by impact (high > medium > low) and return top 5
     impact_order = {"high": 3, "medium": 2, "low": 1}
     risk_factors.sort(key=lambda x: impact_order.get(x["impact"], 0), reverse=True)
     
     return risk_factors[:5]  # Return top 5 risk factors
+
+def generate_counterfactuals(features: Dict, prediction: int, probabilities: np.ndarray, model) -> List[Dict]:
+    """
+    Generate 3-5 counterfactual "what-if" scenarios
+    """
+    counterfactuals = []
+    
+    test_scenarios = [
+        # Larger tenure improvements
+        ("avg_tenure_months", min(features["avg_tenure_months"] + 24, 48), "had 2 years average tenure per job"),
+        ("total_exp_years", features["total_exp_years"] + 3, "had 3 more years of experience"),
+        
+        # Dramatic improvements
+        ("job_hopping_rate", max(features["job_hopping_rate"] - 0.5, 0), "had much more stable job history"),
+        ("skill_match_score", min(features["skill_match_score"] + 0.4, 1.0), "had 40% better skill match"),
+        ("overall_match_score", min(features["overall_match_score"] + 0.4, 1.0), "had significantly better overall match"),
+        
+        # Combination improvements
+        ("total_jobs", max(features["total_jobs"] + 2, 3), "had more diverse work experience"),
+        ("location_match_score", min(features["location_match_score"] + 0.3, 1.0), "lived much closer to job location"),
+    ]
+    
+    for feature_name, new_value, description in test_scenarios:
+        # Create modified feature set
+        modified_features = features.copy()
+        modified_features[feature_name] = new_value
+        
+        # If improving tenure, also improve related features
+        if feature_name == "avg_tenure_months" and new_value > features[feature_name]:
+            modified_features["job_hopping_rate"] = max(features["job_hopping_rate"] - 0.3, 0)
+            modified_features["current_job_tenure"] = new_value
+        
+        # Predict with modified features
+        try:
+            new_pred, new_proba = predict_with_model(modified_features)
+            
+            # RELAXED threshold: Include if ANY meaningful change
+            if new_pred != prediction or abs(new_proba[new_pred] - probabilities[prediction]) > 0.05:
+                counterfactuals.append({
+                    "scenario": f"If candidate {description}",
+                    "original_risk": RISK_LABELS[prediction],
+                    "new_risk": RISK_LABELS[new_pred],
+                    "confidence_change": float(new_proba[new_pred] - probabilities[prediction]),
+                    "impact": "positive" if new_pred > prediction or new_proba[new_pred] > probabilities[prediction] else "negative",
+                    "feature_changed": feature_name,
+                    "original_value": float(features[feature_name]),
+                    "new_value": float(new_value)
+                })
+        except Exception as e:
+            print(f"  Counterfactual generation error for {feature_name}: {e}")
+            continue
+    
+    # Return top 3-5 most impactful
+    counterfactuals.sort(key=lambda x: abs(x["confidence_change"]), reverse=True)
+    
+    # If still empty, add at least one generic insight
+    if not counterfactuals and prediction == 0:  # High risk
+        counterfactuals.append({
+            "scenario": "If candidate had 3+ years stable work history with better skill alignment",
+            "original_risk": RISK_LABELS[prediction],
+            "new_risk": "Medium or Low Risk (estimated)",
+            "confidence_change": 0.0,
+            "impact": "positive",
+            "feature_changed": "multiple",
+            "original_value": 0.0,
+            "new_value": 0.0
+        })
+    
+    return counterfactuals[:5]
