@@ -11,6 +11,7 @@ from app.routes.user_router import router as user_router
 from app.routes.cv_routes import router as cv_router
 from app.routes.turnover_router import router as turnover_router
 from app.routes.geocoding_router import router as geocoding_router
+from app.routes.esco_router import router as esco_router
 
 # Model loading
 from app.services.model_downloader import ensure_model_files
@@ -33,6 +34,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"  MongoDB connection failed: {e}")
         print("   Application will start but database features won't work")
+
+    # Load ESCO Mapper
+    try:
+        from app.services.esco_mapper import get_esco_mapper
+        esco = get_esco_mapper()
+        if esco:
+            print(" ESCO Mapper loaded successfully")
+        else:
+            print("  ESCO Mapper unavailable, using fallback matching")
+    except Exception as e:
+        print(f"  ESCO loading error: {e}")
     
     #  Ensure model files are present (download if missing)
     try:
@@ -82,6 +94,7 @@ app.include_router(user_router)
 app.include_router(cv_router)
 app.include_router(turnover_router)
 app.include_router(geocoding_router)
+app.include_router(esco_router)
 
 @app.get("/")
 def home():
