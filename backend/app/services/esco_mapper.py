@@ -32,7 +32,7 @@ class ESCOMapper:
         
         self.esco_data_dir = Path(esco_data_dir)
         
-        print(f"✅ Loading ESCO data from: {self.esco_data_dir}")
+        print(f" Loading ESCO data from: {self.esco_data_dir}")
         
         # Load ESCO datasets
         self.occupations_df = self._load_occupations()
@@ -42,7 +42,7 @@ class ESCOMapper:
         # Create lookup dictionaries for fast matching
         self._build_lookup_dicts()
         
-        print(f"✅ ESCO READY: {len(self.occupations_df)} occupations, {len(self.skills_df)} skills, {len(self.occ_skill_relations_df)} relations")
+        print(f" ESCO READY: {len(self.occupations_df)} occupations, {len(self.skills_df)} skills, {len(self.occ_skill_relations_df)} relations")
     
     def _load_occupations(self) -> pd.DataFrame:
         """Load occupations_en.csv with intelligent separator detection"""
@@ -50,7 +50,7 @@ class ESCOMapper:
             file_path = self.esco_data_dir / "occupations_en.csv"
             
             if not file_path.exists():
-                print(f"  ❌ File not found: {file_path}")
+                print(f"   File not found: {file_path}")
                 return pd.DataFrame()
             
             # Try comma separator first (ESCO standard format)
@@ -61,13 +61,13 @@ class ESCOMapper:
                 # Fallback to tab separator
                 try:
                     df = pd.read_csv(file_path, sep='\t', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                    print(f"  ✓ Loaded with tab separator")
+                    print(f"   Loaded with tab separator")
                 except Exception as e2:
-                    print(f"  ❌ Failed both separators: {e1}, {e2}")
+                    print(f"   Failed both separators: {e1}, {e2}")
                     return pd.DataFrame()
             
-            print(f"  📊 Loaded {len(df)} rows with {len(df.columns)} columns")
-            print(f"  📋 First 5 columns: {df.columns.tolist()[:5]}")
+            print(f"   Loaded {len(df)} rows with {len(df.columns)} columns")
+            print(f"   First 5 columns: {df.columns.tolist()[:5]}")
             
             # Map to expected column names
             column_mapping = {
@@ -93,22 +93,22 @@ class ESCOMapper:
                 
                 if rename_map:
                     df.rename(columns=rename_map, inplace=True)
-                    print(f"  🔄 Renamed columns: {rename_map}")
+                    print(f"   Renamed columns: {rename_map}")
             
             # Keep only columns that exist
             available_cols = [col for col in ['conceptUri', 'preferredLabel', 'altLabels', 'description'] if col in df.columns]
             
             if available_cols:
                 df = df[available_cols]
-                print(f"  ✅ Successfully loaded {len(df)} occupations")
+                print(f"   Successfully loaded {len(df)} occupations")
                 return df
             else:
-                print(f"  ❌ Could not find expected columns in occupations file")
+                print(f"   Could not find expected columns in occupations file")
                 print(f"  Available columns: {df.columns.tolist()[:10]}")
                 return pd.DataFrame()
                 
         except Exception as e:
-            print(f"  ❌ Error loading occupations: {e}")
+            print(f"   Error loading occupations: {e}")
             return pd.DataFrame()
     
     def _load_skills(self) -> pd.DataFrame:
@@ -117,24 +117,24 @@ class ESCOMapper:
             file_path = self.esco_data_dir / "skills_en.csv"
             
             if not file_path.exists():
-                print(f"  ❌ File not found: {file_path}")
+                print(f"   File not found: {file_path}")
                 return pd.DataFrame()
             
             # Try comma separator first (ESCO standard)
             try:
                 df = pd.read_csv(file_path, sep=',', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                print(f"  ✓ Loaded skills with comma separator")
+                print(f"   Loaded skills with comma separator")
             except Exception as e1:
                 # Fallback to tab separator
                 try:
                     df = pd.read_csv(file_path, sep='\t', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                    print(f"  ✓ Loaded skills with tab separator")
+                    print(f"   Loaded skills with tab separator")
                 except Exception as e2:
-                    print(f"  ❌ Failed both separators: {e1}, {e2}")
+                    print(f"   Failed both separators: {e1}, {e2}")
                     return pd.DataFrame()
             
-            print(f"  📊 Loaded {len(df)} rows with {len(df.columns)} columns")
-            print(f"  📋 First 5 columns: {df.columns.tolist()[:5]}")
+            print(f"   Loaded {len(df)} rows with {len(df.columns)} columns")
+            print(f"   First 5 columns: {df.columns.tolist()[:5]}")
             
             # Try alternative column names
             rename_map = {}
@@ -150,22 +150,22 @@ class ESCOMapper:
             
             if rename_map:
                 df.rename(columns=rename_map, inplace=True)
-                print(f"  🔄 Renamed columns: {rename_map}")
+                print(f"   Renamed columns: {rename_map}")
             
             # Keep essential columns
             available_cols = [col for col in ['conceptUri', 'preferredLabel', 'altLabels', 'skillType', 'description'] if col in df.columns]
             
             if available_cols:
                 df = df[available_cols]
-                print(f"  ✅ Successfully loaded {len(df)} skills")
+                print(f"   Successfully loaded {len(df)} skills")
                 return df
             else:
-                print(f"  ❌ Could not find expected columns in skills file")
+                print(f"  Could not find expected columns in skills file")
                 print(f"  Available columns: {df.columns.tolist()[:10]}")
                 return pd.DataFrame()
                 
         except Exception as e:
-            print(f"  ❌ Error loading skills: {e}")
+            print(f"   Error loading skills: {e}")
             return pd.DataFrame()
     
     def _load_occ_skill_relations(self) -> pd.DataFrame:
@@ -174,22 +174,22 @@ class ESCOMapper:
             file_path = self.esco_data_dir / "occupationSkillRelations_en.csv"
             
             if not file_path.exists():
-                print(f"  ⚠️ Relations file not found: {file_path}")
+                print(f"   Relations file not found: {file_path}")
                 return pd.DataFrame()
             
             # Try comma separator first
             try:
                 df = pd.read_csv(file_path, sep=',', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                print(f"  ✓ Loaded relations with comma separator")
+                print(f"   Loaded relations with comma separator")
             except:
                 try:
                     df = pd.read_csv(file_path, sep='\t', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                    print(f"  ✓ Loaded relations with tab separator")
+                    print(f"   Loaded relations with tab separator")
                 except Exception as e:
-                    print(f"  ❌ Failed to load relations: {e}")
+                    print(f"   Failed to load relations: {e}")
                     return pd.DataFrame()
             
-            print(f"  📊 Loaded {len(df)} relations with {len(df.columns)} columns")
+            print(f"   Loaded {len(df)} relations with {len(df.columns)} columns")
             
             # Keep only essential columns
             essential_cols = ['occupationUri', 'relationType', 'skillType', 'skillUri']
@@ -197,22 +197,22 @@ class ESCOMapper:
             
             if available_cols:
                 df = df[available_cols]
-                print(f"  ✅ Successfully loaded {len(df)} occupation-skill relations")
+                print(f"   Successfully loaded {len(df)} occupation-skill relations")
                 return df
             else:
-                print(f"  ❌ Could not find expected relation columns")
+                print(f"  Could not find expected relation columns")
                 print(f"  Available columns: {df.columns.tolist()[:10]}")
                 return pd.DataFrame()
             
         except Exception as e:
-            print(f"  ❌ Error loading occupation-skill relations: {e}")
+            print(f"   Error loading occupation-skill relations: {e}")
             return pd.DataFrame()
     
     def _build_lookup_dicts(self):
         """Build lookup dictionaries for fast fuzzy matching"""
         
         if self.occupations_df.empty and self.skills_df.empty:
-            print("  ⚠️ No ESCO data loaded, skipping lookup dict creation")
+            print("   No ESCO data loaded, skipping lookup dict creation")
             self.job_titles_lookup = {}
             self.skills_lookup = {}
             return
@@ -232,7 +232,7 @@ class ESCOMapper:
                         'preferredLabel': row['preferredLabel']
                     }
         
-        print(f"  📖 Built job titles lookup: {len(self.job_titles_lookup)} entries")
+        print(f"   Built job titles lookup: {len(self.job_titles_lookup)} entries")
         
         # Skills lookup (preferredLabel and altLabels)
         self.skills_lookup = {}
@@ -250,7 +250,7 @@ class ESCOMapper:
                         'skillType': row['skillType']
                     }
         
-        print(f"  📖 Built skills lookup: {len(self.skills_lookup)} entries")
+        print(f"   Built skills lookup: {len(self.skills_lookup)} entries")
     
     def map_job_title(self, job_title: str, threshold: int = 85) -> Optional[Dict[str, str]]:  
         """
@@ -280,7 +280,7 @@ class ESCOMapper:
                 'match_score': 100
             }
         
-        # ENHANCED fallback mappings for modern IT/tech roles
+        # Fallback mappings for modern IT/tech roles
         fallback_mappings = {
             # AI/ML/Data Science
             'ai engineer': 'software developer',
@@ -356,12 +356,12 @@ class ESCOMapper:
                     'mapped_to': fallback_title
                 }
         
-        # Fuzzy matching with STRICTER threshold (85 instead of 70)
+        # Fuzzy matching with STRICTER threshold
         # Use ratio instead of token_sort_ratio for exact phrase matching
         matches = process.extract(
             job_title_lower,
             self.job_titles_lookup.keys(),
-            scorer=fuzz.ratio,  # Changed from token_sort_ratio
+            scorer=fuzz.ratio,  
             limit=5
         )
         
@@ -411,7 +411,7 @@ class ESCOMapper:
                 'match_score': 100
             }
         
-        # ENHANCED fallback for common tech skills not in ESCO
+        # Fallback for common tech skills not in ESCO
         tech_skill_mappings = {
             # Programming languages
             'python': 'Python (computer programming)',
@@ -493,7 +493,7 @@ class ESCOMapper:
                     'original_skill': skill
                 }
         
-        # Fuzzy matching with MUCH STRICTER threshold
+        # Fuzzy matching with STRICTER threshold
         matches = process.extract(
             skill_lower,
             self.skills_lookup.keys(),
@@ -627,11 +627,11 @@ def get_esco_mapper() -> Optional[ESCOMapper]:
             
             # Validate that ESCO loaded successfully
             if _esco_mapper.occupations_df.empty and _esco_mapper.skills_df.empty:
-                print(f"⚠️ ESCO data is empty - falling back to non-ESCO mode")
+                print(f" ESCO data is empty - falling back to non-ESCO mode")
                 return None
                 
         except Exception as e:
-            print(f"❌ Failed to initialize ESCO Mapper: {e}")
+            print(f" Failed to initialize ESCO Mapper: {e}")
             print("  Falling back to non-ESCO mode")
             return None
     
