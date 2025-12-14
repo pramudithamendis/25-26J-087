@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, UploadFile, File, Request
+from fastapi import Depends
+from app.auth.dependencies import get_current_user
 from typing import List
 from bson import ObjectId
 import io
@@ -25,7 +27,7 @@ from git import Repo
 router = APIRouter(prefix="/api/items", tags=["Items"])
 
 @router.get("", response_model=List[QuestionResponse])
-async def get_items():
+async def get_items(user=Depends(get_current_user)):
     try:
         items = list(questions_collection.find({}, {"_id": 0}))
         return items
@@ -37,7 +39,7 @@ async def get_items():
 
 
 @router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
-async def add_item(item: QuestionCreate):
+async def add_item(item: QuestionCreate,user=Depends(get_current_user)):
     try:
         questions_collection.insert_one(item.dict())
         return {"message": "Item added"}
@@ -61,7 +63,7 @@ async def fetch_readme(user: str, repo: str):
 
 
 @router.post("/extract-github-readme")
-async def extract_github_and_store(file: UploadFile = File(...)):
+async def extract_github_and_store(user=Depends(get_current_user), file: UploadFile = File(...)):
     """
     Extract GitHub links from PDF, fetch README content, and store in MongoDB.
     """
@@ -163,7 +165,7 @@ def find_best_matching_project(job_description, projects):
 
 
 @router.post("/match-project")
-async def match_project(payload: dict):
+async def match_project(payload: dict,user=Depends(get_current_user)):
     if "job_description" not in payload:
         raise HTTPException(
             status_code=400,
@@ -171,8 +173,8 @@ async def match_project(payload: dict):
         )
 
     job_description = payload["job_description"]
-
-    projects = list(questions_readme_collection.find({}))
+    username =  payload["username"]
+    projects = list(questions_readme_collection.find({"user": username}))
 
     best_project, best_score, similarities = find_best_matching_project(job_description, projects)
 
@@ -194,7 +196,7 @@ async def match_project(payload: dict):
     }
 
 @router.get("/repos/{username}")
-async def get_public_repos(username: str):
+async def get_public_repos(username: str,user=Depends(get_current_user)):
     """
     Fetch all public GitHub repositories for a given user.
     """
@@ -240,7 +242,7 @@ async def get_public_repos(username: str):
         )
 
 @router.post("/clone")
-def clone_repo(payload: CloneRequest):
+def clone_repo(payload: CloneRequest,user=Depends(get_current_user)):
     repo_url = payload.repo_url
     dest = os.path.abspath(payload.dest)
 
@@ -263,7 +265,7 @@ client = ollama.Client()
 MODEL_NAME = "llama3.2:1b"
 
 @router.post("/ask")
-async def generate_questions(payload: dict):
+async def generate_questions(payload: dict,user=Depends(get_current_user)):
     folder = payload.get("folder")
     filename = payload.get("filename")
 
