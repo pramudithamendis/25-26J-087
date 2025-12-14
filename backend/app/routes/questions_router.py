@@ -23,6 +23,7 @@ import httpx
 
 import os
 from git import Repo
+from pathlib import Path
 
 router = APIRouter(prefix="/api/items", tags=["Items"])
 
@@ -296,3 +297,23 @@ async def generate_questions(payload: dict,user=Depends(get_current_user)):
     response = client.generate(model=MODEL_NAME, prompt=prompt)
 
     return {"questions": response.response}
+
+
+
+@router.get("/files/{username}/{reponame}")
+async def list_files(username: str,reponame: str):
+    FILES_DIR = Path(__file__).parent.parent.parent / "uploads" / "repos" / username /reponame
+    print(FILES_DIR)
+    try:
+        return [f.name for f in FILES_DIR.iterdir() if f.is_file()]
+    except Exception:
+        raise HTTPException(status_code=500, detail="Cannot read files")
+
+@router.get("/files/{username}/{reponame}/{filename}")
+async def get_file(username: str,reponame: str,filename: str):
+    FILES_DIR = Path(__file__).parent.parent.parent / "uploads" / "repos" / username /reponame
+    file_path = FILES_DIR / filename
+    print(file_path)
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    return file_path.read_text()

@@ -1,0 +1,109 @@
+import { useEffect, useState } from "react";
+
+const API_BASE = "http://127.0.0.1:8000/api/items"; // e.g. "http://localhost:8000"
+
+export default function QuestionsAllFiles() {
+  const [username, setUsername] = useState("pramudithamendis");
+  const [reponame, setReponame] = useState("BI-backend");
+  const [files, setFiles] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function loadFiles() {
+    setError(null);
+    setFiles([]);
+    setSelectedFile(null);
+    setFileContent("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/files/${username}/${reponame}`);
+
+      if (!res.ok) {
+        throw new Error(`Failed to load files (${res.status})`);
+      }
+
+      const data: string[] = await res.json();
+      setFiles(data);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadFile(filename: string) {
+    setError(null);
+    setSelectedFile(filename);
+    setFileContent("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/files/${username}/${reponame}/${filename}`);
+
+      if (!res.ok) {
+        throw new Error(`Failed to load file (${res.status})`);
+      }
+
+      const text = await res.text();
+      setFileContent(text);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ padding: 24, fontFamily: "sans-serif" }}>
+      <h2>Repo File Browser</h2>
+
+      <div style={{ marginBottom: 12 }}>
+        <input placeholder="username" value={username} onChange={(e) => setUsername(e.target.value)} style={{ marginRight: 8 }} />
+        <input placeholder="reponame" value={reponame} onChange={(e) => setReponame(e.target.value)} style={{ marginRight: 8 }} />
+        <button onClick={loadFiles} disabled={!username || !reponame}>
+          Load Files
+        </button>
+      </div>
+
+      {loading && <p>Loading…</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <div style={{ display: "flex", gap: 24 }}>
+        <ul style={{ minWidth: 200 }}>
+          {files.map((file) => (
+            <li key={file}>
+              <button
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  color: file === selectedFile ? "blue" : "black",
+                }}
+                onClick={() => loadFile(file)}
+              >
+                {file}
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <pre
+          style={{
+            flex: 1,
+            background: "#000000ff",
+            padding: 12,
+            overflow: "auto",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+                  {fileContent || "Select a file to view its contents"}
+                  
+        </pre>
+      </div>
+    </div>
+  );
+}
