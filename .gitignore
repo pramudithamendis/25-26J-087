@@ -56,4 +56,4 @@ backend-mypart/
 backend/app/data/articles/
 
 #models
-backend/app/ml_models
+backend/app/ml_models/
