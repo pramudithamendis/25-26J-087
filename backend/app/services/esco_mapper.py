@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 from pathlib import Path
 from rapidfuzz import fuzz, process
@@ -56,7 +57,7 @@ class ESCOMapper:
             # Try comma separator first (ESCO standard format)
             try:
                 df = pd.read_csv(file_path, sep=',', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                print(f"  ✓ Loaded with comma separator")
+                print(f"  Loaded with comma separator")
             except Exception as e1:
                 # Fallback to tab separator
                 try:
@@ -254,20 +255,12 @@ class ESCOMapper:
     
     def map_job_title(self, job_title: str, threshold: int = 85) -> Optional[Dict[str, str]]:  
         """
-        Map a job title to ESCO occupation
-        
-        Args:
-            job_title: Raw job title string
-            threshold: Fuzzy matching threshold (0-100) - default 85 for quality
-        
-        Returns:
-            Dict with 'uri', 'preferredLabel', 'match_score' or None
+        Map a job title to ESCO occupation with intern handling
         """
         if not job_title or pd.isna(job_title):
             return None
         
         if not self.job_titles_lookup:
-            # ESCO not available, return None
             return None
         
         job_title_lower = job_title.lower().strip()
@@ -280,7 +273,28 @@ class ESCOMapper:
                 'match_score': 100
             }
         
-        # Fallback mappings for modern IT/tech roles
+        # Strip intern/trainee/junior and retry
+        intern_keywords = ['intern', 'internship', 'trainee', 'graduate', 'entry level', 'entry-level']
+        stripped_title = job_title_lower
+        
+        for keyword in intern_keywords:
+            stripped_title = re.sub(rf'\b{keyword}\b', '', stripped_title, flags=re.IGNORECASE)
+        
+        stripped_title = re.sub(r'\s+', ' ', stripped_title).strip()
+        
+        # Try stripped version in exact match
+        if stripped_title and stripped_title != job_title_lower:
+            if stripped_title in self.job_titles_lookup:
+                return {
+                    'uri': self.job_titles_lookup[stripped_title]['uri'],
+                    'preferredLabel': self.job_titles_lookup[stripped_title]['preferredLabel'],
+                    'match_score': 95,
+                    'original_title': job_title,
+                    'mapped_via': 'stripped_intern',
+                    'note': f'Mapped by removing intern-level keywords'
+                }
+        
+        # Enhanced fallback mappings
         fallback_mappings = {
             # AI/ML/Data Science
             'ai engineer': 'software developer',
@@ -295,7 +309,7 @@ class ESCOMapper:
             
             # Software Engineering
             'software engineer': 'software developer',
-            'software engineer intern': 'software developer',
+            'software developer': 'software developer',
             'full stack developer': 'software developer',
             'fullstack developer': 'software developer',
             'frontend developer': 'web developer',
@@ -330,18 +344,12 @@ class ESCOMapper:
             'technical product manager': 'ICT project manager',
             'scrum master': 'ICT project manager',
             'project manager': 'ICT project manager',
-            
-            # Emerging/Marketing roles (no direct match)
-            'data evangelist': None,
-            'developer advocate': None,
-            'technical evangelist': None,
         }
         
-        # Try fallback mapping first (before fuzzy matching)
-        if job_title_lower in fallback_mappings:
-            fallback_title = fallback_mappings[job_title_lower]
+        # Try fallback mapping on stripped title
+        if stripped_title in fallback_mappings:
+            fallback_title = fallback_mappings[stripped_title]
             
-            # If explicitly set to None, return no match
             if fallback_title is None:
                 return None
             
@@ -350,18 +358,35 @@ class ESCOMapper:
                 return {
                     'uri': result['uri'],
                     'preferredLabel': result['preferredLabel'],
-                    'match_score': 90,  # Fallback match
+                    'match_score': 90,
+                    'original_title': job_title,
+                    'mapped_via': 'fallback_stripped',
+                    'mapped_to': fallback_title
+                }
+        
+        # Try fallback on original title
+        if job_title_lower in fallback_mappings:
+            fallback_title = fallback_mappings[job_title_lower]
+            
+            if fallback_title is None:
+                return None
+            
+            if fallback_title in self.job_titles_lookup:
+                result = self.job_titles_lookup[fallback_title]
+                return {
+                    'uri': result['uri'],
+                    'preferredLabel': result['preferredLabel'],
+                    'match_score': 90,
                     'original_title': job_title,
                     'mapped_via': 'fallback',
                     'mapped_to': fallback_title
                 }
         
-        # Fuzzy matching with STRICTER threshold
-        # Use ratio instead of token_sort_ratio for exact phrase matching
+        # Fuzzy matching (last resort)
         matches = process.extract(
-            job_title_lower,
+            stripped_title if stripped_title else job_title_lower,
             self.job_titles_lookup.keys(),
-            scorer=fuzz.ratio,  
+            scorer=fuzz.ratio,
             limit=5
         )
         
@@ -381,23 +406,16 @@ class ESCOMapper:
             }
         
         return None
-    
+
+
     def map_skill(self, skill: str, threshold: int = 90) -> Optional[Dict[str, str]]:
         """
-        Map a skill to ESCO skill concept
-        
-        Args:
-            skill: Raw skill string
-            threshold: Fuzzy matching threshold (0-100) - default 90 for quality
-        
-        Returns:
-            Dict with 'uri', 'preferredLabel', 'skillType', 'match_score' or None
+        Map a skill to ESCO skill
         """
         if not skill or pd.isna(skill):
             return None
         
         if not self.skills_lookup:
-            # ESCO not available, return None
             return None
         
         skill_lower = skill.lower().strip()
@@ -411,93 +429,109 @@ class ESCOMapper:
                 'match_score': 100
             }
         
-        # Fallback for common tech skills not in ESCO
+        # Fallback for tech skills
         tech_skill_mappings = {
             # Programming languages
             'python': 'Python (computer programming)',
             'java': 'Java (computer programming)',
             'javascript': 'JavaScript',
-            'typescript': None,  # Too new for ESCO
+            'typescript': 'JavaScript', 
             'c++': 'C++',
             'c#': 'C#',
-            'go': None,
-            'rust': None,
+            'go': 'Go (computer programming)', 
+            'golang': 'Go (computer programming)',
+            'rust': None, 
             'ruby': 'Ruby (computer programming)',
             'php': 'PHP',
             
-            # Frameworks/Libraries (likely not in ESCO)
-            'react': None,
-            'angular': None,
-            'vue': None,
-            'django': None,
-            'flask': None,
-            'spring boot': None,
-            'node.js': None,
-            'nodejs': None,
+            # Frameworks/Libraries - Map to base language if no match
+            'react': 'JavaScript',
+            'angular': 'JavaScript',
+            'vue': 'JavaScript',
+            'vue.js': 'JavaScript',
+            'django': 'Python (computer programming)',
+            'flask': 'Python (computer programming)',
+            'spring boot': 'Java (computer programming)',
+            'spring': 'Java (computer programming)',
+            'node.js': 'JavaScript',
+            'nodejs': 'JavaScript',
             
             # DevOps/Cloud tools
-            'docker': None,
-            'kubernetes': None,
-            'jenkins': None,
-            'terraform': None,
-            'ansible': None,
+            'docker': 'virtualization',  
+            'kubernetes': 'cloud technologies',
+            'jenkins': 'continuous integration',
+            'terraform': 'infrastructure as code',
+            'ansible': 'configuration management',
+            'git': 'Git',
             
             # Cloud platforms
             'aws': 'Amazon Web Services',
+            'amazon web services': 'Amazon Web Services',
             'azure': 'Microsoft Azure',
             'gcp': 'Google Cloud Platform',
+            'google cloud': 'Google Cloud Platform',
             
-            # Data Science/ML libraries
-            'tensorflow': None,
-            'pytorch': None,
-            'scikit-learn': None,
-            'sklearn': None,
-            'pandas': None,
-            'numpy': None,
-            'keras': None,
+            # Data Science/ML
+            'tensorflow': 'machine learning',
+            'pytorch': 'machine learning',
+            'scikit-learn': 'machine learning',
+            'sklearn': 'machine learning',
+            'pandas': 'data analysis',
+            'numpy': 'scientific computing',
+            'keras': 'machine learning',
             
             # Databases
             'sql': 'SQL',
             'mysql': 'MySQL',
             'postgresql': 'PostgreSQL',
+            'postgres': 'PostgreSQL',
             'mongodb': 'MongoDB',
-            'redis': None,
+            'redis': 'database management',
             
-            # Enterprise software
+            # Enterprise
             'sap': 'SAP software products',
             'oracle': 'Oracle software products',
             
             # General
-            'git': 'Git',
             'agile': 'Agile software development',
             'scrum': 'SCRUM',
+            'ci/cd': 'continuous integration',
+            'devops': 'DevOps',
         }
         
         # Try tech skill mapping
         if skill_lower in tech_skill_mappings:
             mapped_skill = tech_skill_mappings[skill_lower]
             
-            # If explicitly None, skill doesn't exist in ESCO
             if mapped_skill is None:
-                return None
+                
+                return {
+                    'uri': f'custom:{skill_lower}',
+                    'preferredLabel': skill.title(),
+                    'skillType': 'technical',
+                    'match_score': 80,
+                    'mapped_via': 'custom_mapping',
+                    'note': 'Modern tech skill not in ESCO, mapped to generic equivalent'
+                }
             
-            # Try to find the mapped skill
+            # Try to find mapped skill
             if mapped_skill.lower() in self.skills_lookup:
                 result = self.skills_lookup[mapped_skill.lower()]
                 return {
                     'uri': result['uri'],
                     'preferredLabel': result['preferredLabel'],
                     'skillType': result['skillType'],
-                    'match_score': 95,
+                    'match_score': 85,
                     'mapped_via': 'tech_fallback',
-                    'original_skill': skill
+                    'original_skill': skill,
+                    'note': f'Mapped to broader concept: {mapped_skill}'
                 }
         
-        # Fuzzy matching with STRICTER threshold
+        # Fuzzy matching
         matches = process.extract(
             skill_lower,
             self.skills_lookup.keys(),
-            scorer=fuzz.ratio,  # Exact phrase matching
+            scorer=fuzz.ratio,
             limit=3
         )
         
@@ -511,7 +545,15 @@ class ESCOMapper:
                 'mapped_via': 'fuzzy'
             }
         
-        return None
+        # Still no match - return useful fallback
+        return {
+            'uri': f'custom:{skill_lower}',
+            'preferredLabel': skill.title(),
+            'skillType': 'technical',
+            'match_score': 50,
+            'mapped_via': 'unmatched_fallback',
+            'note': 'Skill not in ESCO database, treating as valid technical skill'
+        }
     
     def map_skills_batch(self, skills_list: List[str], threshold: int = 75) -> List[Dict[str, str]]:
         """
