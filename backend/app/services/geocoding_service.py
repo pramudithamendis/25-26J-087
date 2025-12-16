@@ -8,12 +8,21 @@ from app.config import settings
 class GeocodingService:
     """
     Service to geocode addresses and calculate commute distances
-    Using geocode.maps.co API
+    Using geocode.maps.co API with Road Distance Correction Factor
     """
     
     BASE_URL = "https://geocode.maps.co/search"
     
-    # Common Sri Lankan cities for address cleaning
+    # Road distance multipliers for Sri Lanka
+    # Based on geography, infrastructure, and traffic patterns
+    ROAD_DISTANCE_MULTIPLIERS = {
+        'colombo_metro': 1.3,      # Heavy traffic, indirect routes
+        'western_urban': 1.4,       # Urban sprawl, bottlenecks
+        'inter_province': 1.6,      # Mountain roads, limited highways
+        'remote_areas': 1.8,        # Very limited road access
+    }
+    
+    # Common Sri Lankan cities
     SL_CITIES = [
         'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo',
         'Anuradhapura', 'Trincomalee', 'Batticaloa', 'Matara',
@@ -24,21 +33,82 @@ class GeocodingService:
         'Katugastota', 'Peradeniya', 'Matale', 'Nuwara Eliya',
         'Hambantota', 'Unawatuna', 'Weligama', 'Kilinochchi',
         'Vavuniya', 'Ampara', 'Kalmunai', 'Chilaw', 'Kuliyapitiya',
-        'Polonnaruwa', 'Bandarawela', 'Ella', 'Pannipitiya', 'Arawwala', 'Battaramulla', 'Rajagiriya', 
-        'Nawala', 'Boralesgamuwa', 'Kotte', 'Sri Jayawardenepura Kotte',
-        'Mount Lavinia', 'Dehiwala-Mount Lavinia', 'Ratmalana',
-        'Kalubowila', 'Wellawatte', 'Bambalapitiya', 'Maradana',
+        'Polonnaruwa', 'Bandarawela', 'Ella', 'Pannipitiya', 'Arawwala',
+        'Battaramulla', 'Rajagiriya', 'Nawala', 'Boralesgamuwa', 'Kotte',
+        'Sri Jayawardenepura Kotte', 'Mount Lavinia', 'Dehiwala-Mount Lavinia',
+        'Ratmalana', 'Kalubowila', 'Wellawatte', 'Bambalapitiya', 'Maradana',
         'Kollupitiya', 'Kotahena', 'Pettah', 'Fort', 'Slave Island',
         'Cinnamon Gardens', 'Havelock Town', 'Kirulapone', 'Pamankada',
         'Thimbirigasyaya', 'Narahenpita', 'Pelawatte', 'Thalawathugoda',
         'Athurugiriya', 'Hokandara', 'Godagama', 'Pitakotte',
-        'Kohuwala', 'Mirihana', 'Kottawa', 'Udahamulla'
+        'Kohuwala', 'Mirihana', 'Kottawa', 'Udahamulla',
+        'Seeduwa', 'Liyanagemulla', 'Bokundara'
     ]
     
     def __init__(self):
         self.api_key = settings.GEOCODING_API_KEY
-        self.cache = {}  # Simple in-memory cache to save API calls
+        self.cache = {}
     
+    def determine_route_type(self, location1: str, location2: str) -> str:
+        """
+        Determine route type based on locations to apply correct multiplier
+        """
+        loc1_lower = location1.lower()
+        loc2_lower = location2.lower()
+        
+        # Colombo metro area cities
+        colombo_metro = [
+            'colombo', 'dehiwala', 'mount lavinia', 'moratuwa', 'nugegoda',
+            'maharagama', 'kotte', 'battaramulla', 'rajagiriya', 'nawala',
+            'wellawatte', 'bambalapitiya', 'maradana', 'kollupitiya', 'fort',
+            'pettah', 'kotahena', 'kirulapone', 'narahenpita'
+        ]
+        
+        # Western urban (outside Colombo but close)
+        western_urban = [
+            'gampaha', 'negombo', 'ja-ela', 'wattala', 'kelaniya',
+            'kaduwela', 'malabe', 'pannipitiya', 'piliyandala', 'homagama',
+            'kalutara', 'panadura', 'horana', 'kadawatha', 'seeduwa',
+            'liyanagemulla', 'arawwala', 'bokundara'
+        ]
+        
+        # Check if both locations are in Colombo metro
+        both_colombo = any(c in loc1_lower for c in colombo_metro) and \
+                      any(c in loc2_lower for c in colombo_metro)
+        
+        if both_colombo:
+            return 'colombo_metro'
+        
+        # Check if one is Colombo metro, one is western urban
+        one_colombo = any(c in loc1_lower for c in colombo_metro) or \
+                     any(c in loc2_lower for c in colombo_metro)
+        one_western = any(c in loc1_lower for c in western_urban) or \
+                     any(c in loc2_lower for c in western_urban)
+        
+        if one_colombo and one_western:
+            return 'western_urban'
+        
+        # Check for inter-province travel (e.g., Colombo to Kandy)
+        major_cities = ['kandy', 'galle', 'jaffna', 'matara', 'anuradhapura', 
+                       'trincomalee', 'batticaloa', 'kurunegala', 'ratnapura', 'badulla']
+        
+        one_colombo_or_western = (one_colombo or one_western)
+        one_major_city = any(c in loc1_lower for c in major_cities) or \
+                        any(c in loc2_lower for c in major_cities)
+        
+        if one_colombo_or_western and one_major_city:
+            return 'inter_province'
+        
+        # Both in same western province
+        both_western = any(c in loc1_lower for c in western_urban) and \
+                      any(c in loc2_lower for c in western_urban)
+        
+        if both_western:
+            return 'western_urban'
+        
+        # Default to remote areas
+        return 'remote_areas'
+
     def clean_address_for_geocoding(self, address: str) -> str:
         """
         Simplify address to just city name for better geocoding success
@@ -46,17 +116,15 @@ class GeocodingService:
         if not address:
             return "Colombo, Sri Lanka"
         
-        # Convert to lowercase for matching
         address_lower = address.lower()
         
-        # Check if it's already in simple format
+        # Check if already in simple format
         for city in self.SL_CITIES:
             city_lower = city.lower()
-            # If address is already "City, Sri Lanka" format, return as is
             if address_lower == f"{city_lower}, sri lanka":
                 return address
         
-        # Remove common business/organization identifiers
+        # Remove common business identifiers
         address_clean = re.sub(
             r'\b(PLC|Ltd|Limited|Pvt|Private|Inc|Corporation|Company|Group)\b',
             '',
@@ -72,14 +140,13 @@ class GeocodingService:
             flags=re.IGNORECASE
         )
         
-        # Remove P.O. Box, building numbers, and floor numbers
+        # Remove P.O. Box, building numbers, floor numbers
         address_clean = re.sub(r'P\.?\s*O\.?\s*Box\s*\d+', '', address_clean, flags=re.IGNORECASE)
         address_clean = re.sub(r'\bNo\.?\s*\d+[A-Za-z]?[,\s]*', '', address_clean)
         address_clean = re.sub(r'\b\d+(?:st|nd|rd|th)?\s+Floor\b', '', address_clean, flags=re.IGNORECASE)
-        address_clean = re.sub(r'\b\d+/\d+\b', '', address_clean)  # Remove 148/15 format
+        address_clean = re.sub(r'\b\d+/\d+\b', '', address_clean)
         
-        # Try to find a city name in the cleaned address
-        # Check each word/phrase against city list
+        # Try to find a city name
         words = [w.strip() for w in address_clean.split(',')]
         for word in words:
             word_clean = word.strip()
@@ -87,12 +154,12 @@ class GeocodingService:
                 if city.lower() in word_clean.lower():
                     return f"{city}, Sri Lanka"
         
-        # If still no match, try partial matching on original address
+        # Partial matching on original address
         for city in self.SL_CITIES:
             if city.lower() in address_lower:
                 return f"{city}, Sri Lanka"
         
-        # Check for postal codes (e.g., "Colombo 01", "Colombo 10")
+        # Check for postal codes
         colombo_match = re.search(r'colombo\s+\d{1,2}', address_lower, re.IGNORECASE)
         if colombo_match:
             return "Colombo, Sri Lanka"
@@ -100,22 +167,14 @@ class GeocodingService:
         # Default fallback
         print(f"  Could not extract city from address: {address}, using Colombo as default")
         return "Colombo, Sri Lanka"
-        
+
     async def geocode_address(self, address: str) -> Optional[Tuple[float, float]]:
         """
         Convert address to (latitude, longitude) coordinates
-        
-        Args:
-            address: Address string (e.g., "Colombo, Sri Lanka")
-        
-        Returns:
-            Tuple of (lat, lon) or None if geocoding fails
         """
-        
-        # Clean address for better geocoding success
         clean_address = self.clean_address_for_geocoding(address)
         
-        # Check cache first (use cleaned address as key)
+        # Check cache
         if clean_address in self.cache:
             return self.cache[clean_address]
         
@@ -135,60 +194,46 @@ class GeocodingService:
                         data = await response.json()
                         
                         if data and len(data) > 0:
-                            # Take first result
                             result = data[0]
                             lat = float(result.get("lat"))
                             lon = float(result.get("lon"))
                             
-                            # Cache result (using cleaned address as key)
+                            # Cache result
                             self.cache[clean_address] = (lat, lon)
                             
                             print(f" Geocoded: {clean_address} → ({lat}, {lon})")
                             
                             return (lat, lon)
                         else:
-                            print(f" No results for: {clean_address}")
+                            print(f"  No results for: {clean_address}")
                             return None
-                    
                     elif response.status == 429:
-                        # Rate limited
                         print("  Geocoding API rate limit exceeded")
                         return None
-                    
                     else:
                         print(f"  Geocoding failed: HTTP {response.status} for {clean_address}")
                         return None
         
         except Exception as e:
-            print(f" Geocoding error for '{clean_address}': {e}")
+            print(f"  Geocoding error for '{clean_address}': {e}")
             return None
     
-    def calculate_distance(
-        self, 
-        lat1: float, lon1: float, 
+    def calculate_haversine_distance(
+        self,
+        lat1: float, lon1: float,
         lat2: float, lon2: float
     ) -> float:
         """
-        Calculate distance between two coordinates using Haversine formula
-        
-        Args:
-            lat1, lon1: First location coordinates
-            lat2, lon2: Second location coordinates
-        
-        Returns:
-            Distance in kilometers
+        Calculate straight-line distance using Haversine formula
+        Returns distance in kilometers
         """
+        R = 6371.0  # Earth's radius in km
         
-        # Earth's radius in kilometers
-        R = 6371.0
-        
-        # Convert to radians
         lat1_rad = radians(lat1)
         lon1_rad = radians(lon1)
         lat2_rad = radians(lat2)
         lon2_rad = radians(lon2)
         
-        # Haversine formula
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
         
@@ -200,20 +245,15 @@ class GeocodingService:
         return round(distance, 2)
     
     async def calculate_commute_distance(
-        self, 
-        cv_location: str, 
+        self,
+        cv_location: str,
         job_location: str
     ) -> Tuple[float, str]:
         """
-        Calculate commute distance between CV location and job location
-        
-        Args:
-            cv_location: Candidate's current location (from CV)
-            job_location: Job location (from job description)
+        Calculate commute distance with ROAD DISTANCE CORRECTION
         
         Returns:
-            Tuple of (distance_km, risk_category)
-            risk_category: "low", "medium", "high", "very_high"
+            Tuple of (estimated_road_distance_km, risk_category)
         """
         
         # Handle remote jobs
@@ -226,45 +266,48 @@ class GeocodingService:
         job_coords = await self.geocode_address(job_location)
         
         if not cv_coords or not job_coords:
-            # Geocoding failed - return default moderate risk
             print(f"  Geocoding failed: CV={cv_location}, Job={job_location}")
             print(f"   Using default: distance=0, risk=medium")
-            return (0.0, "medium")  # Unknown distance = moderate risk
+            return (0.0, "medium")
         
-        # Calculate distance
-        distance = self.calculate_distance(
+        # Calculate straight-line distance
+        haversine_distance = self.calculate_haversine_distance(
             cv_coords[0], cv_coords[1],
             job_coords[0], job_coords[1]
         )
         
-        # Categorize commute risk
-        # Based on Sri Lankan context and traffic patterns
-        if distance < 5:
-            risk = "low"  # < 5 km - Very manageable
-        elif distance < 15:
-            risk = "medium"  # 5-15 km - Moderate commute
-        elif distance < 30:
-            risk = "high"  # 15-30 km - Long commute (especially in Colombo traffic)
+        # Determine route type
+        route_type = self.determine_route_type(cv_location, job_location)
+        multiplier = self.ROAD_DISTANCE_MULTIPLIERS[route_type]
+        
+        # Calculate estimated road distance
+        estimated_road_distance = haversine_distance * multiplier
+        
+        print(f" Distance Analysis:")
+        print(f"   From: {cv_location}")
+        print(f"   To: {job_location}")
+        print(f"   Straight-line: {haversine_distance} km")
+        print(f"   Route type: {route_type} (multiplier: {multiplier}x)")
+        print(f"   Estimated road distance: {estimated_road_distance:.2f} km")
+        
+        # Categorize commute risk based on ROAD distance
+        if estimated_road_distance < 5:
+            risk = "low"
+        elif estimated_road_distance < 15:
+            risk = "medium"
+        elif estimated_road_distance < 30:
+            risk = "high"
         else:
-            risk = "very_high"  # > 30 km - Very long commute
+            risk = "very_high"
         
-        print(f" Distance calculated: {distance} km ({risk} risk)")
+        print(f"   Risk: {risk}")
         
-        return (distance, risk)
+        return (round(estimated_road_distance, 2), risk)
     
     def get_location_match_score(self, distance_km: float, commute_risk: str) -> float:
         """
-        Convert commute distance/risk to a location match score (0.0 - 1.0)
-        
-        Args:
-            distance_km: Commute distance in km
-            commute_risk: Risk category ("low", "medium", "high", "very_high")
-        
-        Returns:
-            Float score between 0.0 and 1.0
+        Convert commute distance/risk to location match score (0.0 - 1.0)
         """
-        
-        # Map risk categories to scores
         risk_scores = {
             "low": 1.0,
             "medium": 0.7,
