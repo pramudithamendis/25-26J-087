@@ -12,19 +12,10 @@ async def predict_turnover_api(
     user: dict = Depends(get_current_user)
 ):
     """
-    Predict employee turnover risk
-    
-    **Workflow:**
-    1. User submits CV via `/cv/submit` → gets `cv_id`
-    2. User calls this endpoint with `cv_id` + job description + job location (optional)
-    3. System retrieves parsed CV from MongoDB
-    4. Calculates commute distance using geocoding API (geocode.maps.co)
-    5. Extracts features aligned with ML model
-    6. Generates counterfactual "what-if" scenarios
-    7. Returns prediction with risk factors and counterfactuals
+    Predict employee turnover risk with SHAP-based explainability
     
     **Commute Distance Feature:**
-    - Uses geocode.maps.co API (free tier: 25,000 requests)
+    - Uses geocode.maps.co API
     - Calculates distance between CV location and job location
     - Converts distance to location match score:
       * < 5 km: High match (1.0)
@@ -37,12 +28,6 @@ async def predict_turnover_api(
     - 1: Medium Risk (leaves in 6-12 months)  
     - 2: Low Risk (stays longer than 1 year)
     
-    **Counterfactual Explanations**
-    - Provides 3-5 "what-if" scenarios
-    - Shows how changing key features affects risk prediction
-    - Examples:
-      * "If candidate had 2 more years experience, risk would drop to Medium"
-      * "If skill match improved by 30%, confidence would increase by 25%"
     """
     
     if not cv_id:
@@ -51,7 +36,7 @@ async def predict_turnover_api(
     if not job_description or len(job_description.strip()) < 50:
         raise HTTPException(400, "Job description must be at least 50 characters")
     
-    # Call prediction service (uses MongoDB data + geocoding + counterfactuals)
+    # Call prediction service
     result = await predict_turnover_from_cv_id(cv_id, job_description, job_location)
     
     return result
@@ -66,7 +51,35 @@ async def health_check():
         return {
             "status": "healthy",
             "model_loaded": model is not None,
-            "message": "Turnover prediction service is operational"
+            "message": "Turnover prediction service is operational",
+            "explainability": "SHAP-based explanations enabled"
         }
     except Exception as e:
         raise HTTPException(500, f"Model not loaded: {str(e)}")
+
+
+@router.post("/explain")
+async def explain_prediction(
+    cv_id: str = Form(..., description="CV ID to explain"),
+    job_description: str = Form(..., description="Job description text"),
+    job_location: str = Form(None, description="Job location (optional)"),
+    user: dict = Depends(get_current_user)
+):
+    """
+    Get detailed SHAP explanation for a specific predictions
+
+    """
+    
+    result = await predict_turnover_from_cv_id(cv_id, job_description, job_location)
+    
+    # Add additional metadata for explanation-focused use
+    if result.get("status") == "success":
+        result["explanation_metadata"] = {
+            "generated_for": "detailed_analysis",
+            "shap_method": "TreeExplainer",
+            "visualization_ready": True,
+            "full_feature_set": len(result.get("shap_explanation", {}).get("all_features", [])),
+            "note": "Use 'all_features' for complete SHAP analysis"
+        }
+    
+    return result
