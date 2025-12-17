@@ -50,7 +50,8 @@ async def create_feature_vector_from_mongo(cv_document: Dict, jd_text: str, jd_l
     
     # Calculate derived features
     avg_tenure_months = (total_exp_years * 12) / max(n_jobs, 1)
-    job_hopping_rate = min(n_jobs, 3) / max(n_jobs, 1)
+    short_stints_count = count_short_stints(experience_text, threshold_months=12)
+    job_hopping_rate = short_stints_count / max(n_jobs, 1) if n_jobs > 0 else 0.0
     
     # Matching scores
     skill_match = compute_skill_match_with_esco(skills_text, jd_text) 
@@ -96,7 +97,7 @@ async def create_feature_vector_from_mongo(cv_document: Dict, jd_text: str, jd_l
         'total_exp_years': float(total_exp_years),
         'avg_tenure_months': float(avg_tenure_months),
         'current_job_tenure': float(avg_tenure_months),  # Approx
-        'short_stints_count': float(min(n_jobs, 2)),  # Estimate
+        'short_stints_count': float(short_stints_count),
         'job_hopping_rate': float(job_hopping_rate),
         'has_progression': 1.0 if n_jobs >= 2 else 0.0,
         'has_masters': 1.0 if has_masters else 0.0,
@@ -135,7 +136,7 @@ def compute_skill_match_with_esco(cv_skills: str, jd_text: str) -> float:
         # Extract skills from CV
         cv_skills_list = [s.strip() for s in cv_skills.split(',') if s.strip()]
         
-        # Extract skills from JD (enhanced extraction)
+        # Extract skills from JD
         jd_skills_list = extract_skills_from_jd(jd_text)
         
         # Use ESCO semantic matching
@@ -242,6 +243,31 @@ def compute_title_similarity(cv_text: str, jd_text: str) -> float:
     
     return SequenceMatcher(None, cv_title.lower(), jd_title.lower()).ratio()
 
+def count_short_stints(experience_text: str, threshold_months: int = 12) -> int:
+    """Count jobs lasting less than threshold months"""
+    year_ranges = re.findall(r'(\d{4})\s*(?:to|-|--)\s*(\d{4}|present|current)', 
+                              experience_text, re.IGNORECASE)
+    
+    short_count = 0
+    current_year = datetime.now().year
+    
+    for start, end in year_ranges:
+        start_year = int(start)
+        if 'present' in end.lower() or 'current' in end.lower():
+            end_year = current_year
+        else:
+            end_year = int(end)
+        
+        tenure_months = (end_year - start_year) * 12
+        if tenure_months < threshold_months:
+            short_count += 1
+    
+    return short_count
+
+def calculate_job_hopping_rate(short_stints, total_jobs):
+    if total_jobs <= 1:
+        return 0.0
+    return short_stints / total_jobs
 
 def compute_experience_match(cv_exp: float, jd_text: str) -> float:
     """Compute experience match score"""
@@ -283,22 +309,57 @@ def compute_education_match(cv_edu_text: str, jd_text: str) -> int:
 
 def extract_location_from_cv(raw_text: str, sections: Dict) -> str:
     """Extract candidate location from CV"""
-    # Try to find location in raw text 
-    lines = raw_text.split('\n')[:10]  # Check first 10 lines
+    # Try to find location in raw text
+    lines = raw_text.split('\n')[:15]  # Check first 15 lines
     
-    # Common Sri Lankan cities
+    # Expanded Sri Lankan cities list (include suburbs and towns)
     sl_cities = [
-        'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 
+        # Major cities
+        'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo',
         'Anuradhapura', 'Trincomalee', 'Batticaloa', 'Matara',
-        'Moratuwa', 'Maharagama', 'Nugegoda', 'Dehiwala', 'Kurunegala'
+        
+        # Colombo suburbs
+        'Moratuwa', 'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia',
+        'Piliyandala', 'Bokundara', 'Boralesgamuwa', 'Homagama', 'Kaduwela',
+        'Battaramulla', 'Rajagiriya', 'Nawala', 'Malabe', 'Kotte',
+        'Kelaniya', 'Wattala', 'Ja-Ela', 'Gampaha', 'Kadawatha',
+        'Kalutara', 'Panadura', 'Horana',
+        
+        # Other cities
+        'Kurunegala', 'Ratnapura', 'Badulla', 'Nuwara Eliya',
+        'Hambantota', 'Kilinochchi', 'Vavuniya', 'Ampara'
     ]
     
-    for line in lines:
+    # Try to find any city mentioned in first 15 lines
+    found_locations = []
+    for line_num, line in enumerate(lines):
+        line_clean = line.strip()
+        if not line_clean:
+            continue
+            
         for city in sl_cities:
-            if city.lower() in line.lower():
-                return city
+            if city.lower() in line_clean.lower():
+                found_locations.append((city, line_num, line_clean))
+                
+    
+    # Return the FIRST location found
+    if found_locations:
+        # Prefer locations found in lines 1-5 (most likely to be candidate location)
+        early_locations = [loc for loc in found_locations if loc[1] <= 5]
+        if early_locations:
+            city = early_locations[0][0]
+            print(f"   Extracted CV location: {city}")
+            return f"{city}, Sri Lanka"
+        else:
+            city = found_locations[0][0]
+            print(f"   Extracted CV location: {city}")
+            return f"{city}, Sri Lanka"
     
     # Default to Colombo if not found
+    print(f"  Location not found in CV, defaulting to Colombo")
+    print(f"  First 5 lines were:")
+    for i, line in enumerate(lines[:5]):
+        print(f"    {i}: {line[:80]}")
     return "Colombo, Sri Lanka"
 
 
@@ -325,6 +386,7 @@ async def compute_location_match_with_geocoding(cv_location: str, jd_location: s
     Compute location match score using geocoding API
     Returns score between 0.0 and 1.0
     """
+
     try:
         from app.services.geocoding_service import get_geocoding_service
         
