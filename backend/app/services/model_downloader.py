@@ -71,8 +71,6 @@ def ensure_model_files():
         }
     }
     
-    print("\n Checking model files...")
-    
     for filename, info in MODEL_FILES.items():
         model_path = model_dir / filename
         
@@ -80,7 +78,6 @@ def ensure_model_files():
         if model_path.exists():
             size_mb = model_path.stat().st_size / (1024 * 1024)
             if size_mb > 0.1:  # File exists and is not empty
-                print(f"    {filename} already exists ({size_mb:.1f} MB)")
                 continue
         
         # File missing or corrupted - download it
@@ -101,8 +98,6 @@ def ensure_model_files():
         except Exception as e:
             print(f"   Error downloading {filename}: {e}")
             print(f"   Please manually download from Google Drive and place in {model_dir}")
-    
-    print("\n Model file check complete\n")
 
 
 # Alternative: Simpler version with direct download (if files are public)

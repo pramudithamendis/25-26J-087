@@ -201,8 +201,6 @@ class GeocodingService:
                             # Cache result
                             self.cache[clean_address] = (lat, lon)
                             
-                            print(f" Geocoded: {clean_address} → ({lat}, {lon})")
-                            
                             return (lat, lon)
                         else:
                             print(f"  No results for: {clean_address}")
@@ -282,12 +280,7 @@ class GeocodingService:
         
         # Calculate estimated road distance
         estimated_road_distance = haversine_distance * multiplier
-        
-        print(f" Distance Analysis:")
-        print(f"   From: {cv_location}")
-        print(f"   To: {job_location}")
-        print(f"   Straight-line: {haversine_distance} km")
-        print(f"   Route type: {route_type} (multiplier: {multiplier}x)")
+    
         print(f"   Estimated road distance: {estimated_road_distance:.2f} km")
         
         # Categorize commute risk based on ROAD distance

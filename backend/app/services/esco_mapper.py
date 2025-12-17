@@ -33,8 +33,6 @@ class ESCOMapper:
         
         self.esco_data_dir = Path(esco_data_dir)
         
-        print(f" Loading ESCO data from: {self.esco_data_dir}")
-        
         # Load ESCO datasets
         self.occupations_df = self._load_occupations()
         self.skills_df = self._load_skills()
@@ -42,8 +40,6 @@ class ESCOMapper:
         
         # Create lookup dictionaries for fast matching
         self._build_lookup_dicts()
-        
-        print(f" ESCO READY: {len(self.occupations_df)} occupations, {len(self.skills_df)} skills, {len(self.occ_skill_relations_df)} relations")
     
     def _load_occupations(self) -> pd.DataFrame:
         """Load occupations_en.csv with intelligent separator detection"""
@@ -57,7 +53,7 @@ class ESCOMapper:
             # Try comma separator first (ESCO standard format)
             try:
                 df = pd.read_csv(file_path, sep=',', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                print(f"  Loaded with comma separator")
+                
             except Exception as e1:
                 # Fallback to tab separator
                 try:
@@ -66,9 +62,6 @@ class ESCOMapper:
                 except Exception as e2:
                     print(f"   Failed both separators: {e1}, {e2}")
                     return pd.DataFrame()
-            
-            print(f"   Loaded {len(df)} rows with {len(df.columns)} columns")
-            print(f"   First 5 columns: {df.columns.tolist()[:5]}")
             
             # Map to expected column names
             column_mapping = {
@@ -101,7 +94,6 @@ class ESCOMapper:
             
             if available_cols:
                 df = df[available_cols]
-                print(f"   Successfully loaded {len(df)} occupations")
                 return df
             else:
                 print(f"   Could not find expected columns in occupations file")
@@ -124,18 +116,14 @@ class ESCOMapper:
             # Try comma separator first (ESCO standard)
             try:
                 df = pd.read_csv(file_path, sep=',', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                print(f"   Loaded skills with comma separator")
+                
             except Exception as e1:
                 # Fallback to tab separator
                 try:
                     df = pd.read_csv(file_path, sep='\t', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                    print(f"   Loaded skills with tab separator")
                 except Exception as e2:
                     print(f"   Failed both separators: {e1}, {e2}")
                     return pd.DataFrame()
-            
-            print(f"   Loaded {len(df)} rows with {len(df.columns)} columns")
-            print(f"   First 5 columns: {df.columns.tolist()[:5]}")
             
             # Try alternative column names
             rename_map = {}
@@ -158,7 +146,7 @@ class ESCOMapper:
             
             if available_cols:
                 df = df[available_cols]
-                print(f"   Successfully loaded {len(df)} skills")
+                
                 return df
             else:
                 print(f"  Could not find expected columns in skills file")
@@ -181,16 +169,14 @@ class ESCOMapper:
             # Try comma separator first
             try:
                 df = pd.read_csv(file_path, sep=',', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                print(f"   Loaded relations with comma separator")
+                
             except:
                 try:
                     df = pd.read_csv(file_path, sep='\t', encoding='utf-8', on_bad_lines='skip', low_memory=False)
-                    print(f"   Loaded relations with tab separator")
+                    
                 except Exception as e:
                     print(f"   Failed to load relations: {e}")
                     return pd.DataFrame()
-            
-            print(f"   Loaded {len(df)} relations with {len(df.columns)} columns")
             
             # Keep only essential columns
             essential_cols = ['occupationUri', 'relationType', 'skillType', 'skillUri']
@@ -198,7 +184,7 @@ class ESCOMapper:
             
             if available_cols:
                 df = df[available_cols]
-                print(f"   Successfully loaded {len(df)} occupation-skill relations")
+                
                 return df
             else:
                 print(f"  Could not find expected relation columns")
@@ -233,8 +219,6 @@ class ESCOMapper:
                         'preferredLabel': row['preferredLabel']
                     }
         
-        print(f"   Built job titles lookup: {len(self.job_titles_lookup)} entries")
-        
         # Skills lookup (preferredLabel and altLabels)
         self.skills_lookup = {}
         for _, row in self.skills_df.iterrows():
@@ -251,7 +235,6 @@ class ESCOMapper:
                         'skillType': row['skillType']
                     }
         
-        print(f"   Built skills lookup: {len(self.skills_lookup)} entries")
     
     def map_job_title(self, job_title: str, threshold: int = 85) -> Optional[Dict[str, str]]:  
         """
