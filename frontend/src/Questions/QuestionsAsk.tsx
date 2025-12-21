@@ -11,12 +11,11 @@ interface AskResponse {
 
 const QuestionsAsk: React.FC = () => {
   const location = useLocation();
-  const state = location.state as { username: string; repoName: string; filename: string } | undefined;
+  const params = new URLSearchParams(location.search);
 
-  const [username, setUsername] = useState(state?.username || "pramudithamendis");
-  const [repoName, setRepoName] = useState(state?.repoName || "BI-backend");
-  const [filename, setFilename] = useState(state?.filename || "db.js");
-
+  const [username, setUsername] = useState(params.get("username") || "pramudithamendis");
+  const [repoName, setRepoName] = useState(params.get("repoName") || "BI-backend");
+  const [filename, setFilename] = useState(params.get("filename") || "db.js");
   const [folder, setFolder] = useState(`./uploads/repos/${username}/${repoName}`);
   const [questions, setQuestions] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

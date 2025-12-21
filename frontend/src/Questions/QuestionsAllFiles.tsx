@@ -109,11 +109,14 @@ export default function QuestionsAllFiles() {
         <button
           style={{ height: "50px" }}
           disabled={!selectedFile}
-          onClick={() =>
-            navigate("/questions/ask", {
-              state: { username, repoName: reponame, filename: selectedFile },
-            })
-          }
+          onClick={() => {
+            const params = new URLSearchParams({
+              username,
+              repoName: reponame,
+              filename: selectedFile || "",
+            });
+            window.open(`/questions/ask?${params.toString()}`, "_blank"); // opens in new tab
+          }}
         >
           Go to Questions
         </button>
