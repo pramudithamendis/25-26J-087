@@ -113,22 +113,45 @@ def build_semantic_features(candidate_block: str, jd_block: str, github_summary:
         Dictionary with similarity scores
     """
     try:
+        # Validate inputs
+        if not candidate_block or not candidate_block.strip():
+            logger.warning("Candidate block is empty, cannot compute semantic similarity")
+            return {
+                "sim_profile_to_jd": 0.0,
+                "sim_github_to_jd": 0.0
+            }
+        
+        if not jd_block or not jd_block.strip():
+            logger.warning("Job description block is empty, cannot compute semantic similarity")
+            return {
+                "sim_profile_to_jd": 0.0,
+                "sim_github_to_jd": 0.0
+            }
+        
         # Truncate text if too long (for API limits)
         max_length = 8000
         candidate_block = candidate_block[:max_length] if len(candidate_block) > max_length else candidate_block
         jd_block = jd_block[:max_length] if len(jd_block) > max_length else jd_block
+        
+        logger.info(f"Computing semantic similarity: candidate_block length={len(candidate_block)}, jd_block length={len(jd_block)}")
         
         # Generate embeddings
         logger.info("Generating embeddings for candidate profile and job description...")
         candidate_embedding = get_embeddings(candidate_block)
         jd_embedding = get_embeddings(jd_block)
         
+        # Check if embeddings are zero vectors
+        if np.all(candidate_embedding == 0):
+            logger.warning("Candidate embedding is zero vector")
+        if np.all(jd_embedding == 0):
+            logger.warning("JD embedding is zero vector")
+        
         # Compute cosine similarity
         sim_profile_to_jd = cosine_similarity(candidate_embedding, jd_embedding)
         
         # GitHub similarity (if provided)
         sim_github_to_jd = 0.0
-        if github_summary:
+        if github_summary and github_summary.strip():
             github_summary = github_summary[:max_length] if len(github_summary) > max_length else github_summary
             github_embedding = get_embeddings(github_summary)
             sim_github_to_jd = cosine_similarity(github_embedding, jd_embedding)
@@ -145,10 +168,10 @@ def build_semantic_features(candidate_block: str, jd_block: str, github_summary:
         }
     
     except Exception as e:
-        logger.error(f"Error building semantic features: {str(e)}")
-        # Fallback to placeholder
+        logger.error(f"Error building semantic features: {str(e)}", exc_info=True)
+        # Return zero instead of placeholder to avoid false positives
         return {
-            "sim_profile_to_jd": 0.75,
+            "sim_profile_to_jd": 0.0,
             "sim_github_to_jd": 0.0
         }
 

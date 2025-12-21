@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # CV Extraction method
     CV_EXTRACTION_METHOD: str = "openai"  # 'openai' or 'regex'
     
+    # Agentic AI settings
+    USE_AGENTIC_EVALUATION: bool = True  # Use agentic system instead of pipeline
+    AGENTIC_FALLBACK_TO_PIPELINE: bool = True  # Fallback to pipeline on agent failure
+    MAX_AGENT_ITERATIONS: int = 20  # Maximum iterations in agentic loop
+    AGENT_TEMPERATURE: float = 0.3  # LLM temperature for agents
+    
     @property
     def CV_UPLOAD_FOLDER(self) -> str:
         """Get CV upload folder path"""

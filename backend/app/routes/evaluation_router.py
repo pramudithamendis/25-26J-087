@@ -15,6 +15,8 @@ from app.services.judge import judge_candidate
 from app.services.critic import critic_review
 from app.services.aggregator import aggregate_scores
 from app.services.role_classifier import classify_roles
+from app.services.agents.orchestrator_agent import AgenticOrchestrator
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -179,8 +181,36 @@ async def evaluate_candidate(
                 detail=f"Candidate {candidate_id} not found"
             )
         
-        # Step 1: Run orchestrator to get merged JSON
-        logger.info(f"Starting evaluation pipeline for candidate {candidate_id} and job {job_id}")
+        # Step 1: Run orchestrator (agentic or pipeline based on config)
+        logger.info(f"Starting evaluation for candidate {candidate_id} and job {job_id}")
+        
+        if settings.USE_AGENTIC_EVALUATION:
+            logger.info("Using agentic evaluation system")
+            orchestrator = AgenticOrchestrator()
+            evaluation_result = orchestrator.run_agentic_evaluation(candidate_id, job_id)
+            
+            # Save to evaluations collection
+            evaluation_doc = {
+                "candidate_id": candidate_id,
+                "job_id": job_id,
+                "pipeline_output": evaluation_result.get("raw_pipeline", {}),
+                "total_score": evaluation_result.get("total_score", 0),
+                "decision": evaluation_result.get("decision", "Not Selected"),
+                "role_predictions": evaluation_result.get("role_predictions", []),
+                "status": "completed",
+                "created_at": datetime.utcnow().isoformat() + "Z",
+                "agentic": True,
+                "iterations": evaluation_result.get("iterations", 0)
+            }
+            
+            result = evaluations_collection.insert_one(evaluation_doc)
+            evaluation_result["_id"] = str(result.inserted_id)
+            evaluation_result["created_at"] = evaluation_doc["created_at"]
+            
+            return EvaluationResponse(**evaluation_result)
+        
+        # Fallback to pipeline
+        logger.info("Using pipeline evaluation system")
         merged_json = run_evaluation(candidate_id, job_id)
         
         # Step 2: Normalize skills
@@ -193,9 +223,13 @@ async def evaluate_candidate(
         # Create candidate profile text block
         candidate_block = build_candidate_profile_text(merged_json)
         jd_block = merged_json.get("job_description", {}).get("jd_text", "")
+        if not jd_block:
+            logger.warning(f"JD text is empty! Job description keys: {list(merged_json.get('job_description', {}).keys())}")
         github_summary = build_github_summary(candidate_data.get("github", {}))
         
+        logger.info(f"Building semantic features: candidate_block length={len(candidate_block)}, jd_block length={len(jd_block)}")
         semantic_features = build_semantic_features(candidate_block, jd_block, github_summary)
+        logger.info(f"Semantic features computed: {semantic_features}")
         merged_json["semantic_features"] = semantic_features
         
         # Step 4: Judge candidate
@@ -207,10 +241,16 @@ async def evaluate_candidate(
         merged_json["critic_scores"] = critic_output.get("judge_scores", [])
         
         # Step 6: Aggregate scores
+        github_info = candidate_data.get("github", {})
+        if not github_info:
+            logger.warning("GitHub info is missing from candidate data")
+        else:
+            logger.debug(f"GitHub info for aggregation: repos={len(github_info.get('repos', []))}, commits={github_info.get('commits_last_12m', 0)}, prs={github_info.get('external_prs_merged', 0)}")
+        
         aggregated = aggregate_scores(
             semantic_features,
             judge_output,
-            candidate_data.get("github", {}),
+            github_info,
             candidate_data.get("experience", []),
             merged_json
         )
@@ -364,4 +404,79 @@ async def get_evaluation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting evaluation: {str(e)}"
         )
+
+
+@router.post("/evaluate/agentic", response_model=EvaluationResponse, status_code=status.HTTP_200_OK)
+async def evaluate_candidate_agentic(
+    request: EvaluationRequest,
+    admin_user = Depends(get_admin_user)
+):
+    """
+    Run agentic evaluation for a candidate against a job (Admin-only)
+    
+    Uses agentic AI system with dynamic workflow instead of fixed pipeline.
+    """
+    try:
+        candidate_id = request.candidate_id
+        job_id = request.job_id
+        
+        # Validate ObjectId formats
+        if not ObjectId.is_valid(candidate_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid candidate ID format"
+            )
+        if not ObjectId.is_valid(job_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid job ID format"
+            )
+        
+        # Verify candidate exists
+        candidate = candidates_collection.find_one({"_id": ObjectId(candidate_id)})
+        if not candidate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Candidate {candidate_id} not found"
+            )
+        
+        logger.info(f"Starting agentic evaluation for candidate {candidate_id} and job {job_id}")
+        orchestrator = AgenticOrchestrator()
+        evaluation_result = orchestrator.run_agentic_evaluation(candidate_id, job_id)
+        
+        # Save to evaluations collection
+        evaluation_doc = {
+            "candidate_id": candidate_id,
+            "job_id": job_id,
+            "pipeline_output": evaluation_result.get("raw_pipeline", {}),
+            "total_score": evaluation_result.get("total_score", 0),
+            "decision": evaluation_result.get("decision", "Not Selected"),
+            "role_predictions": evaluation_result.get("role_predictions", []),
+            "status": "completed",
+            "created_at": datetime.utcnow().isoformat() + "Z",
+            "agentic": True,
+            "iterations": evaluation_result.get("iterations", 0)
+        }
+        
+        result = evaluations_collection.insert_one(evaluation_doc)
+        evaluation_result["_id"] = str(result.inserted_id)
+        evaluation_result["created_at"] = evaluation_doc["created_at"]
+        
+        return EvaluationResponse(**evaluation_result)
+    
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Value error in agentic evaluation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error running agentic evaluation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error running agentic evaluation: {str(e)}"
+        )
+
 

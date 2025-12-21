@@ -111,7 +111,13 @@ def run_evaluation(candidate_id: str, job_id: str) -> dict:
     
     # 5. Call JD extractor
     jd_text = job.get("jd_text", "")
+    # Fix "ob Description" -> "Job Description" if needed
+    if jd_text.startswith("ob Description"):
+        jd_text = "Job Description" + jd_text[14:]
     jd_data = extract_from_jd(jd_text)
+    # Ensure jd_text is preserved in jd_data for semantic analysis (use fixed version)
+    if "jd_text" not in jd_data:
+        jd_data["jd_text"] = jd_text
     
     # 6. Merge all outputs into unified JSON
     # Combine skills from CV and LinkedIn

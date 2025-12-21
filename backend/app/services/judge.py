@@ -1,5 +1,6 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from app.config import settings
+from app.services.technology_mismatch_detector import detect_technology_mismatch, build_mismatch_warning
 import logging
 import json
 
@@ -19,8 +20,12 @@ def get_openai_client():
             logger.error(f"Failed to initialize OpenAI client: {str(e)}")
     return _openai_client
 
-def build_judge_prompt(candidate: Dict, job_desc: Dict) -> str:
-    """Build prompt for LLM judge"""
+def build_judge_prompt(candidate: Dict, job_desc: Dict) -> Tuple[str, bool, str]:
+    """Build prompt for LLM judge
+    
+    Returns:
+        tuple: (prompt, framework_mismatch_detected, mismatch_details)
+    """
     
     skills = candidate.get("skills_canonical", candidate.get("skills_raw", []))
     experience = candidate.get("experience", [])
@@ -32,7 +37,20 @@ def build_judge_prompt(candidate: Dict, job_desc: Dict) -> str:
     jd_text = job_desc.get("jd_text", "")
     jd_title = job_desc.get("title", "")
     
-    prompt = f"""You are an expert technical recruiter evaluating a candidate for a software engineering position.
+    # Use LLM-based dynamic technology mismatch detection
+    mismatch_result = detect_technology_mismatch(job_desc, candidate)
+    framework_mismatch_detected = mismatch_result.get("mismatch_detected", False) and mismatch_result.get("severity") == "critical"
+    mismatch_details = mismatch_result.get("mismatch_details", "")
+    
+    # Build framework requirements list from LLM-detected required technologies
+    framework_requirements = []
+    required_techs = mismatch_result.get("required_technologies", [])
+    if required_techs:
+        for tech in required_techs:
+            framework_requirements.append(f"{tech} (CRITICAL - cannot substitute with incompatible alternatives)")
+    
+    # Build the base prompt
+    base_prompt = f"""You are an expert technical recruiter evaluating a candidate for a software engineering position.
 
 JOB POSITION: {jd_title}
 
@@ -41,7 +59,55 @@ JOB DESCRIPTION:
 
 REQUIRED SKILLS: {', '.join(must_have[:20])}
 NICE-TO-HAVE SKILLS: {', '.join(nice_to_have[:20])}
+"""
+    
+    # If framework mismatch detected, put warning at the VERY START
+    if framework_mismatch_detected:
+        logger.warning(f"🚨 TECHNOLOGY MISMATCH DETECTED IN JUDGE: {mismatch_details}")
+        # Use dynamic mismatch warning from LLM result
+        mismatch_warning = build_mismatch_warning(mismatch_result)
+        # Add mandatory scoring instructions
+        mismatch_warning += """🚨🚨🚨 MANDATORY LOW SCORING - TECHNOLOGY MISMATCH 🚨🚨🚨
 
+YOU ARE REQUIRED TO SCORE ALL 6 CRITERIA BETWEEN 0-2 (NOT 3-5).
+
+This is NOT optional. The candidate does NOT have the required technology/framework.
+Even if they have related skills, they CANNOT do this job without the specific technology.
+
+MANDATORY SCORING EXAMPLES:
+- APIs: Score 1 or 2 (NOT 3, 4, or 5) - has REST API experience but WRONG TECHNOLOGY
+- Databases: Score 1 or 2 (NOT 3, 4, or 5) - has database experience but for WRONG TECHNOLOGY
+- Microservices: Score 1 or 2 (NOT 3, 4, or 5) - has containerization but NOT for required technology
+- Testing/CI: Score 1 or 2 (NOT 3, 4, or 5) - has CI/CD but NOT for the required technology
+- Cloud/DevOps: Score 1 or 2 (NOT 3, 4, or 5) - has cloud experience but NOT technology-specific
+- Impact: Score 1 or 2 (NOT 3, 4, or 5) - has projects but WRONG TECHNOLOGY
+
+IF YOU GIVE SCORES OF 3-5, YOU ARE WRONG. THIS IS A TECHNOLOGY MISMATCH.
+
+CRITICAL: The maximum score you can give for ANY criterion is 2. Do NOT exceed 2 for any criterion.
+
+"""
+        prompt = mismatch_warning + base_prompt
+    else:
+        prompt = base_prompt
+    
+    if framework_requirements:
+        prompt += "\n⚠️ CRITICAL TECHNOLOGY REQUIREMENTS - READ CAREFULLY:\n"
+        for req in framework_requirements:
+            prompt += f"- {req}\n"
+        
+        if not framework_mismatch_detected:
+            prompt += """
+⚠️ CRITICAL SCORING RULES:
+1. Technology/framework mismatches are CRITICAL - do NOT give credit for "general experience"
+2. Even if candidate has related skills - if they lack the REQUIRED technology, score LOW
+3. Only score 3-5 if candidate has the EXACT technology required OR a very close equivalent
+4. If job requires a specific technology and candidate has a different but similar technology in the same category, score LOW (0-2)
+
+DO NOT give scores of 3-5 for technology mismatches!
+"""
+    
+    prompt += f"""
 CANDIDATE PROFILE:
 Skills: {', '.join(skills[:30])}
 
@@ -80,7 +146,9 @@ Evaluate the candidate on these criteria (0-5 scale, where 0=No evidence, 5=Exce
 For each criterion:
 - Give a score (0-5 integer)
 - Provide specific evidence (quote from experience, skill, or GitHub activity)
+- Be STRICT: If job requires specific technology (e.g., Flutter) and candidate doesn't have it, score LOW (0-2)
 - Be specific and cite actual examples from the profile
+- Consider framework mismatches as critical - don't give high scores for wrong technology
 
 Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 {
@@ -99,9 +167,9 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 }
 """
     
-    return prompt
+    return prompt, framework_mismatch_detected, mismatch_details
 
-def judge_with_openai(prompt: str) -> Dict:
+def judge_with_openai(prompt: str, candidate: Dict = None, job_desc: Dict = None, framework_mismatch: bool = False) -> Dict:
     """Judge using OpenAI API"""
     if not settings.OPENAI_API_KEY:
         logger.warning("OpenAI API key not configured, using heuristic fallback")
@@ -149,7 +217,48 @@ def judge_with_openai(prompt: str) -> Dict:
             logger.error("Invalid response structure from OpenAI")
             return None
         
-        logger.info(f"Successfully received judge scores from OpenAI: {len(result.get('judge_scores', []))} criteria")
+        scores = result.get('judge_scores', [])
+        logger.info(f"Successfully received judge scores from OpenAI: {len(scores)} criteria")
+        
+        # Log individual scores for debugging
+        if scores:
+            score_values = [s.get('score', 0) for s in scores]
+            avg_score = sum(score_values) / len(score_values) if score_values else 0
+            # Build score strings separately to avoid f-string backslash issue
+            score_strings = [f"{s.get('criterion', 'N/A')}: {s.get('score', 0)}" for s in scores]
+            logger.info(f"Judge scores: {score_strings}")
+            logger.info(f"Average judge score: {avg_score:.2f} (role_competency will be {avg_score/5.0*30:.1f})")
+            
+            # Post-process: If framework mismatch was detected, cap all scores to 2
+            if framework_mismatch and any(s.get('score', 0) > 2 for s in scores):
+                logger.warning(f"⚠️ FRAMEWORK MISMATCH: Judge gave scores > 2. Capping all scores to maximum 2")
+                # Post-process: Cap all scores to 2
+                for score_item in scores:
+                    if score_item.get('score', 0) > 2:
+                        score_item['score'] = 2
+                        logger.info(f"   Capped {score_item.get('criterion', 'N/A')} score to 2")
+                # Recalculate average after capping
+                score_values = [s.get('score', 0) for s in scores]
+                avg_score = sum(score_values) / len(score_values) if score_values else 0
+                logger.info(f"   After capping: Average judge score: {avg_score:.2f} (role_competency will be {avg_score/5.0*30:.1f})")
+            elif candidate and job_desc and any(s.get('score', 0) > 2 for s in scores):
+                # Fallback check: use LLM-based mismatch detection if framework_mismatch flag wasn't set
+                if not framework_mismatch:
+                    mismatch_result = detect_technology_mismatch(job_desc, candidate)
+                    if mismatch_result.get("mismatch_detected") and mismatch_result.get("severity") == "critical":
+                        logger.warning(f"⚠️ WARNING: Judge gave scores > 2 despite technology mismatch! Scores: {score_values}")
+                        logger.warning(f"   Mismatch: {mismatch_result.get('mismatch_details', '')}")
+                        logger.warning(f"   Capping all scores to maximum 2 due to technology mismatch")
+                        # Post-process: Cap all scores to 2
+                        for score_item in scores:
+                            if score_item.get('score', 0) > 2:
+                                score_item['score'] = 2
+                                logger.info(f"   Capped {score_item.get('criterion', 'N/A')} score to 2")
+                        # Recalculate average after capping
+                        score_values = [s.get('score', 0) for s in scores]
+                        avg_score = sum(score_values) / len(score_values) if score_values else 0
+                        logger.info(f"   After capping: Average judge score: {avg_score:.2f} (role_competency will be {avg_score/5.0*30:.1f})")
+        
         return result
     
     except json.JSONDecodeError as e:
@@ -251,8 +360,8 @@ def judge_candidate(merged_json: Dict) -> Dict:
     
     # Try OpenAI LLM first if configured
     if settings.LLM_PROVIDER == "openai" and settings.OPENAI_API_KEY:
-        prompt = build_judge_prompt(candidate, job_desc)
-        result = judge_with_openai(prompt)
+        prompt, framework_mismatch_detected, mismatch_details = build_judge_prompt(candidate, job_desc)
+        result = judge_with_openai(prompt, candidate, job_desc, framework_mismatch_detected)
         
         if result:
             logger.info("Using OpenAI LLM for candidate judgment")

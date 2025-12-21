@@ -51,3 +51,20 @@ temp.txt
 
 # backend mypart
 backend-mypart/
+
+# dataset generator
+dataset_generator/
+backend/README.md
+backend/docs/AGENTIC_ARCHITECTURE.md
+.gitignore
+backend/docs/SCORING_FIXES.md
+backend/docs/QUICK_START.md
+backend/docs/LLM_ROLE_CLASSIFICATION.md
+backend/docs/LLM_BASED_ARCHITECTURE.md
+backend/docs/IMPLEMENTATION_SUMMARY.md
+backend/docs/FIXES_APPLIED.md
+backend/docs/EVALUATION_REPORT.md
+backend/docs/DEBUGGING_FIXES.md
+backend/docs/COMPREHENSIVE_FIXES.md
+backend/docs/API_DOCUMENTATION.md
+backend/README.md

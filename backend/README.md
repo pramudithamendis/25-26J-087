@@ -147,6 +147,38 @@ After first-time setup, to start the app:
 - **Models:** Database models should live in `app/models/`
 - **Auth:** Authentication logic in `app/auth/`
 
+## Agentic AI System
+
+The backend now includes an **agentic AI system** for CV evaluation that uses autonomous agents to dynamically plan and execute evaluation workflows.
+
+### Features
+
+- **Dynamic Workflow**: Agents decide next steps based on current state (not fixed pipeline)
+- **Hybrid Approach**: Combines rule-based (30%) and agentic reasoning (70%)
+- **Tool System**: Agents use tools to interact with extractors and services
+- **Memory Management**: Tracks reasoning chain for explainability
+- **Fallback Mechanisms**: Automatically falls back to pipeline on errors
+
+### Agentic Endpoints
+
+- `POST /api/evaluate/agentic` - Run agentic evaluation (Admin-only)
+- `POST /api/evaluate/dataset` - Evaluate on full dataset (Admin-only)
+- `GET /api/evaluate/comparison` - Get comparison results (Admin-only)
+
+### Configuration
+
+Set in `.env` or `config.py`:
+- `USE_AGENTIC_EVALUATION=true` - Use agentic system by default
+- `AGENTIC_FALLBACK_TO_PIPELINE=true` - Fallback on errors
+- `MAX_AGENT_ITERATIONS=20` - Max iterations in agentic loop
+- `AGENT_TEMPERATURE=0.3` - LLM temperature for agents
+
+### Documentation
+
+- **Architecture**: See `docs/AGENTIC_ARCHITECTURE.md`
+- **Evaluation Report**: See `docs/EVALUATION_REPORT.md`
+- **Agent Code**: `app/services/agents/`
+
 ### Example: Adding a new route
 
 Create `app/routes/cv_routes.py`:
