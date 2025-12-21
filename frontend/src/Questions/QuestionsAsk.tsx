@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const API_BASE = "http://127.0.0.1:8000/api/items";
@@ -9,11 +9,18 @@ interface AskResponse {
 }
 
 const QuestionsAsk: React.FC = () => {
-  const [folder, setFolder] = useState("./uploads/repos/pramudithamendis/BI-backend");
+  const [username, setUsername] = useState("pramudithamendis");
+  const [repoName, setRepoName] = useState("BI-backend");
   const [filename, setFilename] = useState("db.js");
+  const [folder, setFolder] = useState(`./uploads/repos/${username}/${repoName}`);
   const [questions, setQuestions] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update folder path whenever username or repoName changes
+  useEffect(() => {
+    setFolder(`./uploads/repos/${username}/${repoName}`);
+  }, [username, repoName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +29,7 @@ const QuestionsAsk: React.FC = () => {
     setQuestions(null);
 
     try {
-      // Example in handleSubmit
-      const token = localStorage.getItem("auth_token"); // Or wherever you store it
+      const token = localStorage.getItem("auth_token");
 
       const response = await axios.post<AskResponse>(
         `${API_BASE}/ask`,
@@ -53,8 +59,13 @@ const QuestionsAsk: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-6 rounded shadow">
         <div className="mb-4">
-          <label className="block mb-1 font-semibold">Folder:</label>
-          <input type="text" value={folder} onChange={(e) => setFolder(e.target.value)} className="w-full border px-3 py-2 rounded" required />
+          <label className="block mb-1 font-semibold">Username:</label>
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full border px-3 py-2 rounded" required />
+        </div>
+
+        <div className="mb-4">
+          <label className="block mb-1 font-semibold">Repository Name:</label>
+          <input type="text" value={repoName} onChange={(e) => setRepoName(e.target.value)} className="w-full border px-3 py-2 rounded" required />
         </div>
 
         <div className="mb-4">
