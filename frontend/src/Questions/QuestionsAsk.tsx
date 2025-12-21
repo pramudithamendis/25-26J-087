@@ -2,13 +2,15 @@
 import React, { useState } from "react";
 import axios from "axios";
 
+const API_BASE = "http://127.0.0.1:8000/api/items";
+
 interface AskResponse {
   questions: string;
 }
 
 const QuestionsAsk: React.FC = () => {
-  const [folder, setFolder] = useState("./uploads/repos/testUser");
-  const [filename, setFilename] = useState("logging.js");
+  const [folder, setFolder] = useState("./uploads/repos/pramudithamendis/BI-backend");
+  const [filename, setFilename] = useState("db.js");
   const [questions, setQuestions] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ const QuestionsAsk: React.FC = () => {
       const token = localStorage.getItem("auth_token"); // Or wherever you store it
 
       const response = await axios.post<AskResponse>(
-        "http://127.0.0.1:8000/api/items/ask",
+        `${API_BASE}/ask`,
         { folder, filename },
         {
           headers: {
