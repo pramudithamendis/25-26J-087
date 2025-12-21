@@ -47,7 +47,8 @@ export default function QuestionsAllFiles() {
         throw new Error(`Failed to load file (${res.status})`);
       }
 
-      const text = await res.text();
+      const raw = await res.text();
+      const text = JSON.parse(raw);
       setFileContent(text);
     } catch (err) {
       setError((err as Error).message);
@@ -81,7 +82,7 @@ export default function QuestionsAllFiles() {
                   border: "none",
                   padding: 0,
                   cursor: "pointer",
-                  color: file === selectedFile ? "blue" : "black",
+                  color: file === selectedFile ? "green" : "white",
                 }}
                 onClick={() => loadFile(file)}
               >
@@ -100,8 +101,7 @@ export default function QuestionsAllFiles() {
             whiteSpace: "pre-wrap",
           }}
         >
-                  {fileContent || "Select a file to view its contents"}
-                  
+          {fileContent || "Select a file to view its contents"}
         </pre>
       </div>
     </div>
