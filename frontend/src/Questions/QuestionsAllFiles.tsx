@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = "http://127.0.0.1:8000/api/items"; // e.g. "http://localhost:8000"
 
@@ -10,6 +11,8 @@ export default function QuestionsAllFiles() {
   const [fileContent, setFileContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   async function loadFiles() {
     setError(null);
@@ -103,6 +106,17 @@ export default function QuestionsAllFiles() {
         >
           {fileContent || "Select a file to view its contents"}
         </pre>
+        <button
+          style={{ height: "50px" }}
+          disabled={!selectedFile}
+          onClick={() =>
+            navigate("/questions/ask", {
+              state: { username, repoName: reponame, filename: selectedFile },
+            })
+          }
+        >
+          Go to Questions
+        </button>
       </div>
     </div>
   );

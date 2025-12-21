@@ -1,6 +1,7 @@
 // src/App.tsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 
 const API_BASE = "http://127.0.0.1:8000/api/items";
 
@@ -9,9 +10,13 @@ interface AskResponse {
 }
 
 const QuestionsAsk: React.FC = () => {
-  const [username, setUsername] = useState("pramudithamendis");
-  const [repoName, setRepoName] = useState("BI-backend");
-  const [filename, setFilename] = useState("db.js");
+  const location = useLocation();
+  const state = location.state as { username: string; repoName: string; filename: string } | undefined;
+
+  const [username, setUsername] = useState(state?.username || "pramudithamendis");
+  const [repoName, setRepoName] = useState(state?.repoName || "BI-backend");
+  const [filename, setFilename] = useState(state?.filename || "db.js");
+
   const [folder, setFolder] = useState(`./uploads/repos/${username}/${repoName}`);
   const [questions, setQuestions] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
