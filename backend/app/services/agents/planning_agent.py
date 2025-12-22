@@ -37,6 +37,7 @@ Available agents:
 - JudgeAgent: Scores candidate on criteria
 - CriticAgent: Reviews and validates scores
 - AggregatorAgent: Combines scores into final result
+- DatasetGuidedAgent: Validates and calibrates scores using ground truth dataset
 
 Available stages:
 - INITIALIZED: Just started
@@ -45,12 +46,13 @@ Available stages:
 - SCORING: Scoring candidate
 - REVIEWING: Reviewing scores
 - AGGREGATING: Aggregating final score
+- DATASET_VALIDATION: Validating with dataset
 - COMPLETED: Evaluation complete
 
 Always respond with JSON in this format:
 {
-  "action": "extract_cv" | "extract_linkedin" | "extract_github" | "verify_github" | "verify_consistency" | "score_candidate" | "review_scores" | "aggregate" | "complete",
-  "agent": "extraction" | "verification" | "judge" | "critic" | "aggregator" | null,
+  "action": "extract_cv" | "extract_linkedin" | "extract_github" | "verify_github" | "verify_consistency" | "score_candidate" | "review_scores" | "aggregate" | "validate_with_dataset" | "complete",
+  "agent": "extraction" | "verification" | "judge" | "critic" | "aggregator" | "dataset_guided" | null,
   "reasoning": "Explanation of why this action was chosen",
   "next_stage": "stage_name"
 }"""
@@ -79,9 +81,11 @@ Always respond with JSON in this format:
 
 What should be done next? Consider:
 1. What data has been extracted?
-2. What needs verification?
+2. What needs verification? (DO NOT suggest verify_consistency if experience_consistency is already verified)
 3. What stages are complete?
 4. Are there any errors?
+
+IMPORTANT: If "experience_consistency" is already verified, DO NOT suggest "verify_consistency" action again.
 
 Respond with JSON containing action, agent, reasoning, and next_stage."""
         
@@ -107,6 +111,11 @@ Respond with JSON containing action, agent, reasoning, and next_stage."""
             # Validate result
             if "action" not in result:
                 logger.warning("Invalid planning response, using default action")
+                result = self._get_default_action(state)
+            
+            # Prevent redundant verify_consistency calls
+            if result.get("action") == "verify_consistency" and state.is_verified("experience_consistency"):
+                logger.warning("Planning agent suggested verify_consistency but already verified, using default action")
                 result = self._get_default_action(state)
             
             logger.info(f"Planning decision: {result.get('action')} -> {result.get('agent')}")
@@ -172,6 +181,15 @@ Respond with JSON containing action, agent, reasoning, and next_stage."""
                     "next_stage": "VERIFYING"
                 }
         
+        # Skip verify_consistency if already verified to prevent loops
+        if state.is_extracted("cv") and state.is_extracted("linkedin") and not state.is_verified("experience_consistency"):
+            return {
+                "action": "verify_consistency",
+                "agent": "verification",
+                "reasoning": "Need to verify consistency between CV and LinkedIn",
+                "next_stage": "VERIFYING"
+            }
+        
         if state.is_extracted("cv") and state.is_extracted("jd") and not state.semantic_features:
             return {
                 "action": "calculate_similarity",
@@ -204,6 +222,17 @@ Respond with JSON containing action, agent, reasoning, and next_stage."""
                 "next_stage": "AGGREGATING"
             }
         
+        # After aggregation, validate with dataset if enabled
+        if state.aggregated_score and not state.dataset_validation:
+            from app.config import settings
+            if settings.DATASET_VALIDATION_ENABLED:
+                return {
+                    "action": "validate_with_dataset",
+                    "agent": "dataset_guided",
+                    "reasoning": "Need to validate and calibrate score using ground truth dataset",
+                    "next_stage": "DATASET_VALIDATION"
+                }
+        
         return {
             "action": "complete",
             "agent": None,
@@ -233,6 +262,8 @@ Respond with JSON containing action, agent, reasoning, and next_stage."""
             return "critic"
         elif any(keyword in task_lower for keyword in ["aggregate", "combine", "final"]):
             return "aggregator"
+        elif any(keyword in task_lower for keyword in ["dataset", "validate", "calibrate", "ground truth"]):
+            return "dataset_guided"
         
         return None
     

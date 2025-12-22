@@ -20,6 +20,7 @@ class EvaluationStage(Enum):
     SCORING = "scoring"
     REVIEWING = "reviewing"
     AGGREGATING = "aggregating"
+    DATASET_VALIDATION = "dataset_validation"
     COMPLETED = "completed"
     FAILED = "failed"
 
@@ -85,6 +86,9 @@ class EvaluationState:
         self.decision: Optional[str] = None
         self.role_predictions: Optional[List[Dict]] = None
         self.explanations: Optional[List[str]] = None
+        
+        # Dataset validation results
+        self.dataset_validation: Optional[Dict] = None
         
         # Error tracking
         self.errors: List[str] = []
@@ -206,6 +210,16 @@ class EvaluationState:
         }
         return result_map.get(key)
     
+    def set_dataset_validation(self, result: Dict):
+        """
+        Set dataset validation result.
+        
+        Args:
+            result: Dataset validation result dictionary
+        """
+        self.dataset_validation = result
+        logger.debug("Dataset validation result stored")
+    
     def set_final_result(
         self,
         total_score: int,
@@ -275,6 +289,7 @@ class EvaluationState:
             },
             "total_score": self.total_score,
             "decision": self.decision,
+            "dataset_validation": self.dataset_validation is not None,
             "iteration_count": self.iteration_count,
             "errors": len(self.errors),
             "warnings": len(self.warnings)

@@ -14,6 +14,7 @@ from .verification_agent import VerificationAgent
 from .judge_agent import JudgeAgent
 from .critic_agent import CriticAgent
 from .aggregator_agent import AggregatorAgent
+from .dataset_guided_agent import DatasetGuidedAgent
 from .orchestrator_agent import AgenticOrchestrator
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     "JudgeAgent",
     "CriticAgent",
     "AggregatorAgent",
+    "DatasetGuidedAgent",
     "AgenticOrchestrator",
 ]
 

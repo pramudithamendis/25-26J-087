@@ -20,6 +20,11 @@ from .analysis_tools import (
     normalize_skills_tool,
     classify_role_tool
 )
+from .dataset_tools import (
+    find_similar_cases_tool,
+    get_dataset_statistics_tool,
+    validate_score_against_dataset_tool
+)
 
 __all__ = [
     "extract_cv_tool",
@@ -31,5 +36,8 @@ __all__ = [
     "calculate_semantic_similarity_tool",
     "normalize_skills_tool",
     "classify_role_tool",
+    "find_similar_cases_tool",
+    "get_dataset_statistics_tool",
+    "validate_score_against_dataset_tool",
 ]
 

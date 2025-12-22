@@ -19,6 +19,7 @@ from .verification_agent import VerificationAgent
 from .judge_agent import JudgeAgent
 from .critic_agent import CriticAgent
 from .aggregator_agent import AggregatorAgent
+from .dataset_guided_agent import DatasetGuidedAgent
 from app.services.normalization import normalize_skills
 from app.services.semantic import build_semantic_features
 from app.services.role_classifier import classify_roles
@@ -42,6 +43,7 @@ class AgenticOrchestrator:
         self.judge_agent = JudgeAgent()
         self.critic_agent = CriticAgent()
         self.aggregator_agent = AggregatorAgent()
+        self.dataset_guided_agent = DatasetGuidedAgent()
         
         self.max_iterations = getattr(settings, 'MAX_AGENT_ITERATIONS', 20)
         self.fallback_to_pipeline = getattr(settings, 'AGENTIC_FALLBACK_TO_PIPELINE', True)
@@ -76,15 +78,18 @@ class AgenticOrchestrator:
             
             logger.info(f"Starting agentic evaluation for candidate {candidate_id} and job {job_id}")
             
+            # Track last action to detect loops
+            last_actions = []
+            max_repeat_actions = 3
+            
             # Main agentic loop
             while self.planning_agent.should_continue(state) and not state.is_complete():
                 state.increment_iteration()
                 
                 if state.iteration_count > self.max_iterations:
                     logger.warning(f"Max iterations ({self.max_iterations}) reached")
-                    if self.fallback_to_pipeline:
-                        logger.info("Falling back to pipeline")
-                        return self._fallback_to_pipeline(candidate_id, job_id)
+                    # Complete evaluation with available data
+                    self._complete_evaluation_if_needed(state)
                     break
                 
                 # Planning agent decides next action
@@ -95,6 +100,22 @@ class AgenticOrchestrator:
                     next_stage = plan.get("next_stage")
                     
                     logger.info(f"Iteration {state.iteration_count}: Action={action}, Agent={agent_name}")
+                    
+                    # Detect loops - if same action repeated too many times, force progression
+                    last_actions.append(action)
+                    if len(last_actions) > max_repeat_actions:
+                        last_actions.pop(0)
+                    
+                    if len(last_actions) == max_repeat_actions and len(set(last_actions)) == 1:
+                        logger.warning(f"Detected loop: action '{action}' repeated {max_repeat_actions} times. Forcing progression.")
+                        # Force progression by using default action logic
+                        forced_action = self._get_forced_action(state)
+                        if forced_action and forced_action != action:
+                            logger.info(f"Forcing action: {forced_action} instead of {action}")
+                            action = forced_action
+                            agent_name = self._get_agent_for_action(action)
+                            next_stage = self._get_stage_for_action(action)
+                            last_actions = []  # Reset loop detection
                     
                     # Update stage
                     if next_stage:
@@ -123,6 +144,11 @@ class AgenticOrchestrator:
                             logger.info("Falling back to pipeline due to error")
                             return self._fallback_to_pipeline(candidate_id, job_id)
                         raise
+            
+            # Complete evaluation if not already complete
+            if not state.is_complete():
+                logger.warning("Evaluation not complete after loop, completing with available data")
+                self._complete_evaluation_if_needed(state)
             
             # Build final result
             state.end_time = time.time()
@@ -158,6 +184,8 @@ class AgenticOrchestrator:
             return self._review_scores(state)
         elif action == "aggregate":
             return self._aggregate(state)
+        elif action == "validate_with_dataset":
+            return self._validate_with_dataset(state)
         elif action == "complete":
             return {"status": "complete"}
         else:
@@ -281,8 +309,15 @@ class AgenticOrchestrator:
     
     def _verify_consistency(self, state: EvaluationState) -> Dict:
         """Verify consistency between CV and LinkedIn"""
+        # Check if already verified to prevent loops
+        if state.is_verified("experience_consistency"):
+            logger.info("Consistency already verified, skipping redundant verification")
+            return {"status": "skipped", "reason": "Already verified", "consistent": True}
+        
         if not state.cv_data or not state.linkedin_data:
-            return {"status": "skipped", "reason": "Missing CV or LinkedIn data"}
+            # Mark as verified even if skipped to prevent loops
+            state.mark_verified("experience_consistency", True)
+            return {"status": "skipped", "reason": "Missing CV or LinkedIn data", "consistent": True}
         
         contradictions = self.verification_agent.check_consistency(state.cv_data, state.linkedin_data)
         state.mark_verified("experience_consistency", len(contradictions) == 0)
@@ -398,13 +433,241 @@ class AgenticOrchestrator:
         role_predictions = self._classify_roles(state)
         explanations = self._generate_explanations(state, total_score, result.get("breakdown", {}), role_predictions)
         
-        state.set_final_result(total_score, decision, role_predictions, explanations)
+        # Store aggregated result but don't set final result yet
+        # Dataset validation will happen next if enabled
         return result
+    
+    def _validate_with_dataset(self, state: EvaluationState) -> Dict:
+        """Validate and calibrate score using dataset"""
+        try:
+            result = self.dataset_guided_agent.execute(state)
+            
+            # Always store result in state, even if it failed
+            state.set_dataset_validation(result)
+            state.set_stage(EvaluationStage.DATASET_VALIDATION)
+            
+            # Check if validation was successful
+            if result.get("status") == "error" or result.get("status") == "skipped":
+                # Validation failed or was skipped, use original score
+                original_score = state.aggregated_score.get("total_score", 0) if state.aggregated_score else 0
+                logger.info(f"Dataset validation {result.get('status', 'failed')}, using original score: {original_score}")
+                
+                decision = self._determine_decision(original_score)
+                role_predictions = self._classify_roles(state)
+                explanations = self._generate_explanations(
+                    state,
+                    original_score,
+                    state.aggregated_score.get("breakdown", {}) if state.aggregated_score else {},
+                    role_predictions
+                )
+                
+                reason = result.get("reason", result.get("error", "Dataset validation unavailable"))
+                explanations.append(f"Dataset validation: {reason}")
+                
+                state.set_final_result(original_score, decision, role_predictions, explanations)
+                return result
+            
+            # Use calibrated score if confidence is high enough
+            confidence = result.get("confidence", 0.0)
+            confidence_threshold = 0.7
+            original_score = state.aggregated_score.get("total_score", 0) if state.aggregated_score else 0
+            calibrated_score = result.get("calibrated_score", original_score)
+            
+            if confidence >= confidence_threshold:
+                # Only use calibrated score if it's different from original or if original is 0
+                if calibrated_score != original_score or original_score == 0:
+                    logger.info(f"Using calibrated score: {calibrated_score} (confidence: {confidence:.2f}, original: {original_score})")
+                    
+                    # Update aggregated score with calibrated value
+                    if state.aggregated_score:
+                        state.aggregated_score["total_score"] = calibrated_score
+                        state.aggregated_score["dataset_calibration"] = result
+                    
+                    # Determine decision and generate explanations with calibrated score
+                    decision = self._determine_decision(calibrated_score)
+                    role_predictions = self._classify_roles(state)
+                    explanations = self._generate_explanations(
+                        state, 
+                        calibrated_score, 
+                        state.aggregated_score.get("breakdown", {}) if state.aggregated_score else {},
+                        role_predictions
+                    )
+                    
+                    # Add dataset explanation
+                    if result.get("reasoning"):
+                        explanations.append(f"Dataset validation: {result['reasoning']}")
+                    
+                    state.set_final_result(calibrated_score, decision, role_predictions, explanations)
+                else:
+                    # Calibrated score same as original, use original path
+                    logger.info(f"Calibrated score same as original: {original_score} (confidence: {confidence:.2f})")
+                    decision = self._determine_decision(original_score)
+                    role_predictions = self._classify_roles(state)
+                    explanations = self._generate_explanations(
+                        state,
+                        original_score,
+                        state.aggregated_score.get("breakdown", {}) if state.aggregated_score else {},
+                        role_predictions
+                    )
+                    explanations.append(f"Dataset validation: {result.get('reasoning', 'Score aligns with dataset patterns')}")
+                    state.set_final_result(original_score, decision, role_predictions, explanations)
+            else:
+                # Use original score if confidence is low
+                logger.info(f"Using original score: {original_score} (confidence: {confidence:.2f})")
+                
+                decision = self._determine_decision(original_score)
+                role_predictions = self._classify_roles(state)
+                explanations = self._generate_explanations(
+                    state,
+                    original_score,
+                    state.aggregated_score.get("breakdown", {}) if state.aggregated_score else {},
+                    role_predictions
+                )
+                
+                if original_score == 0:
+                    explanations.append(f"Dataset validation: Found {len(result.get('similar_cases', []))} similar cases (confidence: {confidence:.2f})")
+                else:
+                    explanations.append(f"Dataset validation confidence too low ({confidence:.2f}), using original score")
+                
+                state.set_final_result(original_score, decision, role_predictions, explanations)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Dataset validation failed: {str(e)}", exc_info=True)
+            # Create error result
+            error_result = {
+                "status": "error",
+                "error": str(e),
+                "original_score": state.aggregated_score.get("total_score", 0) if state.aggregated_score else 0,
+                "calibrated_score": state.aggregated_score.get("total_score", 0) if state.aggregated_score else 0,
+                "confidence": 0.0,
+                "calibration_adjustment": 0,
+                "similar_cases": [],
+                "validation_status": "error",
+                "reasoning": f"Dataset validation failed: {str(e)}"
+            }
+            state.set_dataset_validation(error_result)
+            
+            # Fallback to original score
+            original_score = state.aggregated_score.get("total_score", 0) if state.aggregated_score else 0
+            decision = self._determine_decision(original_score)
+            role_predictions = self._classify_roles(state)
+            explanations = self._generate_explanations(
+                state,
+                original_score,
+                state.aggregated_score.get("breakdown", {}) if state.aggregated_score else {},
+                role_predictions
+            )
+            explanations.append("Dataset validation failed, using original score")
+            state.set_final_result(original_score, decision, role_predictions, explanations)
+            return error_result
     
     def _update_state_from_result(self, state: EvaluationState, action: str, result: Dict):
         """Update state based on action result"""
         # State updates are handled in individual action methods
         pass
+    
+    def _get_forced_action(self, state: EvaluationState) -> Optional[str]:
+        """Get forced action when loop is detected"""
+        # Force progression through workflow
+        if not state.is_extracted("jd") and state.job_data:
+            return "extract_jd"
+        if state.is_extracted("cv") and state.is_extracted("jd") and not state.semantic_features:
+            return "calculate_similarity"
+        if state.semantic_features and not state.judge_scores:
+            return "score_candidate"
+        if state.judge_scores and not state.critic_scores:
+            return "review_scores"
+        if state.critic_scores and not state.aggregated_score:
+            return "aggregate"
+        if state.aggregated_score and not state.dataset_validation and settings.DATASET_VALIDATION_ENABLED:
+            return "validate_with_dataset"
+        if state.aggregated_score:
+            return "complete"
+        return None
+    
+    def _get_agent_for_action(self, action: str) -> Optional[str]:
+        """Get agent name for action"""
+        action_to_agent = {
+            "extract_cv": "extraction",
+            "extract_linkedin": "extraction",
+            "extract_github": "extraction",
+            "extract_jd": "extraction",
+            "verify_github": "verification",
+            "verify_consistency": "verification",
+            "calculate_similarity": "analysis",
+            "score_candidate": "judge",
+            "review_scores": "critic",
+            "aggregate": "aggregator",
+            "validate_with_dataset": "dataset_guided",
+            "complete": None
+        }
+        return action_to_agent.get(action)
+    
+    def _get_stage_for_action(self, action: str) -> Optional[str]:
+        """Get stage for action"""
+        action_to_stage = {
+            "extract_cv": "EXTRACTING",
+            "extract_linkedin": "EXTRACTING",
+            "extract_github": "EXTRACTING",
+            "extract_jd": "EXTRACTING",
+            "verify_github": "VERIFYING",
+            "verify_consistency": "VERIFYING",
+            "calculate_similarity": "SCORING",
+            "score_candidate": "SCORING",
+            "review_scores": "REVIEWING",
+            "aggregate": "AGGREGATING",
+            "validate_with_dataset": "DATASET_VALIDATION",
+            "complete": "COMPLETED"
+        }
+        return action_to_stage.get(action)
+    
+    def _complete_evaluation_if_needed(self, state: EvaluationState):
+        """Complete evaluation with available data if not already complete"""
+        try:
+            # If we have aggregated score, we can complete
+            if state.aggregated_score and state.total_score is None:
+                total_score = state.aggregated_score.get("total_score", 0)
+                decision = self._determine_decision(total_score)
+                role_predictions = self._classify_roles(state) if not state.role_predictions else state.role_predictions
+                explanations = self._generate_explanations(
+                    state,
+                    total_score,
+                    state.aggregated_score.get("breakdown", {}),
+                    role_predictions
+                ) if not state.explanations else state.explanations
+                
+                state.set_final_result(total_score, decision, role_predictions, explanations)
+                logger.info(f"Completed evaluation with score: {total_score}, decision: {decision}")
+            # If we don't have aggregated score but have judge scores, try to aggregate
+            elif state.judge_scores and not state.aggregated_score:
+                logger.warning("Attempting to complete evaluation with judge scores only")
+                # Try to aggregate with available data
+                if state.semantic_features:
+                    result = self.aggregator_agent.execute(state)
+                    state.set_intermediate_result("aggregated_score", result)
+                    state.aggregated_score = result
+                    total_score = result.get("total_score", 0)
+                    decision = self._determine_decision(total_score)
+                    role_predictions = self._classify_roles(state)
+                    explanations = self._generate_explanations(
+                        state,
+                        total_score,
+                        result.get("breakdown", {}),
+                        role_predictions
+                    )
+                    state.set_final_result(total_score, decision, role_predictions, explanations)
+                    logger.info(f"Completed evaluation with partial data: score: {total_score}, decision: {decision}")
+            # If we have nothing, set defaults
+            elif state.total_score is None:
+                logger.error("No evaluation data available, setting defaults")
+                state.set_final_result(0, "Not Selected", [], ["Evaluation incomplete - insufficient data"])
+        except Exception as e:
+            logger.error(f"Error completing evaluation: {str(e)}")
+            # Set defaults as last resort
+            if state.total_score is None:
+                state.set_final_result(0, "Not Selected", [], [f"Evaluation failed: {str(e)}"])
     
     def _build_merged_json(self, state: EvaluationState) -> Dict:
         """Build merged JSON from state"""
@@ -667,18 +930,64 @@ class AgenticOrchestrator:
     
     def _build_final_result(self, state: EvaluationState) -> Dict:
         """Build final evaluation result"""
-        return {
+        # Ensure we have valid values - never None
+        total_score = state.total_score if state.total_score is not None else 0
+        decision = state.decision if state.decision is not None else "Not Selected"
+        role_predictions = state.role_predictions or []
+        explanations = state.explanations or []
+        
+        # If we still don't have a score, try to get it from aggregated_score
+        if total_score == 0 and state.aggregated_score:
+            total_score = state.aggregated_score.get("total_score", 0)
+            if decision == "Not Selected" and total_score > 0:
+                decision = self._determine_decision(total_score)
+        
+        # If still no score and we have some data, set a default
+        if total_score == 0 and not state.aggregated_score:
+            logger.warning("No score available, using default")
+            explanations.append("Evaluation incomplete - using default score")
+        
+        result = {
             "candidate_id": state.candidate_id,
             "job_id": state.job_id,
-            "total_score": state.total_score,
-            "decision": state.decision,
-            "role_predictions": state.role_predictions or [],
-            "why": state.explanations or [],
+            "total_score": total_score,
+            "decision": decision,
+            "role_predictions": role_predictions,
+            "why": explanations,
             "breakdown": state.aggregated_score.get("breakdown", {}) if state.aggregated_score else {},
             "raw_pipeline": self._build_merged_json(state),
             "evaluation_time": state.end_time - state.start_time if state.end_time and state.start_time else None,
             "iterations": state.iteration_count
         }
+        
+        # Always include dataset validation results (even if None/empty)
+        if state.dataset_validation:
+            result["dataset_validation"] = {
+                "original_score": state.dataset_validation.get("original_score"),
+                "calibrated_score": state.dataset_validation.get("calibrated_score"),
+                "confidence": state.dataset_validation.get("confidence", 0.0),
+                "calibration_adjustment": state.dataset_validation.get("calibration_adjustment", 0),
+                "validation_status": state.dataset_validation.get("validation_status", "unknown"),
+                "similar_cases_count": len(state.dataset_validation.get("similar_cases", [])),
+                "similar_cases": state.dataset_validation.get("similar_cases", [])[:3],  # Include top 3 for reference
+                "reasoning": state.dataset_validation.get("reasoning", ""),
+                "status": state.dataset_validation.get("status", "unknown")
+            }
+        else:
+            # Include empty dataset_validation if not available
+            result["dataset_validation"] = {
+                "original_score": total_score,
+                "calibrated_score": total_score,
+                "confidence": 0.0,
+                "calibration_adjustment": 0,
+                "validation_status": "not_available",
+                "similar_cases_count": 0,
+                "similar_cases": [],
+                "reasoning": "Dataset validation not performed",
+                "status": "not_available"
+            }
+        
+        return result
     
     def _fallback_to_pipeline(self, candidate_id: str, job_id: str) -> Dict:
         """Fallback to original pipeline"""
