@@ -57,10 +57,14 @@ def detect_technology_mismatch(job_desc: Dict, candidate: Dict) -> Dict:
         }
     
     # Extract relevant information
+    # CRITICAL: Ensure we're using the latest JD data (should come from state.jd_data)
     jd_title = job_desc.get("title", "")
     jd_must_have = job_desc.get("must_have", [])
     jd_nice_to_have = job_desc.get("nice_to_have", [])
     jd_text = job_desc.get("jd_text", "")
+    
+    # Log JD data being used for debugging
+    logger.debug(f"Technology mismatch detection using JD: title={jd_title}, must_have count={len(jd_must_have)}, jd_text length={len(jd_text)}")
     
     candidate_skills = candidate.get("skills_canonical", candidate.get("skills_raw", []))
     candidate_experience = candidate.get("experience", [])

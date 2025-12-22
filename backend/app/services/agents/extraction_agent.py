@@ -82,7 +82,8 @@ Always respond with structured data in JSON format."""
         self,
         cv_path: Optional[str] = None,
         linkedin_path: Optional[str] = None,
-        github_handle: Optional[str] = None
+        github_handle: Optional[str] = None,
+        state: Optional[EvaluationState] = None
     ) -> Dict:
         """
         Extract candidate data from available sources.
@@ -91,6 +92,7 @@ Always respond with structured data in JSON format."""
             cv_path: Path to CV PDF
             linkedin_path: Path to LinkedIn PDF
             github_handle: GitHub username
+            state: Optional EvaluationState to check for already extracted data
         
         Returns:
             Dictionary with extracted data
@@ -101,8 +103,21 @@ Always respond with structured data in JSON format."""
             "github_handle": github_handle
         }
         
-        # Extract CV if available
-        if cv_path:
+        # If state provided, check what's already extracted
+        if isinstance(state, EvaluationState):
+            cv_data = state.cv_data if state.is_extracted("cv") else None
+            linkedin_data = state.linkedin_data if state.is_extracted("linkedin") else None
+            
+            # Use already extracted data if available
+            if cv_data:
+                result["cv_data"] = cv_data
+                logger.debug("Reusing already extracted CV data in extract_candidate_data")
+            if linkedin_data:
+                result["linkedin_data"] = linkedin_data
+                logger.debug("Reusing already extracted LinkedIn data in extract_candidate_data")
+        
+        # Extract CV only if needed and not already extracted
+        if cv_path and not result.get("cv_data"):
             try:
                 cv_result = extract_cv_tool(cv_path)
                 if cv_result.get("status") == "success":
@@ -113,8 +128,8 @@ Always respond with structured data in JSON format."""
             except Exception as e:
                 logger.error(f"CV extraction failed: {str(e)}")
         
-        # Extract LinkedIn if available
-        if linkedin_path:
+        # Extract LinkedIn only if needed and not already extracted
+        if linkedin_path and not result.get("linkedin_data"):
             try:
                 linkedin_result = extract_linkedin_tool(linkedin_path)
                 if linkedin_result.get("status") == "success":
@@ -193,20 +208,50 @@ Always respond with structured data in JSON format."""
             linkedin_path = candidate_data.get("linkedin_file_path")
             github_handle = candidate_data.get("github_handle", "")
             
-            # Extract candidate data
-            extracted = self.extract_candidate_data(cv_path, linkedin_path, github_handle)
+            # Check if CV already extracted
+            if state.is_extracted("cv") and state.cv_data:
+                cv_data = state.cv_data
+                logger.info("Reusing already extracted CV data")
+            else:
+                cv_data = None
             
-            # Extract JD if needed
+            # Check if LinkedIn already extracted
+            if state.is_extracted("linkedin") and state.linkedin_data:
+                linkedin_data = state.linkedin_data
+                logger.info("Reusing already extracted LinkedIn data")
+            else:
+                linkedin_data = None
+            
+            # Only extract if we need CV or LinkedIn and they're not already extracted
+            if (cv_path and not cv_data) or (linkedin_path and not linkedin_data):
+                extracted = self.extract_candidate_data(
+                    cv_path if not cv_data else None,
+                    linkedin_path if not linkedin_data else None,
+                    github_handle,
+                    state  # Pass state to check for already extracted data
+                )
+                if not cv_data:
+                    cv_data = extracted.get("cv_data")
+                if not linkedin_data:
+                    linkedin_data = extracted.get("linkedin_data")
+                # Update GitHub handle if extracted from CV
+                extracted_github = extracted.get("github_handle")
+                if extracted_github:
+                    github_handle = extracted_github
+            
+            # Extract JD only if explicitly needed and not already extracted
+            # JD should NOT be extracted when extracting CV/LinkedIn - it's extracted separately
             jd_data = None
-            if job_data.get("jd_text") and not state.is_extracted("jd"):
-                jd_result = extract_jd_tool(job_data["jd_text"])
-                if jd_result.get("status") == "success":
-                    jd_data = jd_result["data"]
+            if state.is_extracted("jd") and state.jd_data:
+                jd_data = state.jd_data
+                logger.info("Reusing already extracted JD data")
+            # Note: JD extraction should happen via _extract_jd() action, not here
+            # This prevents redundant JD extraction when only CV/LinkedIn is requested
             
             return {
-                "cv_data": extracted.get("cv_data"),
-                "linkedin_data": extracted.get("linkedin_data"),
-                "github_handle": extracted.get("github_handle"),
+                "cv_data": cv_data,
+                "linkedin_data": linkedin_data,
+                "github_handle": github_handle,
                 "jd_data": jd_data
             }
         else:

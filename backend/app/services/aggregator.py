@@ -100,8 +100,12 @@ def aggregate_scores(
     # Calculate total score
     total_score = semantic_fit + role_competency + experience_recency + github_evidence + bonus_malus - skill_mismatch_penalty - technology_mismatch_penalty
     
+    # Log calculation breakdown for debugging
+    logger.info(f"Score calculation: {semantic_fit} + {role_competency} + {experience_recency} + {github_evidence} + {bonus_malus} - {skill_mismatch_penalty} - {technology_mismatch_penalty} = {total_score}")
+    
     # Clamp to 0-100
     total_score = max(0, min(100, round(total_score)))
+    logger.info(f"Final clamped score: {total_score}")
     
     return {
         "total_score": total_score,

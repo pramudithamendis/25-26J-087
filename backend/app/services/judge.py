@@ -37,7 +37,11 @@ def build_judge_prompt(candidate: Dict, job_desc: Dict) -> Tuple[str, bool, str]
     jd_text = job_desc.get("jd_text", "")
     jd_title = job_desc.get("title", "")
     
+    # Log JD data being used for mismatch detection
+    logger.debug(f"Using JD data for mismatch detection: title={jd_title}, must_have count={len(must_have)}, jd_text length={len(jd_text)}")
+    
     # Use LLM-based dynamic technology mismatch detection
+    # CRITICAL: Ensure job_desc contains the latest extracted JD data
     mismatch_result = detect_technology_mismatch(job_desc, candidate)
     framework_mismatch_detected = mismatch_result.get("mismatch_detected", False) and mismatch_result.get("severity") == "critical"
     mismatch_details = mismatch_result.get("mismatch_details", "")

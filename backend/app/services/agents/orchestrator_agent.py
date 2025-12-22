@@ -166,6 +166,11 @@ class AgenticOrchestrator:
     
     def _extract_cv(self, state: EvaluationState) -> Dict:
         """Extract CV data"""
+        # Check if already extracted
+        if state.is_extracted("cv") and state.cv_data:
+            logger.info("CV already extracted, skipping redundant extraction")
+            return {"status": "skipped", "reason": "Already extracted", "cv_data": state.cv_data}
+        
         cv_path = state.candidate_data.get("cv_file_path")
         if not cv_path:
             return {"status": "skipped", "reason": "No CV file path"}
@@ -178,18 +183,34 @@ class AgenticOrchestrator:
             github_handle = result["cv_data"].get("github_handle", "")
             if github_handle:
                 state.candidate_data["github_handle"] = github_handle
+        
+        # CRITICAL: Also update LinkedIn state if LinkedIn was extracted together with CV
+        # This prevents redundant LinkedIn extraction later
+        if result.get("linkedin_data") and not state.is_extracted("linkedin"):
+            state.mark_extracted("linkedin", result["linkedin_data"])
+            state.linkedin_data = result["linkedin_data"]
+            logger.info(f"LinkedIn also extracted with CV, stored in state: {len(result['linkedin_data'].get('skills_raw', []))} skills found")
+        
         return result
     
     def _extract_linkedin(self, state: EvaluationState) -> Dict:
         """Extract LinkedIn data"""
+        # Check if already extracted - return early without calling execute()
+        if state.is_extracted("linkedin") and state.linkedin_data:
+            logger.info("LinkedIn already extracted, skipping redundant extraction")
+            return {"status": "skipped", "reason": "Already extracted", "linkedin_data": state.linkedin_data}
+        
         linkedin_path = state.candidate_data.get("linkedin_file_path")
         if not linkedin_path:
             return {"status": "skipped", "reason": "No LinkedIn file path"}
         
+        # Only call extraction agent if LinkedIn is not already extracted
+        # The extraction agent will check state again, but we've already checked here
         result = self.extraction_agent.execute(state)
         if result.get("linkedin_data"):
             state.mark_extracted("linkedin", result["linkedin_data"])
             state.linkedin_data = result["linkedin_data"]
+            logger.info(f"LinkedIn extracted and stored in state: {len(result['linkedin_data'].get('skills_raw', []))} skills found")
         return result
     
     def _extract_github(self, state: EvaluationState) -> Dict:
@@ -212,15 +233,35 @@ class AgenticOrchestrator:
     
     def _extract_jd(self, state: EvaluationState) -> Dict:
         """Extract job description data"""
+        # Check if already extracted
+        if state.is_extracted("jd") and state.jd_data:
+            logger.info("JD already extracted, skipping redundant extraction")
+            return {"status": "skipped", "reason": "Already extracted", "jd_data": state.jd_data}
+        
         jd_text = state.job_data.get("jd_text", "")
         if not jd_text:
             return {"status": "error", "reason": "No JD text"}
         
-        result = self.extraction_agent.execute(state)
-        if result.get("jd_data"):
-            state.mark_extracted("jd", result["jd_data"])
-            state.jd_data = result["jd_data"]
-        return result
+        # Fix the JD text if it has "ob Description" issue
+        if jd_text.startswith("ob Description"):
+            jd_text = "Job Description" + jd_text[14:]
+        
+        # Extract JD directly using the tool (not through extraction agent)
+        # The extraction agent's execute() method doesn't extract JD, only CV/LinkedIn
+        from app.services.agents.tools.extraction_tools import extract_jd_tool
+        jd_result = extract_jd_tool(jd_text)
+        
+        if jd_result.get("status") == "success" and jd_result.get("data"):
+            jd_data = jd_result["data"]
+            # CRITICAL: Set state.jd_data and mark as extracted to ensure persistence
+            state.jd_data = jd_data
+            state.mark_extracted("jd", jd_data)
+            logger.info(f"JD extracted and stored in state: title={jd_data.get('title', 'N/A')}, must_have count={len(jd_data.get('must_have', []))}")
+            return {"status": "success", "jd_data": jd_data}
+        else:
+            error_msg = jd_result.get("error", "Unknown error")
+            logger.error(f"JD extraction failed: {error_msg}")
+            return {"status": "error", "reason": error_msg, "jd_data": None}
     
     def _verify_github(self, state: EvaluationState) -> Dict:
         """Verify GitHub handle"""
@@ -271,6 +312,16 @@ class AgenticOrchestrator:
     
     def _score_candidate(self, state: EvaluationState) -> Dict:
         """Score candidate using judge agent"""
+        # CRITICAL: Ensure JD is extracted before scoring
+        # Judge agent needs JD data for accurate scoring and technology mismatch detection
+        if not state.is_extracted("jd") or not state.jd_data:
+            logger.info("JD not extracted before scoring, extracting now")
+            jd_result = self._extract_jd(state)
+            if jd_result.get("status") == "error":
+                logger.warning(f"JD extraction failed before scoring: {jd_result.get('reason')}")
+            elif jd_result.get("jd_data"):
+                logger.info("JD successfully extracted before scoring")
+        
         # Normalize skills first if not done
         if not state.normalized_skills:
             skills_raw = []
@@ -400,28 +451,55 @@ class AgenticOrchestrator:
             }
         
         # Build job description, ensuring ALL fields are preserved
-        # Start with jd_data (from extraction) which has title, must_have, nice_to_have, etc.
-        if state.jd_data:
+        # CRITICAL: Always use the latest jd_data from state (from extraction)
+        # This ensures technology mismatch detection uses the most recent extracted data
+        # Check if JD is already extracted first
+        if state.is_extracted("jd") and state.jd_data:
             # Make a copy to avoid mutating the original
             job_description = dict(state.jd_data)
+            logger.debug(f"Using extracted JD data from state: title={job_description.get('title', 'N/A')}, must_have count={len(job_description.get('must_have', []))}")
+        elif state.job_data and state.job_data.get("jd_text"):
+            # JD not extracted yet, extract it ONCE and update state
+            logger.info("JD not yet extracted, extracting now and storing in state")
+            from app.services.extractors.jd_extractor import extract_from_jd
+            jd_text = state.job_data.get("jd_text", "")
+            # Fix the JD text if it has "ob Description" issue
+            if jd_text.startswith("ob Description"):
+                jd_text = "Job Description" + jd_text[14:]
+            
+            try:
+                extracted = extract_from_jd(jd_text)
+                if extracted:
+                    # Store in state to prevent future extractions
+                    state.jd_data = extracted
+                    state.mark_extracted("jd", extracted)
+                    job_description = dict(extracted)
+                    logger.info(f"JD extracted and stored in state: title={job_description.get('title', 'N/A')}, must_have count={len(job_description.get('must_have', []))}")
+                else:
+                    job_description = {}
+                    logger.warning("JD extraction returned empty result")
+            except Exception as e:
+                logger.error(f"JD extraction failed: {str(e)}")
+                job_description = {}
         else:
             job_description = {}
+            logger.warning("No jd_data in state and no jd_text in job_data")
         
-        # If jd_data is missing fields, try to get them from job_data
-        if state.job_data:
+        # If jd_data is missing fields, try to get them from job_data (fallback only)
+        if state.job_data and not job_description.get("must_have"):
             # Ensure title is present
             if not job_description.get("title") and state.job_data.get("title"):
                 job_description["title"] = state.job_data["title"]
             
-            # Ensure must_have is present
+            # Ensure must_have is present (fallback)
             if not job_description.get("must_have") and state.job_data.get("must_have"):
                 job_description["must_have"] = state.job_data["must_have"]
             
-            # Ensure nice_to_have is present
+            # Ensure nice_to_have is present (fallback)
             if not job_description.get("nice_to_have") and state.job_data.get("nice_to_have"):
                 job_description["nice_to_have"] = state.job_data["nice_to_have"]
             
-            # Ensure min_years is present
+            # Ensure min_years is present (fallback)
             if "min_years" not in job_description and "min_years" in state.job_data:
                 job_description["min_years"] = state.job_data["min_years"]
         
@@ -438,23 +516,6 @@ class AgenticOrchestrator:
             jd_text = job_description["jd_text"]
             if jd_text.startswith("ob Description"):
                 job_description["jd_text"] = "Job Description" + jd_text[14:]
-        
-        # If jd_data is still empty or missing critical fields, try to extract from job_data
-        if not job_description or (not job_description.get("must_have") and state.job_data and state.job_data.get("jd_text")):
-            logger.warning("JD data missing must_have skills, attempting to extract from job_data")
-            from app.services.extractors.jd_extractor import extract_from_jd
-            jd_text = state.job_data.get("jd_text", "") if state.job_data else ""
-            if jd_text:
-                try:
-                    extracted = extract_from_jd(jd_text)
-                    if extracted:
-                        # Merge extracted data, preserving existing fields
-                        for key, value in extracted.items():
-                            if key not in job_description or not job_description[key]:
-                                job_description[key] = value
-                        logger.info(f"Extracted JD data: title={job_description.get('title')}, must_have count={len(job_description.get('must_have', []))}")
-                except Exception as e:
-                    logger.error(f"Failed to extract JD data: {str(e)}")
         
         return {
             "candidate": candidate,

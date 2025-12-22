@@ -74,11 +74,11 @@ Always respond with JSON in this format:
             Dictionary with judge_scores
         """
         # Use existing judge prompt builder
-        prompt = build_judge_prompt(candidate, job_desc)
+        prompt, framework_mismatch_detected, mismatch_details = build_judge_prompt(candidate, job_desc)
         
         # Try OpenAI first
         if settings.LLM_PROVIDER == "openai" and settings.OPENAI_API_KEY:
-            result = judge_with_openai(prompt)
+            result = judge_with_openai(prompt, candidate, job_desc, framework_mismatch_detected)
             if result:
                 logger.info("Using OpenAI LLM for candidate judgment")
                 return result
@@ -184,11 +184,26 @@ Respond with a brief description of what to look for."""
                     state.linkedin_data.get("education", [])
                 ))
             
+            # CRITICAL: Use jd_data from state, not job_data
+            # This ensures technology mismatch detection uses the latest extracted JD data
             job_desc = state.jd_data or {}
+            if not job_desc:
+                logger.warning("No jd_data in state for judge evaluation - missing JD extraction")
+                # Fallback to job_data if absolutely necessary (may be incomplete)
+                if state.job_data:
+                    logger.warning("Falling back to job_data for JD (may be incomplete or stale)")
+                    job_desc = state.job_data
+                else:
+                    logger.error("No JD data available for evaluation")
+                    job_desc = {}
         else:
             # Direct evaluation request
             candidate = state.get("candidate", {})
             job_desc = state.get("job_description", {})
+        
+        # Log which JD data is being used for debugging
+        if job_desc:
+            logger.debug(f"Judge agent using JD data: title={job_desc.get('title', 'N/A')}, must_have count={len(job_desc.get('must_have', []))}, source={'state.jd_data' if isinstance(state, EvaluationState) and state.jd_data else 'fallback'}")
         
         # Evaluate criteria
         result = self.evaluate_criteria(candidate, job_desc)
