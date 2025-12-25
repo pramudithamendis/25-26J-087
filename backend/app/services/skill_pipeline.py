@@ -1,6 +1,6 @@
 
 from typing import List, Dict
-from app.services.article_fetcher import fetch_all_articles
+from backend.app.services.article_service import fetch_all_articles
 from app.ml_models.skill_ner_loader import extract_skills
 from app.ml_models.hybrid_extractor import hybrid_detect
 import re
