@@ -1,7 +1,0 @@
-[
-  {
-    "file_name": "calculator.py",
-    "code": "def add(a, b):\n    return a + b\n\ndef subtract(a, b):\n    return a - b\n\ndef multiply(a, b):\n    return a * b\n\ndef divide(a, b):\n    if b == 0:\n        raise ValueError(\"Cannot divide by zero.\")\n    return a / b\n\nif __name__ == \"__main__\":\n    print(add(10, 5))\n    print(subtract(10, 5))\n    print(multiply(10, 5))\n    print(divide(10, 5))\n",
-    "questions": ["What does each function (add, subtract, multiply, divide) do?", "How does the code handle division by zero?", "Can I use these functions with negative numbers?", "Are there any limits on how close two numbers can be for a given operation?", "How do the error messages work when dividing by zero?"]
-  }
-]

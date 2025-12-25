@@ -1,0 +1,52 @@
+[
+  {
+    "file_name": ".gitignore",
+    "code": "# Logs\nlogs\n*.log\nnpm-debug.log*\nyarn-debug.log*\nyarn-error.log*\npnpm-debug.log*\nlerna-debug.log*\n\nnode_modules\ndist\ndist-ssr\n*.local\n\n# Editor directories and files\n.vscode/*\n!.vscode/extensions.json\n.idea\n.DS_Store\n*.suo\n*.ntvs*\n*.njsproj\n*.sln\n*.sw?",
+    "questions": ["What does this file contain?", "What types of files are excluded from being tracked by Git?", "What specific directory or file names are affected in this configuration?", "Can you explain the purpose of this `.gitignore` file?"]
+  },
+  {
+    "file_name": "calculator.py",
+    "code": "def add(a, b):\n    return a + b\n\ndef subtract(a, b):\n    return a - b\n\ndef multiply(a, b):\n    return a * b\n\ndef divide(a, b):\n    if b == 0:\n        raise ValueError(\"Cannot divide by zero.\")\n    return a / b\n\nif __name__ == \"__main__\":\n    print(add(10, 5))\n    print(subtract(10, 5))\n    print(multiply(10, 5))\n    print(divide(10, 5))\n",
+    "questions": [
+      "\"What is the purpose of each function in this calculator?\",",
+      "\"How does the divide function handle division by zero?\",",
+      "\"Can I use these functions with more than two numbers?\",",
+      "\"What is the difference between addition and subtraction operations?\",",
+      "\"Is there a way to add an unknown number to two existing values?\",",
+      "\"How do the multiplication and division functions compare in terms of performance?\",",
+      "\"Are there any edge cases or special handling for certain inputs (e.g. negative numbers, zero)?\",",
+      "\"Can I use this calculator as a simple math library with other functions?\""
+    ]
+  },
+  {
+    "file_name": "configLoader.js",
+    "code": "import fs from \"fs\";\nimport path from \"path\";\n\nexport function loadMetricConfig() {\n  const filePath = path.join(process.cwd(), \"config\", \"metrics.config.json\");\n  const raw = fs.readFileSync(filePath, \"utf-8\");\n  return JSON.parse(raw);\n}\n",
+    "questions": ["1. What is this code snippet doing?", "2. How does it load configuration from a file called \"metrics.config.json\"?", "3. What type of data can be expected in the returned JSON array?", "4. Is there a specific output format expected (e.g., Node.js built-in format, CSV, etc.)?", "5. Can this code snippet handle any errors that might occur during execution?", "6. Are there any specific requirements for the configuration file itself (e.g., required keys, structure)?", "7. What is the purpose of `process.cwd()` in this context?"]
+  },
+  {
+    "file_name": "db.js",
+    "code": "// db.js\nimport mysql from \"mysql2/promise\";\n\nexport const pool = mysql.createPool({\n  host: \"localhost\",\n  user: \"root\",\n  password: \"YOUR_PASSWORD\",\n  database: \"gameon_bi\",\n  connectionLimit: 10,\n});\n",
+    "questions": ["What does this code do?", "Where does it connect to?", "How does it handle multiple connections at once?", "What happens if I don't have a database or user?", "Why are there special variables (host, password) for credentials?"]
+  },
+  {
+    "file_name": "index.js",
+    "code": "// index.js\nimport express from \"express\";\nconst app = express();\nimport mysql from \"mysql2/promise\";\n\nconst pool = mysql.createPool({\n  host: \"127.0.0.1\",\n  user: \"root\",\n  password: \"password\", // your MySQL password\n  database: \"gaming_app_bi\",\n  port: 3306,\n  connectionLimit: 10,\n});\n\nimport { loadMetricConfig } from \"./configLoader.js\";\n\nconst config = loadMetricConfig();\n\nfunction buildQuery(block) {\n  let columns = block.columns.join(\", \");\n  let distinct_col = block.distinct_col;\n\n  return `\n    SELECT ${columns}\n    FROM ${block.table_name}\n    ORDER BY ${block.order_by_column} ${block.order_by}\n    LIMIT ${block.record_count};\n  `;\n}\n\napp.get(\"/api/cards\", async (req, res) => {\n  try {\n    const results = [];\n    const { table_name } = req.query;\n    console.log(table_name);\n\n    if (table_name == undefined) {\n      //means we need all\n      for (const card of config.Cards) {\n        const sql = buildQuery(card);\n\n        const [rows] = await pool.query(sql);\n\n        results.push({\n          metric_name: card.metric_name,\n          sql,\n          field_names: card.columns,\n          data: rows,\n        });\n      }\n    } else {\n      //means we need specific table\n      for (const card of config.Cards) {\n        if (card.table_name == table_name) {\n          const sql = buildQuery(card);\n\n          const [rows] = await pool.query(sql);\n\n          results.push({\n            metric_name: card.metric_name,\n            sql,\n            field_names: card.columns,\n            data: rows,\n          });\n        }\n      }\n    }\n\n    res.json({ status: \"success\", results });\n  } catch (err) {\n    console.error(err);\n    res.status(500).json({ error: \"Server error\" });\n  }\n});\n\nfunction buildQuery_cumulative(block) {\n  let columns = block.columns.join(\", \");\n  let distinct_col = block.distinct_col;\n\n  return `\n    WITH ranked AS (\n      SELECT \n        ${columns},\n        ROW_NUMBER() OVER (\n          PARTITION BY ${distinct_col}\n          ORDER BY ${block.order_by_column} ${block.order_by}\n        ) AS rn\n      FROM ${block.table_name}\n    )\n    SELECT ${columns}\n    FROM ranked\n    WHERE rn = 1\n    ORDER BY ${block.order_by_column} ${block.order_by}\n    LIMIT ${block.record_count};\n  `;\n}\n\napp.get(\"/api/tables\", async (req, res) => {\n  try {\n    const results = [];\n    const { table_name } = req.query;\n    console.log(table_name);\n\n    if (table_name == undefined) {\n      //means we need all\n      for (const card of config.Tables) {\n        let sql = \"\";\n        if (card.is_cumulative == 1) {\n          sql = buildQuery_cumulative(card);\n        } else {\n          sql = buildQuery(card);\n        }\n        const [rows] = await pool.query(sql);\n\n        results.push({\n          metric_name: card.metric_name,\n          sql,\n          field_names: card.columns,\n          data: rows,\n        });\n      }\n    } else {\n      //means we need specific table\n      for (const card of config.Tables) {\n        if (card.table_name == table_name) {\n          let sql = \"\";\n          if (card.is_cumulative == 1) {\n            sql = buildQuery_cumulative(card);\n          } else {\n            sql = buildQuery(card);\n          }\n          const [rows] = await pool.query(sql);\n          results.push({\n            metric_name: card.metric_name,\n            sql,\n            field_names: card.columns,\n            data: rows,\n          });\n        }\n      }\n    }\n\n    res.json({ status: \"success\", results });\n  } catch (err) {\n    console.error(err);\n    res.status(500).json({ error: \"Server error\" });\n  }\n});\n\napp.get(\"/api/charts\", async (req, res) => {\n  try {\n    const results = [];\n    const { table_name } = req.query;\n    console.log(table_name);\n\n    if (table_name == undefined) {\n      //means we need all\n      for (const card of config.Charts) {\n        let sql = \"\";\n        if (card.is_cumulative == 1) {\n          sql = buildQuery_cumulative(card);\n        } else {\n          sql = buildQuery(card);\n        }\n        const [rows] = await pool.query(sql);\n\n        results.push({\n          metric_name: card.metric_name,\n          sql,\n          field_names: card.columns,\n          data: rows,\n        });\n      }\n    } else {\n      //means we need specific table\n      for (const card of config.Charts) {\n        if (card.table_name == table_name) {\n          let sql = \"\";\n          if (card.is_cumulative == 1) {\n            sql = buildQuery_cumulative(card);\n          } else {\n            sql = buildQuery(card);\n          }\n          const [rows] = await pool.query(sql);\n\n          results.push({\n            metric_name: card.metric_name,\n            chart_type: card.chart_type,\n            sql,\n            field_names: card.columns,\n            data: rows,\n          });\n        }\n      }\n    }\n\n    res.json({ status: \"success\", results });\n  } catch (err) {\n    console.error(err);\n    res.status(500).json({ error: \"Server error\" });\n  }\n});\n\napp.listen(3000, () => console.log(\"Server running on port 3000\"));\n",
+    "questions": [
+      "\"What is the purpose of the '/api/cards' endpoint?\",",
+      "\"How does the code handle authentication? (e.g., user password)\",",
+      "\"Can you explain the use of MySQL2/promise library?\",",
+      "\"What is the difference between 'cumulative' and non-cumulative queries?\",",
+      "\"How are cumulative queries implemented in this code?\",",
+      "\"What are the available table names for /api/tables endpoint?\",",
+      "\"How does the code handle table name query parameter (e.g., ?table_name)\",",
+      "\"Can you provide an example of how to modify the buildQuery_cumulative function to retrieve data from a specific table?\",",
+      "\"What is the purpose of the 'distinct_col' variable in the buildQuery_cumulative function?\",",
+      "\"How does the code handle errors and logging in the /api/tables endpoint?\""
+    ]
+  },
+  {
+    "file_name": "package.json",
+    "code": "{\n  \"name\": \"bi-backend\",\n  \"version\": \"1.0.0\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"test\": \"echo \\\"Error: no test specified\\\" && exit 1\",\n    \"start\": \"node index.js\",\n    \"dev\": \"nodemon index.js\"\n  },\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"git+https://github.com/pramudithamendis/BI-backend.git\"\n  },\n  \"keywords\": [],\n  \"author\": \"\",\n  \"license\": \"ISC\",\n  \"bugs\": {\n    \"url\": \"https://github.com/pramudithamendis/BI-backend/issues\"\n  },\n  \"homepage\": \"https://github.com/pramudithamendis/BI-backend#readme\",\n  \"description\": \"\",\n  \"dependencies\": {\n    \"dotenv\": \"^17.2.3\",\n    \"express\": \"^5.1.0\",\n    \"mysql2\": \"^3.15.3\",\n    \"tunnel-ssh\": \"^5.2.0\"\n  },\n  \"devDependencies\": {\n    \"nodemon\": \"^3.1.11\"\n  }\n}\n",
+    "questions": ["\"What is the purpose of the 'test' script?\",", "\"How does the 'start' script work?\",", "\"What is the purpose of the 'dev' script?\",", "\"Can I specify a custom test environment?\",", "\"How do I configure the repository URL in git?\",", "\"What are the available dependencies for this project?\",", "\"Why is there an empty 'keywords' field?\""]
+  }
+]

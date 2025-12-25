@@ -1,0 +1,40 @@
+{
+  ".gitignore": [
+    {
+      "question": "What does this file contain?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 2,
+        "Depth": 1,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What types of files are excluded from being tracked by Git?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What specific directory or file names are affected in this configuration?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the purpose of this `.gitignore` file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    }
+  ]
+}

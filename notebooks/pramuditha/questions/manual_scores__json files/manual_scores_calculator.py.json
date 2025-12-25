@@ -1,0 +1,76 @@
+{
+  "calculator.py": [
+    {
+      "question": "\"What is the purpose of each function in this calculator?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the divide function handle division by zero?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can I use these functions with more than two numbers?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"What is the difference between addition and subtraction operations?\",",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 1,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Is there a way to add an unknown number to two existing values?\",",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 2
+      }
+    },
+    {
+      "question": "\"How do the multiplication and division functions compare in terms of performance?\",",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Are there any edge cases or special handling for certain inputs (e.g. negative numbers, zero)?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can I use this calculator as a simple math library with other functions?\"",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    }
+  ]
+}
