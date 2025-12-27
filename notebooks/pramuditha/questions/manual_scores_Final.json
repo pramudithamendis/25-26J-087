@@ -379,5 +379,431 @@
         "clarity": 5
       }
     }
+  ],
+  "App.jsx": [
+    {
+      "question": "What are the import statements for this file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 1,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are there four different imports (`reactLogo`, `viteLogo`) instead of one, and where do they come from?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 3
+      }
+    },
+    {
+      "question": "What is the purpose of the React Router components (`Routes` and `Route`) in this context?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does this App component interact with other components (e.g. Cards, Tables, Charts) that are imported elsewhere?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    }
+  ],
+  "Cards.tsx": [
+    {
+      "question": "What is the purpose of the `useEffect` hook in this example?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `formatValue` function handle null or undefined values?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the difference between using `key` as a string and an array in JSX?",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 3
+      }
+    },
+    {
+      "question": "Can you explain why the `selectedCategory` state is used to filter the cards, and how it's updated?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `categories` and `filteredMetrics` functions work together to display the data?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "What is the meaning of `metrics.map((metric, i) => {...})` in the Cards component?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are there multiple `select` options for the category filter? Is it a bug or an intentional design choice?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you provide more context about the API endpoint \"http://localhost:3000/api/cards\" and what data it returns?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the purpose of the `loading` state in the Cards component, and how does it affect the rendering of the page?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How do you handle errors or unexpected responses from the API when using this code?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    }
+  ],
+  "Charts.jsx": [
+    {
+      "question": "What is the purpose of the `useEffect` hook in this code snippet?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `fetchTables` function from the `Charts` component fetch data from an API?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the logic behind the `getNeededCols` function, especially with regards to the different types of charts (bar chart, line chart)?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "What are some potential issues or edge cases that this code might encounter when loading data from the API?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 5,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "How does the code handle errors, such as network failures or invalid responses from the API?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Are there any specific optimizations or improvements that could be made to the code to improve performance or scalability?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 2,
+        "Depth": 5,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Can you explain how the `charts-grid` and `chart-card` components are used in this context?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    }
+  ],
+  "famvitamincintake.py": [
+    {
+      "question": "\"What is the purpose of the linprog function from scipy.optimize?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the 'method' parameter affect the optimization process?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you explain the significance of the bounds argument in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What are the differences between LHS and RHS in the constraint inequalities?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Why did you choose 'highs' as the optimization method instead of another option?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the role of A_ub, b_ub, and bounds in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the coefficient matrix lhs_ineq influence the optimal solution?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Can you provide examples or explanations for other potential objective functions?\",",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 2,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Are there any limitations or edge cases in this code that I should be aware of?\"",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 5,
+        "clarity": 5
+      }
+    }
+  ],
+  "indexing.py": [
+    {
+      "question": "What is the purpose of the `load_preprocessed_documents` function? How does it load preprocessed documents from a file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the concept behind building an inverted index in this code? What are term frequencies and IDF (Inverse Document Frequency)?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 5,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "How do the `term_counts` dictionaries store information about each term in the document, and how is their value calculated?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the purpose of the `idf` dictionary? How does it calculate IDF for a given term?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the concept behind saving the inverted index, IDF, and doc-term counts to files using `pickle.dump()`?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the code handle missing documents in the preprocessed documents list?",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Are there any potential issues with storing sensitive information (e.g., term frequencies) as plain text using `pickle`?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Can you explain why the code uses a logarithmic function (`math.log(total_documents / len(doc_list))`) to calculate IDF?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    }
+  ],
+  "machineAmachineB.py": [
+    {
+      "question": "\"What is the objective function in this linear programming problem?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How do I determine if the optimization method used in linprog is suitable for my problem?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Can you explain the purpose of the bounds attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What does the 'linprog' function from scipy.optimize actually return, and what are its possible values?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Are there any specific constraints (e.g., inequality constraints) that I should be aware of when using linprog?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"How do I interpret the output of the 'opt.x' attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the difference between the 'c' attribute and 'A_ub' attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you provide an example of how to use linprog with different optimization methods (e.g., 'sweep', 'COBYLA')?\"",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 3,
+        "clarity": 4
+      }
+    }
   ]
 }

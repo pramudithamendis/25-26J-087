@@ -1,0 +1,76 @@
+{
+  "machineAmachineB.py": [
+    {
+      "question": "\"What is the objective function in this linear programming problem?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How do I determine if the optimization method used in linprog is suitable for my problem?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Can you explain the purpose of the bounds attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What does the 'linprog' function from scipy.optimize actually return, and what are its possible values?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Are there any specific constraints (e.g., inequality constraints) that I should be aware of when using linprog?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"How do I interpret the output of the 'opt.x' attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the difference between the 'c' attribute and 'A_ub' attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you provide an example of how to use linprog with different optimization methods (e.g., 'sweep', 'COBYLA')?\"",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 3,
+        "clarity": 4
+      }
+    }
+  ]
+}

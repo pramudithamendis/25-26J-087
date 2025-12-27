@@ -1,0 +1,76 @@
+{
+  "indexing.py": [
+    {
+      "question": "What is the purpose of the `load_preprocessed_documents` function? How does it load preprocessed documents from a file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the concept behind building an inverted index in this code? What are term frequencies and IDF (Inverse Document Frequency)?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 5,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "How do the `term_counts` dictionaries store information about each term in the document, and how is their value calculated?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the purpose of the `idf` dictionary? How does it calculate IDF for a given term?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the concept behind saving the inverted index, IDF, and doc-term counts to files using `pickle.dump()`?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the code handle missing documents in the preprocessed documents list?",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Are there any potential issues with storing sensitive information (e.g., term frequencies) as plain text using `pickle`?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Can you explain why the code uses a logarithmic function (`math.log(total_documents / len(doc_list))`) to calculate IDF?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    }
+  ]
+}
