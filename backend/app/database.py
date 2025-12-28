@@ -46,3 +46,9 @@ def get_database():
     if db is None:
         raise RuntimeError("Database not initialized.")
     return db
+
+def get_turnover_collection():
+    """Get turnover results collection"""
+    if db is None:
+        raise RuntimeError("Database not initialized.")
+    return db["turnover_results"]

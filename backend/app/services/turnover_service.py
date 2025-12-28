@@ -4,6 +4,8 @@ from bson import ObjectId
 import numpy as np
 import pandas as pd
 from app.database import get_cv_collection
+from app.database import get_turnover_collection
+from datetime import datetime
 from app.services.feature_engineering import create_feature_vector_from_mongo
 from app.services.model_loader import predict_with_model, get_model
 
@@ -105,6 +107,24 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
             "risk_factors": risk_factors,
             "counterfactuals": counterfactuals
         }
+        
+        if result.get("status") == "success":
+            try:
+                turnover_coll = get_turnover_collection()
+                
+                # Prepare document for storage
+                db_entry = result.copy()
+                db_entry["cv_id"] = cv_id
+                db_entry["calculated_at"] = datetime.utcnow()
+                db_entry["user_email"] = user.get("email") if 'user' in locals() else None
+                
+                # Save to MongoDB
+                await turnover_coll.insert_one(db_entry)
+                print(f" Saved turnover result for CV {cv_id} to MongoDB")
+                
+            except Exception as e:
+                # Log error but don't fail the API request
+                print(f"Error saving turnover result to MongoDB: {e}")
         
         print(" Response ready")
         return result
@@ -417,9 +437,65 @@ def identify_risk_factors_shap(features: Dict[str, float], shap_explanation: Dic
 
 
 def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities: np.ndarray, model, shap_explanation: Dict) -> List[Dict]:
-    """Generate SHAP-guided counterfactuals"""
-    # Use simple counterfactuals as fallback
-    return generate_counterfactuals(features, prediction, probabilities, model)
+    """
+    Generate personalized counterfactuals based on top SHAP features
+    """
+    counterfactuals = []
+    
+    if not shap_explanation or not shap_explanation.get('top_features'):
+        return generate_counterfactuals(features, prediction, probabilities, model)
+    
+    # Get top 3 features that increase risk
+    risk_features = [f for f in shap_explanation['top_features'][:5] 
+                     if f['impact'] == 'increases_risk'][:3]
+    
+    for feat_data in risk_features:
+        feature_name = feat_data['feature']
+        current_value = feat_data['value']
+        
+        # Skip categorical features
+        if not isinstance(current_value, (int, float)):
+            continue
+        
+        # Determine improvement direction
+        if 'match' in feature_name or 'score' in feature_name:
+            # Higher is better
+            new_value = min(current_value + 0.3, 1.0)
+            description = f"had 30% better {feature_name.replace('_', ' ')}"
+        elif 'tenure' in feature_name:
+            # Higher is better
+            new_value = current_value + 24  # Add 2 years
+            description = f"had 2 years longer average tenure"
+        elif 'hopping' in feature_name:
+            # Lower is better
+            new_value = max(current_value - 0.3, 0)
+            description = f"had more stable job history"
+        else:
+            continue
+        
+        # Test counterfactual
+        modified_features = features.copy()
+        modified_features[feature_name] = new_value
+        
+        try:
+            new_pred, new_proba = predict_with_model(modified_features)
+            
+            if new_pred != prediction or abs(new_proba[new_pred] - probabilities[prediction]) > 0.05:
+                counterfactuals.append({
+                    "scenario": f"If candidate {description}",
+                    "original_risk": RISK_LABELS[prediction],
+                    "new_risk": RISK_LABELS[new_pred],
+                    "confidence_change": float(new_proba[new_pred] - probabilities[prediction]),
+                    "impact": "positive" if new_pred > prediction else "negative",
+                    "feature_changed": feature_name,
+                    "original_value": float(current_value),
+                    "new_value": float(new_value),
+                    "shap_importance": float(feat_data['shap_value'])
+                })
+        except:
+            continue
+    
+    return counterfactuals[:3]
 
 
 def generate_counterfactuals(features: Dict, prediction: int, probabilities: np.ndarray, model) -> List[Dict]:
