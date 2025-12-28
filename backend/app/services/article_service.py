@@ -7,7 +7,6 @@ from typing import List, Dict
 from datetime import datetime
 from app.models.article_model import articles_collection
 
-
 # -------------------------
 # CONFIG
 # -------------------------
@@ -146,7 +145,8 @@ def fetch_weekly_articles(
     month_id = current_month_id()
 
     articles = []
-    articles += fetch_gnews_articles(topics)
+    # TODO:how does the fetching switch between gnews and rss?
+    articles += fetch_gnews_articles(topics)  
     articles += fetch_rss_articles()
 
     if max_articles_per_topic:

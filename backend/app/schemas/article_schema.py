@@ -1,3 +1,4 @@
+# backend/app/schemas/article_schema.py
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -11,3 +12,7 @@ class ArticleResponse(BaseModel):
     topic: str
     source_type: str
     published_date: str
+
+class SkillExtractionResponse(BaseModel):
+    processed_articles: int
+    unique_skills: List[str]
