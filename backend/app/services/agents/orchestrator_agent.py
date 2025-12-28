@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 from bson import ObjectId
 import logging
 import time
-from app.models.candidate_model import candidates_collection
+from app.models.user_model import users_collection
 from app.models.job_model import jobs_collection
 from app.config import settings
 from .state import EvaluationState, EvaluationStage
@@ -48,12 +48,12 @@ class AgenticOrchestrator:
         self.max_iterations = getattr(settings, 'MAX_AGENT_ITERATIONS', 20)
         self.fallback_to_pipeline = getattr(settings, 'AGENTIC_FALLBACK_TO_PIPELINE', True)
     
-    def run_agentic_evaluation(self, candidate_id: str, job_id: str) -> Dict:
+    def run_agentic_evaluation(self, user_id: str, job_id: str) -> Dict:
         """
         Run full agentic evaluation pipeline.
         
         Args:
-            candidate_id: MongoDB candidate document ID
+            user_id: MongoDB user document ID
             job_id: MongoDB job document ID
         
         Returns:
@@ -61,22 +61,30 @@ class AgenticOrchestrator:
         """
         try:
             # Initialize state
-            state = EvaluationState(candidate_id, job_id)
+            state = EvaluationState(user_id, job_id)
             state.start_time = time.time()
             
-            # Load candidate and job from MongoDB
-            candidate = candidates_collection.find_one({"_id": ObjectId(candidate_id)})
-            if not candidate:
-                raise ValueError(f"Candidate {candidate_id} not found")
+            # Load user and job from MongoDB
+            user = users_collection.find_one({"_id": ObjectId(user_id)})
+            if not user:
+                raise ValueError(f"User {user_id} not found")
             
             job = jobs_collection.find_one({"_id": ObjectId(job_id)})
             if not job:
                 raise ValueError(f"Job {job_id} not found")
             
+            # Map user to candidate structure for compatibility
+            candidate = {
+                "name": user.get("name", ""),
+                "email": user.get("email", ""),
+                "github_handle": user.get("github_handle", ""),
+                "cv_file_path": user.get("cv_file_path"),
+                "linkedin_file_path": user.get("linkedin_file_path")
+            }
             state.candidate_data = candidate
             state.job_data = job
             
-            logger.info(f"Starting agentic evaluation for candidate {candidate_id} and job {job_id}")
+            logger.info(f"Starting agentic evaluation for user {user_id} and job {job_id}")
             
             # Track last action to detect loops
             last_actions = []
@@ -142,7 +150,7 @@ class AgenticOrchestrator:
                         # Fallback to pipeline on critical errors
                         if self.fallback_to_pipeline:
                             logger.info("Falling back to pipeline due to error")
-                            return self._fallback_to_pipeline(candidate_id, job_id)
+                            return self._fallback_to_pipeline(user_id, job_id)
                         raise
             
             # Complete evaluation if not already complete
@@ -158,7 +166,7 @@ class AgenticOrchestrator:
             logger.error(f"Agentic evaluation failed: {str(e)}")
             if self.fallback_to_pipeline:
                 logger.info("Falling back to pipeline")
-                return self._fallback_to_pipeline(candidate_id, job_id)
+                return self._fallback_to_pipeline(user_id, job_id)
             raise
     
     def _execute_action(self, action: str, agent_name: Optional[str], state: EvaluationState) -> Dict:
@@ -948,7 +956,7 @@ class AgenticOrchestrator:
             explanations.append("Evaluation incomplete - using default score")
         
         result = {
-            "candidate_id": state.candidate_id,
+            "user_id": state.user_id,
             "job_id": state.job_id,
             "total_score": total_score,
             "decision": decision,
@@ -1043,7 +1051,7 @@ class AgenticOrchestrator:
         decision = "Selected" if total_score >= 75 else ("Review" if total_score >= 60 else "Not Selected")
         
         return {
-            "candidate_id": candidate_id,
+            "user_id": user_id,
             "job_id": job_id,
             "total_score": total_score,
             "decision": decision,

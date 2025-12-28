@@ -37,15 +37,16 @@ class EvaluationState:
     - Candidate and job data
     """
     
-    def __init__(self, candidate_id: str, job_id: str):
+    def __init__(self, user_id: str, job_id: str):
         """
         Initialize evaluation state.
         
         Args:
-            candidate_id: Candidate MongoDB ID
+            user_id: User MongoDB ID
             job_id: Job MongoDB ID
         """
-        self.candidate_id = candidate_id
+        self.user_id = user_id
+        self.candidate_id = user_id  # Keep for backward compatibility
         self.job_id = job_id
         self.stage = EvaluationStage.INITIALIZED
         
@@ -275,7 +276,8 @@ class EvaluationState:
             Dictionary with state summary
         """
         return {
-            "candidate_id": self.candidate_id,
+            "user_id": self.user_id,
+            "candidate_id": self.candidate_id,  # Keep for backward compatibility
             "job_id": self.job_id,
             "stage": self.stage.value,
             "extracted": self.extracted.copy(),

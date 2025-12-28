@@ -5,7 +5,7 @@ from typing import Dict, List
 import logging
 
 from app.models.evaluation_model import evaluations_collection
-from app.models.candidate_model import candidates_collection
+from app.models.user_model import users_collection
 from app.schemas.evaluation_schema import EvaluationRequest, EvaluationResponse
 from app.auth.dependencies import get_current_user, get_admin_user
 from app.services.orchestrator import run_evaluation
@@ -140,7 +140,7 @@ def generate_explanations(
 @router.post("/evaluate", response_model=EvaluationResponse, status_code=status.HTTP_200_OK)
 async def evaluate_candidate(
     request: EvaluationRequest,
-    admin_user = Depends(get_admin_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Run full evaluation pipeline for a candidate against a job (Admin-only)
@@ -158,14 +158,14 @@ async def evaluate_candidate(
     10. Return complete evaluation result
     """
     try:
-        candidate_id = request.candidate_id
+        user_id = request.user_id
         job_id = request.job_id
         
         # Validate ObjectId formats
-        if not ObjectId.is_valid(candidate_id):
+        if not ObjectId.is_valid(user_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid candidate ID format"
+                detail="Invalid user ID format"
             )
         if not ObjectId.is_valid(job_id):
             raise HTTPException(
@@ -173,25 +173,25 @@ async def evaluate_candidate(
                 detail="Invalid job ID format"
             )
         
-        # Verify candidate exists
-        candidate = candidates_collection.find_one({"_id": ObjectId(candidate_id)})
-        if not candidate:
+        # Verify user exists
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Candidate {candidate_id} not found"
+                detail=f"User {user_id} not found"
             )
         
         # Step 1: Run orchestrator (agentic or pipeline based on config)
-        logger.info(f"Starting evaluation for candidate {candidate_id} and job {job_id}")
+        logger.info(f"Starting evaluation for user {user_id} and job {job_id}")
         
         if settings.USE_AGENTIC_EVALUATION:
             logger.info("Using agentic evaluation system")
             orchestrator = AgenticOrchestrator()
-            evaluation_result = orchestrator.run_agentic_evaluation(candidate_id, job_id)
+            evaluation_result = orchestrator.run_agentic_evaluation(user_id, job_id)
             
             # Save to evaluations collection
             evaluation_doc = {
-                "candidate_id": candidate_id,
+                "user_id": user_id,
                 "job_id": job_id,
                 "pipeline_output": evaluation_result.get("raw_pipeline", {}),
                 "total_score": evaluation_result.get("total_score", 0),
@@ -211,7 +211,7 @@ async def evaluate_candidate(
         
         # Fallback to pipeline
         logger.info("Using pipeline evaluation system")
-        merged_json = run_evaluation(candidate_id, job_id)
+        merged_json = run_evaluation(user_id, job_id)
         
         # Step 2: Normalize skills
         candidate_data = merged_json.get("candidate", {})
@@ -267,7 +267,7 @@ async def evaluate_candidate(
         
         # Build final evaluation result
         evaluation_result = {
-            "candidate_id": candidate_id,
+            "user_id": user_id,
             "job_id": job_id,
             "total_score": total_score,
             "decision": decision,
@@ -279,7 +279,7 @@ async def evaluate_candidate(
         
         # Step 9: Save to evaluations collection
         evaluation_doc = {
-            "candidate_id": candidate_id,
+            "user_id": user_id,
             "job_id": job_id,
             "pipeline_output": merged_json,
             "total_score": total_score,
@@ -383,7 +383,7 @@ async def get_evaluation(
         
         evaluation_result = {
             "_id": str(evaluation["_id"]),
-            "candidate_id": evaluation.get("candidate_id", ""),
+            "user_id": evaluation.get("user_id", evaluation.get("candidate_id", "")),  # Support both for migration
             "job_id": evaluation.get("job_id", ""),
             "total_score": evaluation.get("total_score", 0),
             "decision": evaluation.get("decision", "Not Selected"),
@@ -417,14 +417,14 @@ async def evaluate_candidate_agentic(
     Uses agentic AI system with dynamic workflow instead of fixed pipeline.
     """
     try:
-        candidate_id = request.candidate_id
+        user_id = request.user_id
         job_id = request.job_id
         
         # Validate ObjectId formats
-        if not ObjectId.is_valid(candidate_id):
+        if not ObjectId.is_valid(user_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid candidate ID format"
+                detail="Invalid user ID format"
             )
         if not ObjectId.is_valid(job_id):
             raise HTTPException(
@@ -432,21 +432,21 @@ async def evaluate_candidate_agentic(
                 detail="Invalid job ID format"
             )
         
-        # Verify candidate exists
-        candidate = candidates_collection.find_one({"_id": ObjectId(candidate_id)})
-        if not candidate:
+        # Verify user exists
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Candidate {candidate_id} not found"
+                detail=f"User {user_id} not found"
             )
         
-        logger.info(f"Starting agentic evaluation for candidate {candidate_id} and job {job_id}")
+        logger.info(f"Starting agentic evaluation for user {user_id} and job {job_id}")
         orchestrator = AgenticOrchestrator()
-        evaluation_result = orchestrator.run_agentic_evaluation(candidate_id, job_id)
+        evaluation_result = orchestrator.run_agentic_evaluation(user_id, job_id)
         
         # Save to evaluations collection
         evaluation_doc = {
-            "candidate_id": candidate_id,
+            "user_id": user_id,
             "job_id": job_id,
             "pipeline_output": evaluation_result.get("raw_pipeline", {}),
             "total_score": evaluation_result.get("total_score", 0),

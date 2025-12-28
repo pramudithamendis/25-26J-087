@@ -25,9 +25,13 @@ def register(user: UserCreate):
         hashed = hash_password(user.password)
         # Add default role as 'user', can be changed manually to 'admin' in DB
         result = users_collection.insert_one({
-            "email": user.email, 
+            "email": user.email,
             "password": hashed,
-            "role": "user"  # Default role
+            "role": "user",  # Default role
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "city": user.city,
+            "phone_number": user.phone_number
         })
         logger.info(f"User registered successfully: {user.email}, ID: {result.inserted_id}")
         return {"message": "User registered successfully"}

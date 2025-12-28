@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Any
 
 class EvaluationRequest(BaseModel):
-    candidate_id: str = Field(..., min_length=1)
+    user_id: str = Field(..., min_length=1)
     job_id: str = Field(..., min_length=1)
 
 class DatasetValidationResult(BaseModel):
@@ -19,7 +19,7 @@ class DatasetValidationResult(BaseModel):
 
 class EvaluationResponse(BaseModel):
     _id: str
-    candidate_id: str
+    user_id: str
     job_id: str
     total_score: int
     decision: str

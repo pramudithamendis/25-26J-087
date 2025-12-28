@@ -1,5 +1,5 @@
 from bson import ObjectId
-from app.models.candidate_model import candidates_collection
+from app.models.user_model import users_collection
 from app.models.job_model import jobs_collection
 from app.services.preprocessing import preprocess_pdf
 from app.services.extractors.cv_extractor import extract_from_cv
@@ -11,24 +11,33 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def run_evaluation(candidate_id: str, job_id: str) -> dict:
+def run_evaluation(user_id: str, job_id: str) -> dict:
     """
     Orchestrate the evaluation pipeline
     
-    Loads candidate and job data, preprocesses PDFs, calls extractors,
+    Loads user and job data, preprocesses PDFs, calls extractors,
     and merges all outputs into unified JSON
     
     Args:
-        candidate_id: MongoDB candidate document ID
+        user_id: MongoDB user document ID
         job_id: MongoDB job document ID
     
     Returns:
         Merged JSON with candidate and job_description keys
     """
-    # 1. Load candidate and job from MongoDB
-    candidate = candidates_collection.find_one({"_id": ObjectId(candidate_id)})
-    if not candidate:
-        raise ValueError(f"Candidate {candidate_id} not found")
+    # 1. Load user and job from MongoDB
+    user = users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise ValueError(f"User {user_id} not found")
+    
+    # Map user to candidate structure for compatibility with existing pipeline
+    candidate = {
+        "name": user.get("name", ""),
+        "email": user.get("email", ""),
+        "github_handle": user.get("github_handle", ""),
+        "cv_file_path": user.get("cv_file_path"),
+        "linkedin_file_path": user.get("linkedin_file_path")
+    }
     
     job = jobs_collection.find_one({"_id": ObjectId(job_id)})
     if not job:
