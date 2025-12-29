@@ -23,6 +23,7 @@ from .dataset_guided_agent import DatasetGuidedAgent
 from app.services.normalization import normalize_skills
 from app.services.semantic import build_semantic_features
 from app.services.role_classifier import classify_roles
+from app.services.extractors.cv_extractor import extract_handle_from_url
 
 logger = logging.getLogger(__name__)
 
@@ -78,16 +79,18 @@ class AgenticOrchestrator:
                 "name": user.get("name", ""),
                 "email": user.get("email", ""),
                 "github_handle": user.get("github_handle", ""),
+                "github_url": user.get("github_url", ""),
                 "cv_file_path": user.get("cv_file_path"),
                 "linkedin_file_path": user.get("linkedin_file_path")
             }
             state.candidate_data = candidate
             state.job_data = job
             
-            logger.info(f"Starting agentic evaluation for user {user_id} and job {job_id}")
+            logger.info(f"=== Starting evaluation: candidate={user_id}, job={job_id} ===")
             
-            # Track last action to detect loops
-            last_actions = []
+            # Track action history in state for better loop detection
+            if not hasattr(state, 'action_history'):
+                state.action_history = []
             max_repeat_actions = 3
             
             # Main agentic loop
@@ -109,21 +112,47 @@ class AgenticOrchestrator:
                     
                     logger.info(f"Iteration {state.iteration_count}: Action={action}, Agent={agent_name}")
                     
-                    # Detect loops - if same action repeated too many times, force progression
-                    last_actions.append(action)
-                    if len(last_actions) > max_repeat_actions:
-                        last_actions.pop(0)
+                    # Enhanced loop detection - track action history
+                    state.action_history.append(action)
+                    if len(state.action_history) > 10:  # Keep last 10 actions
+                        state.action_history.pop(0)
                     
-                    if len(last_actions) == max_repeat_actions and len(set(last_actions)) == 1:
-                        logger.warning(f"Detected loop: action '{action}' repeated {max_repeat_actions} times. Forcing progression.")
-                        # Force progression by using default action logic
+                    # Check for loops: same action repeated 3+ times in a row
+                    recent_actions = state.action_history[-max_repeat_actions:] if len(state.action_history) >= max_repeat_actions else state.action_history
+                    if len(recent_actions) >= max_repeat_actions and len(set(recent_actions)) == 1:
+                        logger.warning(f"🚨 Loop detected: action '{action}' repeated {max_repeat_actions} times in a row")
+                        logger.warning(f"   Action history: {state.action_history[-5:]}")
+                        logger.warning(f"   Current state: extracted={state.extracted}, verified={state.verified}")
+                        
+                        # Force progression by using default action logic with context
                         forced_action = self._get_forced_action(state)
                         if forced_action and forced_action != action:
-                            logger.info(f"Forcing action: {forced_action} instead of {action}")
+                            logger.info(f"   Forcing progression: {forced_action} instead of {action}")
                             action = forced_action
                             agent_name = self._get_agent_for_action(action)
                             next_stage = self._get_stage_for_action(action)
-                            last_actions = []  # Reset loop detection
+                            # Don't reset action_history, keep it for tracking
+                        else:
+                            logger.warning(f"   No alternative action found, skipping '{action}' and trying next step")
+                            # Skip this action and try to complete evaluation
+                            if state.aggregated_score:
+                                logger.info("   Evaluation has aggregated score, completing evaluation")
+                                self._complete_evaluation_if_needed(state)
+                                break
+                            # Try to force next logical step
+                            if not state.is_extracted("jd") and state.job_data:
+                                action = "extract_jd"
+                            elif not state.semantic_features:
+                                action = "calculate_similarity"
+                            elif not state.judge_scores:
+                                action = "score_candidate"
+                            elif not state.aggregated_score:
+                                action = "aggregate"
+                            else:
+                                action = "complete"
+                            agent_name = self._get_agent_for_action(action)
+                            next_stage = self._get_stage_for_action(action)
+                            logger.info(f"   Forced next step: {action}")
                     
                     # Update stage
                     if next_stage:
@@ -160,7 +189,17 @@ class AgenticOrchestrator:
             
             # Build final result
             state.end_time = time.time()
-            return self._build_final_result(state)
+            result = self._build_final_result(state)
+            
+            # Log final summary
+            total_score = result.get("total_score", 0)
+            decision = result.get("decision", "Unknown")
+            breakdown = result.get("breakdown", {})
+            logger.info(f"=== Evaluation complete: score={total_score}, decision={decision} ===")
+            logger.info(f"Breakdown: semantic_fit={breakdown.get('semantic_fit', 0)}, role_competency={breakdown.get('role_competency', 0)}, experience_recency={breakdown.get('experience_recency', 0)}, github_evidence={breakdown.get('github_evidence', 0)}, bonus_malus={breakdown.get('bonus_malus', 0)}, skill_penalty={breakdown.get('skill_mismatch_penalty', 0)}, tech_penalty={breakdown.get('technology_mismatch_penalty', 0)}")
+            logger.info(f"Evaluation time: {state.end_time - state.start_time:.2f}s, iterations: {state.iteration_count}")
+            
+            return result
             
         except Exception as e:
             logger.error(f"Agentic evaluation failed: {str(e)}")
@@ -219,6 +258,24 @@ class AgenticOrchestrator:
             github_handle = result["cv_data"].get("github_handle", "")
             if github_handle:
                 state.candidate_data["github_handle"] = github_handle
+                logger.info(f"GitHub handle extracted from CV: {github_handle}")
+            else:
+                # Fallback: Try to extract handle from user.github_url
+                github_url = state.candidate_data.get("github_url", "")
+                if github_url:
+                    extracted_handle = extract_handle_from_url(github_url)
+                    if extracted_handle:
+                        state.candidate_data["github_handle"] = extracted_handle
+                        logger.info(f"GitHub handle extracted from user.github_url: {extracted_handle}")
+                    else:
+                        logger.debug(f"Could not extract handle from github_url: {github_url}")
+                else:
+                    # Final fallback: Use user.github_handle if available
+                    user_handle = state.candidate_data.get("github_handle", "")
+                    if user_handle:
+                        logger.info(f"Using GitHub handle from user.github_handle: {user_handle}")
+                    else:
+                        logger.info("No GitHub handle found in CV, user.github_url, or user.github_handle")
         
         # CRITICAL: Also update LinkedIn state if LinkedIn was extracted together with CV
         # This prevents redundant LinkedIn extraction later
@@ -251,13 +308,37 @@ class AgenticOrchestrator:
     
     def _extract_github(self, state: EvaluationState) -> Dict:
         """Extract GitHub data"""
-        github_handle = (
-            state.cv_data.get("github_handle", "") if state.cv_data
-            else state.candidate_data.get("github_handle", "")
-        )
+        # Priority order: 1) CV extraction, 2) Extract from github_url, 3) Use github_handle
+        github_handle = ""
+        source = ""
+        
+        # First, check CV data
+        if state.cv_data and state.cv_data.get("github_handle", ""):
+            github_handle = state.cv_data.get("github_handle", "").strip()
+            source = "CV"
+        else:
+            # Second, try to extract from github_url
+            github_url = state.candidate_data.get("github_url", "")
+            if github_url:
+                extracted_handle = extract_handle_from_url(github_url)
+                if extracted_handle:
+                    github_handle = extracted_handle
+                    source = "user.github_url"
+                else:
+                    logger.debug(f"Could not extract handle from github_url: {github_url}")
+            
+            # Third, fallback to github_handle from user
+            if not github_handle:
+                user_handle = state.candidate_data.get("github_handle", "")
+                if user_handle:
+                    github_handle = user_handle.strip()
+                    source = "user.github_handle"
         
         if not github_handle:
+            logger.info("No GitHub handle found in CV, user.github_url, or user.github_handle")
             return {"status": "skipped", "reason": "No GitHub handle"}
+        
+        logger.info(f"Using GitHub handle: {github_handle} (source: {source})")
         
         # Use verification agent to get GitHub data
         verification_result = self.verification_agent.verify_github_profile(github_handle)
@@ -285,7 +366,8 @@ class AgenticOrchestrator:
         # Extract JD directly using the tool (not through extraction agent)
         # The extraction agent's execute() method doesn't extract JD, only CV/LinkedIn
         from app.services.agents.tools.extraction_tools import extract_jd_tool
-        jd_result = extract_jd_tool(jd_text)
+        # Pass job_id for caching to ensure same job always extracts same skills
+        jd_result = extract_jd_tool(jd_text, job_id=state.job_id)
         
         if jd_result.get("status") == "success" and jd_result.get("data"):
             jd_data = jd_result["data"]
@@ -379,6 +461,14 @@ class AgenticOrchestrator:
         judge_scores = result.get("judge_scores", [])
         state.set_intermediate_result("judge_scores", result)
         state.judge_scores = judge_scores
+        
+        # Log judge scores for debugging
+        if judge_scores:
+            score_summary = [f"{s.get('criterion', 'N/A')}: {s.get('score', 0)}" for s in judge_scores]
+            avg_score = sum(s.get("score", 0) for s in judge_scores) / len(judge_scores)
+            logger.info(f"Stage: SCORING, Judge scores: {len(judge_scores)} criteria, avg={avg_score:.2f}")
+            logger.info(f"  Individual scores: {score_summary}")
+        
         return result
     
     def _review_scores(self, state: EvaluationState) -> Dict:
@@ -391,6 +481,17 @@ class AgenticOrchestrator:
         critic_scores = result.get("judge_scores", [])
         state.set_intermediate_result("critic_scores", result)
         state.critic_scores = critic_scores
+        
+        # Log if critic adjusted any scores
+        if critic_scores and state.judge_scores:
+            adjustments = []
+            for judge_score, critic_score in zip(state.judge_scores, critic_scores):
+                if judge_score.get("score") != critic_score.get("score"):
+                    adjustments.append(f"{judge_score.get('criterion')}: {judge_score.get('score')}→{critic_score.get('score')}")
+            if adjustments:
+                logger.info(f"Critic adjusted scores: {', '.join(adjustments)}")
+            else:
+                logger.info("Critic reviewed scores: no adjustments made")
         
         # If critic found issues, might need to re-score
         if result.get("flags") or result.get("contradictions"):
@@ -417,6 +518,16 @@ class AgenticOrchestrator:
                 state.normalized_skills = normalize_skills(all_skills)
                 state.set_intermediate_result("normalized_skills", state.normalized_skills)
         
+        # CRITICAL: Ensure GitHub data is available before aggregation
+        if not state.github_data:
+            logger.warning("GitHub data missing, using empty dict (neutral scoring, not penalized)")
+            state.github_data = {}
+        else:
+            repos_count = len(state.github_data.get("repos", []))
+            commits = state.github_data.get("commits_last_12m", 0)
+            prs = state.github_data.get("external_prs_merged", 0)
+            logger.info(f"GitHub data available for aggregation: {repos_count} repos, {commits} commits, {prs} PRs")
+        
         # CRITICAL: Build merged_json before aggregation to ensure all fields are present
         if not state.merged_json:
             logger.warning("merged_json missing, building now before aggregation")
@@ -435,11 +546,16 @@ class AgenticOrchestrator:
         state.set_intermediate_result("aggregated_score", result)
         state.aggregated_score = result
         
-        # Determine decision and generate explanations
+        # Log aggregation results
         total_score = result.get("total_score", 0)
+        breakdown = result.get("breakdown", {})
+        logger.info(f"Stage: AGGREGATING, Total score: {total_score}")
+        logger.info(f"  Breakdown: semantic_fit={breakdown.get('semantic_fit', 0)}, role_competency={breakdown.get('role_competency', 0)}, experience_recency={breakdown.get('experience_recency', 0)}, github_evidence={breakdown.get('github_evidence', 0)}, bonus_malus={breakdown.get('bonus_malus', 0)}, skill_penalty={breakdown.get('skill_mismatch_penalty', 0)}, tech_penalty={breakdown.get('technology_mismatch_penalty', 0)}")
+        
+        # Determine decision and generate explanations
         decision = self._determine_decision(total_score)
         role_predictions = self._classify_roles(state)
-        explanations = self._generate_explanations(state, total_score, result.get("breakdown", {}), role_predictions)
+        explanations = self._generate_explanations(state, total_score, breakdown, role_predictions)
         
         # Store aggregated result but don't set final result yet
         # Dataset validation will happen next if enabled
@@ -577,22 +693,62 @@ class AgenticOrchestrator:
         pass
     
     def _get_forced_action(self, state: EvaluationState) -> Optional[str]:
-        """Get forced action when loop is detected"""
-        # Force progression through workflow
+        """Get forced action when loop is detected - provides better context-aware progression"""
+        # Force progression through workflow with better context
+        # Check what's missing and suggest next logical step
+        
+        # 1. Extract JD if missing
         if not state.is_extracted("jd") and state.job_data:
+            logger.info("Forced action: extract_jd (JD not extracted)")
             return "extract_jd"
+        
+        # 2. Extract CV if missing
+        if not state.is_extracted("cv") and state.candidate_data and state.candidate_data.get("cv_file_path"):
+            logger.info("Forced action: extract_cv (CV not extracted)")
+            return "extract_cv"
+        
+        # 3. Extract GitHub if CV is extracted but GitHub is not
+        if state.is_extracted("cv") and not state.is_extracted("github"):
+            github_handle = None
+            if state.cv_data:
+                github_handle = state.cv_data.get("github_handle", "")
+            if not github_handle and state.candidate_data:
+                github_handle = state.candidate_data.get("github_handle", "") or state.candidate_data.get("github_url", "")
+            if github_handle:
+                logger.info("Forced action: extract_github (GitHub handle available but not extracted)")
+                return "extract_github"
+        
+        # 4. Calculate similarity if CV and JD are extracted but similarity not calculated
         if state.is_extracted("cv") and state.is_extracted("jd") and not state.semantic_features:
+            logger.info("Forced action: calculate_similarity (CV and JD extracted but similarity not calculated)")
             return "calculate_similarity"
+        
+        # 5. Score candidate if similarity is calculated but judge scores not available
         if state.semantic_features and not state.judge_scores:
+            logger.info("Forced action: score_candidate (Similarity calculated but judge scores not available)")
             return "score_candidate"
+        
+        # 6. Review scores if judge scores available but critic scores not
         if state.judge_scores and not state.critic_scores:
+            logger.info("Forced action: review_scores (Judge scores available but critic scores not)")
             return "review_scores"
+        
+        # 7. Aggregate if critic scores available but aggregated score not
         if state.critic_scores and not state.aggregated_score:
+            logger.info("Forced action: aggregate (Critic scores available but aggregated score not)")
             return "aggregate"
+        
+        # 8. Validate with dataset if aggregated score available but dataset validation not done
         if state.aggregated_score and not state.dataset_validation and settings.DATASET_VALIDATION_ENABLED:
+            logger.info("Forced action: validate_with_dataset (Aggregated score available but dataset validation not done)")
             return "validate_with_dataset"
+        
+        # 9. Complete if aggregated score available
         if state.aggregated_score:
+            logger.info("Forced action: complete (Aggregated score available, evaluation can be completed)")
             return "complete"
+        
+        logger.warning("No forced action found - evaluation may be stuck")
         return None
     
     def _get_agent_for_action(self, action: str) -> Optional[str]:
@@ -702,12 +858,17 @@ class AgenticOrchestrator:
             all_education.extend(state.linkedin_data.get("education", []))
         all_education = list(set(all_education))
         
+        # CRITICAL: Ensure GitHub data is included in merged_json
+        github_data = state.github_data or {}
+        if not github_data:
+            logger.info("No GitHub data in state, using empty dict for merged_json (neutral scoring)")
+        
         candidate = {
             "skills_raw": all_skills,
             "skills_canonical": state.normalized_skills or [],
             "experience": all_experience,
             "education": all_education,
-            "github": state.github_data or {},
+            "github": github_data,  # Always include, even if empty
             "cv_data": state.cv_data or {},
             "linkedin_data": state.linkedin_data or {}
         }
@@ -797,34 +958,79 @@ class AgenticOrchestrator:
         """Build candidate profile text for semantic analysis"""
         parts = []
         
+        # Add skills (both raw and canonical for completeness)
         if state.normalized_skills:
-            parts.append("Skills: " + ", ".join(state.normalized_skills))
+            skills_text = ", ".join(state.normalized_skills[:30])  # Limit to first 30 for token efficiency
+            parts.append(f"Skills: {skills_text}")
+        else:
+            # Fallback to raw skills if normalized not available
+            all_skills = []
+            if state.cv_data:
+                all_skills.extend(state.cv_data.get("skills_raw", []))
+            if state.linkedin_data:
+                all_skills.extend(state.linkedin_data.get("skills_raw", []))
+            if all_skills:
+                skills_text = ", ".join(all_skills[:30])
+                parts.append(f"Skills: {skills_text}")
         
+        # Add experience with highlights
         experience = []
         if state.cv_data:
             experience = state.cv_data.get("experience", [])
         if not experience and state.linkedin_data:
             experience = state.linkedin_data.get("experience", [])
         
-        for exp in experience:
+        for exp in experience[:3]:  # Limit to first 3 experiences
             title = exp.get("title", "")
             company = exp.get("company", "")
             highlights = exp.get("highlights", [])
             if title:
                 parts.append(f"{title} at {company}")
             if highlights:
-                parts.extend(highlights[:3])
+                parts.extend(highlights[:2])  # Limit to 2 highlights per experience
         
-        if state.normalized_skills:
-            education = []
-            if state.cv_data:
-                education = state.cv_data.get("education", [])
-            if state.linkedin_data:
-                education.extend(state.linkedin_data.get("education", []))
-            if education:
-                parts.append("Education: " + ", ".join(education[:3]))
+        # Add education
+        education = []
+        if state.cv_data:
+            education = state.cv_data.get("education", [])
+        if state.linkedin_data:
+            education.extend(state.linkedin_data.get("education", []))
+        if education:
+            # Convert education to strings if needed
+            edu_strings = []
+            for edu in education[:2]:  # Limit to first 2 education entries
+                if isinstance(edu, str):
+                    edu_strings.append(edu)
+                elif isinstance(edu, dict):
+                    # Format education dict
+                    degree = edu.get("degree", "")
+                    institution = edu.get("institution", "")
+                    if degree or institution:
+                        edu_strings.append(f"{degree} from {institution}".strip())
+                else:
+                    edu_strings.append(str(edu))
+            if edu_strings:
+                parts.append("Education: " + ", ".join(edu_strings))
         
-        return " ".join(parts)
+        candidate_block = " ".join(parts)
+        
+        # Validate minimum length
+        if len(candidate_block) < 200:
+            logger.warning(f"Candidate block too short ({len(candidate_block)} chars), may affect semantic matching")
+            # Try to rebuild with more data if available
+            if len(candidate_block) < 100:
+                logger.warning("Candidate block very short, attempting to include more data")
+                # Add more experience highlights if available
+                if experience and len(experience) > 3:
+                    for exp in experience[3:5]:
+                        highlights = exp.get("highlights", [])
+                        if highlights:
+                            parts.extend(highlights[:1])
+                candidate_block = " ".join(parts)
+                logger.info(f"Rebuilt candidate block: {len(candidate_block)} chars")
+        
+        logger.info(f"Built candidate profile block: {len(candidate_block)} characters")
+        return candidate_block
     
     def _build_github_summary(self, github_info: Dict) -> str:
         """Build GitHub summary text"""
@@ -847,7 +1053,7 @@ class AgenticOrchestrator:
     
     def _determine_decision(self, total_score: int) -> str:
         """Determine decision based on score"""
-        if total_score >= 75:
+        if total_score >= 70:
             return "Selected"
         elif total_score >= 60:
             return "Review"
@@ -927,7 +1133,7 @@ class AgenticOrchestrator:
             explanations.append("Active GitHub profile with relevant contributions")
         
         # Score context
-        if total_score >= 75:
+        if total_score >= 70:
             explanations.append("High overall score - strong candidate")
         elif total_score >= 60:
             explanations.append("Moderate score - requires review")
@@ -1048,7 +1254,7 @@ class AgenticOrchestrator:
         role_predictions = classify_roles(skills_canonical, jd_info)
         
         # Decision
-        decision = "Selected" if total_score >= 75 else ("Review" if total_score >= 60 else "Not Selected")
+        decision = "Selected" if total_score >= 70 else ("Review" if total_score >= 60 else "Not Selected")
         
         return {
             "user_id": user_id,

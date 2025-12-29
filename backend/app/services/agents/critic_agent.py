@@ -29,18 +29,20 @@ class CriticAgent(BaseAgent):
     def __init__(self):
         """Initialize critic agent"""
         system_prompt = """You are a critic agent for CV evaluation system. Your role is to:
-1. Review judge scores for accuracy
+1. Review judge scores for accuracy (works with any number of criteria, role-agnostic)
 2. Verify that evidence claims actually exist in the source text (CV/LinkedIn)
 3. Check for contradictions between different data sources
 4. Adjust scores if evidence is weak or missing
 5. Flag inconsistencies for human review
 
 Always be thorough and critical. If evidence doesn't support a score, adjust it.
+Works for all IT roles (Data Analyst, Software Engineer, UI/UX, DevOps, etc.) - no role-specific assumptions.
+
 Respond with JSON in this format:
 {
   "judge_scores": [
     {
-      "criterion": "APIs",
+      "criterion": "Criterion Name",
       "score": 4,
       "original_score": 5,
       "evidence": "Verified evidence from source",

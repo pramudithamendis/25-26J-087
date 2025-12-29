@@ -1,8 +1,8 @@
 """
 Judge Agent for CV evaluation.
 
-Scores candidate on 6 criteria (APIs, Databases, Microservices, Testing/CI,
-Cloud/DevOps, Impact) with agentic reasoning, reusing judge.py logic.
+Scores candidate on role-specific criteria with agentic reasoning, reusing judge.py logic.
+Uses dynamic criteria generation based on job role (Data Analyst, Software Engineer, UI/UX, etc.).
 """
 
 from typing import Dict, List, Optional
@@ -11,6 +11,7 @@ import json
 from .base_agent import BaseAgent
 from .state import EvaluationState
 from app.services.judge import build_judge_prompt, judge_with_openai, judge_candidate_heuristic
+from app.services.role_criteria_generator import generate_role_criteria
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -18,69 +19,89 @@ logger = logging.getLogger(__name__)
 
 class JudgeAgent(BaseAgent):
     """
-    Judge agent that scores candidates on criteria.
+    Judge agent that scores candidates on role-specific criteria.
     
     Uses existing judge.py logic but adds agentic reasoning for:
     - Requesting additional information if evidence insufficient
     - Adjusting scores based on verification results
     - Providing detailed evidence for each score
+    - Using role-specific criteria (dynamically generated)
     """
     
     def __init__(self):
-        """Initialize judge agent"""
-        system_prompt = """You are a judge agent for CV evaluation system. Your role is to:
-1. Score candidates on 6 criteria (0-5 scale):
-   - APIs: REST API design, HTTP endpoints, API architecture, API security
-   - Databases: SQL/NoSQL knowledge, database design, query optimization, data modeling
-   - Microservices: Containerization (Docker), orchestration (Kubernetes), service architecture, distributed systems
-   - Testing/CI: Unit testing, integration testing, CI/CD pipelines, test automation, quality assurance
-   - Cloud/DevOps: AWS/Azure/GCP, infrastructure as code, monitoring, deployment automation
-   - Impact: Quantifiable achievements, metrics, business impact, performance improvements
-
-2. Provide specific evidence for each score
-3. Request additional information if evidence is insufficient
-4. Adjust scores based on verification results
-
-Always respond with JSON in this format:
-{
-  "judge_scores": [
-    {
-      "criterion": "APIs",
-      "score": 4,
-      "evidence": "Built REST APIs with Spring Boot at Company X, reduced API latency by 30%",
-      "confidence": 0.9
-    }
-  ],
-  "needs_more_info": ["criterion_name"] if any,
-  "reasoning": "Overall assessment reasoning"
-}"""
-        
+        """Initialize judge agent with dynamic system prompt"""
+        # System prompt will be built dynamically based on role
         super().__init__(
             name="JudgeAgent",
-            system_prompt=system_prompt,
+            system_prompt="",  # Will be set dynamically
             temperature=0.3,  # Same as original judge
             max_tokens=2000
         )
     
-    def evaluate_criteria(self, candidate: Dict, job_desc: Dict) -> Dict:
+    def _build_system_prompt(self, role_criteria: Dict) -> str:
+        """Build dynamic system prompt based on role criteria"""
+        criteria_list = role_criteria.get("criteria", [])
+        role_category = role_criteria.get("role_category", "IT Professional")
+        
+        criteria_desc = "\n".join([
+            f"   - {c.get('criterion', '')}: {c.get('description', '')}"
+            for c in criteria_list
+        ])
+        
+        return f"""You are a judge agent for CV evaluation system. Your role is to:
+1. Score candidates on {len(criteria_list)} criteria (0-5 scale) for {role_category} role:
+{criteria_desc}
+
+2. Provide specific evidence for each score
+3. Request additional information if evidence is insufficient
+4. Adjust scores based on verification results
+5. Evaluate based on role-specific requirements, not generic software engineering criteria
+
+Always respond with JSON in this format:
+{{
+  "judge_scores": [
+    {{
+      "criterion": "Criterion Name",
+      "score": 4,
+      "evidence": "Specific evidence from candidate profile",
+      "confidence": 0.9
+    }}
+  ],
+  "needs_more_info": ["criterion_name"] if any,
+  "reasoning": "Overall assessment reasoning"
+}}
+
+IMPORTANT: You must score ALL {len(criteria_list)} criteria listed above. Include all criteria in your response.
+"""
+    
+    def evaluate_criteria(self, candidate: Dict, job_desc: Dict, role_criteria: Optional[Dict] = None) -> Dict:
         """
-        Evaluate candidate on criteria.
+        Evaluate candidate on role-specific criteria.
         
         Args:
             candidate: Candidate data
             job_desc: Job description data
+            role_criteria: Optional pre-generated role criteria (if None, will generate)
         
         Returns:
             Dictionary with judge_scores
         """
-        # Use existing judge prompt builder
-        prompt, framework_mismatch_detected, mismatch_details = build_judge_prompt(candidate, job_desc)
+        # Generate role criteria if not provided
+        if role_criteria is None:
+            role_criteria = generate_role_criteria(job_desc, candidate)
+        
+        # Update system prompt dynamically based on role
+        self.system_prompt = self._build_system_prompt(role_criteria)
+        
+        # Use existing judge prompt builder with role criteria
+        prompt, framework_mismatch_detected, mismatch_details, role_criteria = build_judge_prompt(candidate, job_desc, role_criteria)
         
         # Try OpenAI first
         if settings.LLM_PROVIDER == "openai" and settings.OPENAI_API_KEY:
-            result = judge_with_openai(prompt, candidate, job_desc, framework_mismatch_detected)
+            result = judge_with_openai(prompt, candidate, job_desc, framework_mismatch_detected, role_criteria)
             if result:
-                logger.info("Using OpenAI LLM for candidate judgment")
+                role_category = role_criteria.get("role_category", "IT Professional")
+                logger.info(f"Using OpenAI LLM for candidate judgment ({role_category} role)")
                 return result
         
         # Fallback to heuristic
@@ -89,7 +110,7 @@ Always respond with JSON in this format:
             "candidate": candidate,
             "job_description": job_desc
         }
-        return judge_candidate_heuristic(merged_json)
+        return judge_candidate_heuristic(merged_json, role_criteria)
     
     def request_additional_info(self, criterion: str, current_evidence: Dict) -> str:
         """
@@ -205,8 +226,11 @@ Respond with a brief description of what to look for."""
         if job_desc:
             logger.debug(f"Judge agent using JD data: title={job_desc.get('title', 'N/A')}, must_have count={len(job_desc.get('must_have', []))}, source={'state.jd_data' if isinstance(state, EvaluationState) and state.jd_data else 'fallback'}")
         
-        # Evaluate criteria
-        result = self.evaluate_criteria(candidate, job_desc)
+        # Generate role criteria
+        role_criteria = generate_role_criteria(job_desc, candidate)
+        
+        # Evaluate criteria with role-specific criteria
+        result = self.evaluate_criteria(candidate, job_desc, role_criteria)
         
         # Add agentic reasoning if needed
         if isinstance(state, EvaluationState):

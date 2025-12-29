@@ -4,7 +4,7 @@ Extraction tools for agents.
 Wraps existing CV/LinkedIn/JD extractors to provide tool interface.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import logging
 from app.services.preprocessing import preprocess_pdf
 from app.services.extractors.cv_extractor_openai import extract_from_cv_openai
@@ -100,19 +100,20 @@ def extract_linkedin_tool(linkedin_file_path: str) -> Dict[str, Any]:
         }
 
 
-def extract_jd_tool(jd_text: str) -> Dict[str, Any]:
+def extract_jd_tool(jd_text: str, job_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Extract structured data from job description text.
     
     Args:
         jd_text: Job description text
+        job_id: Optional job ID for caching (ensures same job always extracts same skills)
     
     Returns:
         Dictionary with title, must_have, nice_to_have, jd_text, min_years
     """
     try:
         logger.info("Extracting job description")
-        result = extract_from_jd(jd_text)
+        result = extract_from_jd(jd_text, job_id=job_id)
         # Ensure jd_text is preserved in the result
         if "jd_text" not in result:
             result["jd_text"] = jd_text

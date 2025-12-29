@@ -75,7 +75,7 @@ def build_github_summary(github_info: Dict) -> str:
 
 def determine_decision(total_score: int) -> str:
     """Determine decision based on score thresholds"""
-    if total_score >= 75:
+    if total_score >= 70:
         return "Selected"
     elif total_score >= 60:
         return "Review"
@@ -127,7 +127,7 @@ def generate_explanations(
         explanations.append("Active GitHub profile with relevant contributions")
     
     # Add score context
-    if total_score >= 75:
+    if total_score >= 70:
         explanations.append("High overall score - strong candidate")
     elif total_score >= 60:
         explanations.append("Moderate score - requires review")

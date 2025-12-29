@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from app.config import settings
 import logging
 import json
@@ -8,6 +8,7 @@ from openai import OpenAI
 logger = logging.getLogger(__name__)
 
 _openai_client = None
+_jd_cache = {}  # Cache: {job_id: extracted_data} - ensures same job always extracts same skills
 
 def get_openai_client():
     """Get or create OpenAI client"""
@@ -20,7 +21,7 @@ def get_openai_client():
             logger.error(f"Failed to initialize OpenAI client: {str(e)}")
     return _openai_client
 
-def extract_from_jd_openai(jd_text: str) -> Dict:
+def extract_from_jd_openai(jd_text: str, job_id: Optional[str] = None) -> Dict:
     """
     Extract structured data from job description using OpenAI
     
@@ -29,19 +30,31 @@ def extract_from_jd_openai(jd_text: str) -> Dict:
     
     Args:
         jd_text: Full job description text
+        job_id: Optional job ID for caching (ensures same job always extracts same skills)
     
     Returns:
         Dictionary with title, must_have, nice_to_have, min_years, jd_text
     """
+    # Check cache first if job_id provided
+    if job_id and job_id in _jd_cache:
+        logger.info(f"✅ Using cached JD extraction for job {job_id} (ensures consistency)")
+        cached_result = _jd_cache[job_id]
+        logger.info(f"   Cached must-have skills: {len(cached_result.get('must_have', []))} - {cached_result.get('must_have', [])}")
+        return cached_result.copy()  # Return copy to prevent mutation
+    
     if not jd_text or not jd_text.strip():
         logger.warning("No text found in JD")
-        return {
+        result = {
             "title": "",
             "must_have": [],
             "nice_to_have": [],
             "min_years": 0,
             "jd_text": jd_text
         }
+        # Cache even empty results
+        if job_id:
+            _jd_cache[job_id] = result.copy()
+        return result
     
     # Fix common data issues
     jd_text = jd_text.strip()
@@ -79,22 +92,38 @@ Extract the following information and return ONLY valid JSON:
    Include any qualifiers like "Entry-Level", "Senior", "Junior" if mentioned.
    Return the full title as a string (e.g., "Entry-Level Mobile Application Developer (Flutter)").
 
-2. MUST_HAVE: Extract ALL required/mandatory skills and qualifications. Look for sections like:
+2. MUST_HAVE: Extract ONLY TECHNICAL SKILLS that are required/mandatory. Look for sections like:
    - "Required Skills"
    - "Must have"
    - "Essential"
    - "Prerequisites"
    - "Requirements"
-   Extract ALL technologies, tools, frameworks, programming languages, and technical skills mentioned as required.
-   Return as a list of individual skill strings (e.g., ["Flutter", "Dart", "Firebase", "REST API", "Git"]).
-   Include both specific technologies and general concepts (e.g., "mobile UI/UX", "state management").
+   
+   CRITICAL: Only include TECHNICAL SKILLS in MUST_HAVE:
+   - Programming languages (SQL, Python, Java, JavaScript, etc.)
+   - Frameworks and tools (Power BI, React, Flutter, AWS, Docker, etc.)
+   - Technical concepts (REST APIs, databases, microservices, etc.)
+   
+   DO NOT include in MUST_HAVE:
+   - Soft skills (communication skills, teamwork, leadership) → Move to NICE_TO_HAVE
+   - Work arrangements (remote work, on-site, hybrid) → Move to NICE_TO_HAVE
+   - General concepts without technical specificity (data insights, business acumen) → Move to NICE_TO_HAVE
+   
+   Return as a list of individual technical skill strings (e.g., ["SQL", "Power BI", "Python", "REST API", "Git"]).
 
-3. NICE_TO_HAVE: Extract all preferred/bonus skills. Look for sections like:
+3. NICE_TO_HAVE: Extract all preferred/bonus skills, soft skills, work arrangements, and general concepts. Look for sections like:
    - "Nice to have"
    - "Preferred"
    - "Bonus"
    - "Optional"
    - "Plus"
+   
+   Include in NICE_TO_HAVE:
+   - Additional technical skills that are preferred but not required
+   - Soft skills (communication skills, teamwork, problem-solving)
+   - Work arrangements (remote work, on-site, hybrid)
+   - General concepts (data insights, business acumen, agile methodology)
+   
    Return as a list of individual skill strings.
 
 4. MIN_YEARS: Extract minimum years of experience required. Look for patterns like:
@@ -112,11 +141,12 @@ Return the response in this EXACT JSON format (no markdown, no code blocks):
 }}
 
 Important:
-- Extract ALL skills mentioned in required sections, don't miss any technologies
+- For MUST_HAVE: ONLY include TECHNICAL SKILLS (programming languages, tools, frameworks). Exclude soft skills, work arrangements, and vague concepts.
 - Extract the exact job title as written (including qualifiers and parentheses)
-- For skills, extract both specific technologies (e.g., "Flutter", "Dart") and general concepts (e.g., "mobile app development", "RESTful APIs")
+- For technical skills, extract specific technologies (e.g., "SQL", "Power BI", "Python", "REST API")
+- Soft skills, work arrangements, and general concepts should go in NICE_TO_HAVE, not MUST_HAVE
 - If a field is not found, use empty string "" or empty array [] or 0
-- Be comprehensive - extract all relevant skills and requirements
+- Be comprehensive but precise - distinguish between technical requirements and soft skills/work arrangements
 - Don't rely on predefined keyword lists - extract what's actually mentioned in the JD
 """
 
@@ -133,7 +163,7 @@ Important:
                     "content": prompt
                 }
             ],
-            temperature=0.1,  # Low temperature for consistent extraction
+            temperature=0.0,  # Zero temperature for maximum determinism (with caching ensures perfect consistency)
             response_format={"type": "json_object"},
             max_tokens=4000
         )
@@ -164,6 +194,25 @@ Important:
         nice_to_have = [s.strip() for s in nice_to_have if s and s.strip()]
         nice_to_have = list(dict.fromkeys(nice_to_have))  # Remove duplicates
         
+        # Post-processing: Filter non-technical skills from must_have
+        from app.services.skill_categorizer import categorize_skills_batch
+        
+        # Categorize must_have skills
+        must_have_categorized = categorize_skills_batch(must_have)
+        must_have_technical = must_have_categorized["technical"]
+        must_have_non_technical = (
+            must_have_categorized["soft"] + 
+            must_have_categorized["work_arrangement"] + 
+            must_have_categorized["concept"]
+        )
+        
+        # Move non-technical skills from must_have to nice_to_have
+        if must_have_non_technical:
+            logger.info(f"Moving {len(must_have_non_technical)} non-technical skills from must_have to nice_to_have: {must_have_non_technical}")
+            nice_to_have.extend(must_have_non_technical)
+            nice_to_have = list(dict.fromkeys(nice_to_have))  # Remove duplicates
+            must_have = must_have_technical  # Keep only technical skills in must_have
+        
         # Validate min_years
         try:
             min_years = int(min_years) if min_years else 0
@@ -173,13 +222,20 @@ Important:
         
         logger.info(f"OpenAI JD extraction successful: title='{title}', {len(must_have)} must-have skills, {len(nice_to_have)} nice-to-have skills, min_years={min_years}")
         
-        return {
+        result = {
             "title": title,
             "must_have": must_have,
             "nice_to_have": nice_to_have,
             "min_years": min_years,
             "jd_text": jd_text  # Preserve original JD text for semantic analysis
         }
+        
+        # Cache result if job_id provided
+        if job_id:
+            _jd_cache[job_id] = result.copy()
+            logger.info(f"✅ Cached JD extraction for job {job_id}: {len(must_have)} must-have skills - {must_have}")
+        
+        return result
     
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON from OpenAI response: {str(e)}")

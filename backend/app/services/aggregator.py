@@ -1,6 +1,7 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple, Optional
 from datetime import datetime, timedelta
 from app.services.technology_mismatch_detector import detect_technology_mismatch
+from app.services.semantic import get_embeddings, cosine_similarity
 import re
 import logging
 
@@ -13,6 +14,35 @@ def aggregate_scores(
     experience_info: List[Dict],
     merged_json: Dict
 ) -> Dict:
+    """
+    Aggregate all scores into a 0-100 total score
+    
+    Includes validation and error recovery for edge cases.
+    """
+    # Validate inputs
+    if not semantic_features:
+        logger.warning("semantic_features is empty, using defaults")
+        semantic_features = {"sim_profile_to_jd": 0.0, "sim_github_to_jd": 0.0}
+    
+    if not judge_scores:
+        logger.warning("judge_scores is empty, using defaults")
+        judge_scores = {"judge_scores": []}
+    
+    if not merged_json:
+        logger.warning("merged_json is empty, using defaults")
+        merged_json = {"candidate": {}, "job_description": {}}
+    
+    # Validate candidate data
+    candidate = merged_json.get("candidate", {})
+    candidate_skills = candidate.get("skills_raw", []) + candidate.get("skills_canonical", [])
+    if not candidate_skills:
+        logger.warning("No candidate skills - will result in low score (neutral, not error)")
+    
+    # Validate job description
+    job_desc = merged_json.get("job_description", {})
+    if not job_desc.get("must_have"):
+        logger.warning("No must-have skills in JD - cannot evaluate properly (using nice-to-have or empty)")
+    
     """
     Aggregate all scores into a 0-100 total score
     
@@ -70,12 +100,28 @@ def aggregate_scores(
     
     # 2. Role competency (30 pts max)
     # Average judge scores and scale to 30
+    # Handles variable criteria count (4-8 criteria) - scales consistently
+    # CRITICAL: Use original scores (not adjusted by critic) for consistent calculation
     scores_list = judge_scores.get("judge_scores", [])
     if scores_list:
-        avg_score = sum(score["score"] for score in scores_list) / len(scores_list)
-        role_competency = (avg_score / 5.0) * 30  # Scale from 0-5 to 0-30
+        # Extract scores, handling both original format and critic-reviewed format
+        score_values = []
+        criteria_names = []
+        for score_entry in scores_list:
+            # Handle both formats: {"score": X} or {"score": X, "original_score": Y}
+            score = score_entry.get("score", 0)
+            # If this is a critic-reviewed score with original_score, use original for consistency
+            # But for now, use the score as-is since we're using judge_scores (not critic_scores)
+            score_values.append(score)
+            criteria_names.append(score_entry.get("criterion", "N/A"))
+        
+        avg_score = sum(score_values) / len(score_values) if score_values else 0
+        role_competency = (avg_score / 5.0) * 30  # Scale from 0-5 to 0-30 (works for any criteria count)
+        logger.info(f"Role competency: {len(scores_list)} criteria ({', '.join(criteria_names[:5])}{'...' if len(criteria_names) > 5 else ''}), avg={avg_score:.2f}, scaled={role_competency:.1f}")
+        logger.debug(f"  Individual scores: {[f'{name}: {val}' for name, val in zip(criteria_names, score_values)]}")
     else:
         role_competency = 0
+        logger.warning("No judge scores available for role competency calculation")
     role_competency = round(role_competency, 1)
     
     # 3. Experience recency (15 pts max)
@@ -97,27 +143,56 @@ def aggregate_scores(
     # 7. Technology mismatch penalty (already calculated above for semantic fit adjustment)
     # The penalty is applied both to semantic fit (reduction) and as a direct penalty
     
-    # Calculate total score
-    total_score = semantic_fit + role_competency + experience_recency + github_evidence + bonus_malus - skill_mismatch_penalty - technology_mismatch_penalty
+    # Build breakdown first
+    breakdown = {
+        "semantic_fit": semantic_fit,
+        "role_competency": role_competency,
+        "experience_recency": experience_recency,
+        "github_evidence": github_evidence,
+        "bonus_malus": bonus_malus,
+        "skill_mismatch_penalty": round(skill_mismatch_penalty, 1),
+        "technology_mismatch_penalty": round(technology_mismatch_penalty, 1)
+    }
+    
+    # Calculate total score from breakdown components
+    calculated_total = (
+        breakdown["semantic_fit"] +
+        breakdown["role_competency"] +
+        breakdown["experience_recency"] +
+        breakdown["github_evidence"] +
+        breakdown["bonus_malus"] -
+        breakdown["skill_mismatch_penalty"] -
+        breakdown["technology_mismatch_penalty"]
+    )
     
     # Log calculation breakdown for debugging
-    logger.info(f"Score calculation: {semantic_fit} + {role_competency} + {experience_recency} + {github_evidence} + {bonus_malus} - {skill_mismatch_penalty} - {technology_mismatch_penalty} = {total_score}")
+    logger.info(f"Score calculation: {semantic_fit} + {role_competency} + {experience_recency} + {github_evidence} + {bonus_malus} - {skill_mismatch_penalty} - {technology_mismatch_penalty} = {calculated_total}")
     
-    # Clamp to 0-100
-    total_score = max(0, min(100, round(total_score)))
-    logger.info(f"Final clamped score: {total_score}")
+    # Clamp to 0-100 and round to integer
+    total_score = max(0, min(100, int(round(calculated_total))))
+    
+    # Validate final score matches breakdown sum (allow small floating point differences)
+    if abs(total_score - calculated_total) > 1.0:
+        logger.warning(f"Score mismatch detected: total={total_score}, calculated={calculated_total:.2f}, difference={abs(total_score - calculated_total):.2f}")
+        logger.warning(f"  Using calculated value: {int(round(calculated_total))}")
+        total_score = int(round(calculated_total))
+    
+    logger.info(f"Final score: {total_score} (from breakdown components)")
+    
+    # Final validation: ensure breakdown components are valid
+    validated_breakdown = {}
+    for key, value in breakdown.items():
+        if isinstance(value, (int, float)):
+            if key.endswith("_penalty"):
+                validated_breakdown[key] = round(max(0, min(30, value)), 1)
+            else:
+                validated_breakdown[key] = round(max(0, min(100, value)), 1)
+        else:
+            validated_breakdown[key] = value
     
     return {
         "total_score": total_score,
-        "breakdown": {
-            "semantic_fit": semantic_fit,
-            "role_competency": role_competency,
-            "experience_recency": experience_recency,
-            "github_evidence": github_evidence,
-            "bonus_malus": bonus_malus,
-            "skill_mismatch_penalty": round(skill_mismatch_penalty, 1),
-            "technology_mismatch_penalty": round(technology_mismatch_penalty, 1)
-        }
+        "breakdown": validated_breakdown
     }
 
 def calculate_experience_recency(experience: List[Dict]) -> float:
@@ -287,6 +362,273 @@ def calculate_bonus_malus(merged_json: Dict) -> float:
     logger.info(f"Bonus/Malus final score: {score} (clamped to ±10)")
     return round(score, 1)
 
+def match_skill_semantically(required_skill: str, candidate_skills: List[str], threshold: float = 0.7) -> Tuple[bool, Optional[str], float]:
+    """
+    Match a required skill to candidate skills using semantic similarity (embeddings).
+    
+    Useful for conceptual skills like "data analysis" matching "Data Analytics & Visualization".
+    
+    Args:
+        required_skill: The required skill to match
+        candidate_skills: List of candidate skills to search
+        threshold: Minimum similarity score (0-1) to consider a match
+    
+    Returns:
+        Tuple of (found, matched_skill, similarity_score)
+        - found: True if a match was found above threshold
+        - matched_skill: The candidate skill that matched (or None)
+        - similarity_score: The similarity score (0-1)
+    """
+    if not required_skill or not candidate_skills:
+        return (False, None, 0.0)
+    
+    try:
+        # Generate embedding for required skill
+        required_embedding = get_embeddings(required_skill)
+        
+        if required_embedding is None or len(required_embedding) == 0:
+            return (False, None, 0.0)
+        
+        best_match = None
+        best_similarity = 0.0
+        
+        # Compare with each candidate skill
+        for candidate_skill in candidate_skills:
+            if not candidate_skill or not candidate_skill.strip():
+                continue
+            
+            try:
+                candidate_embedding = get_embeddings(candidate_skill)
+                if candidate_embedding is None or len(candidate_embedding) == 0:
+                    continue
+                
+                similarity = cosine_similarity(required_embedding, candidate_embedding)
+                
+                if similarity > best_similarity:
+                    best_similarity = similarity
+                    best_match = candidate_skill
+            except Exception as e:
+                logger.debug(f"Error computing similarity for '{candidate_skill}': {str(e)}")
+                continue
+        
+        if best_similarity >= threshold:
+            logger.debug(f"Semantic match: '{required_skill}' ~ '{best_match}' (similarity: {best_similarity:.3f})")
+            return (True, best_match, best_similarity)
+        else:
+            return (False, best_match, best_similarity)
+            
+    except Exception as e:
+        logger.warning(f"Error in semantic skill matching for '{required_skill}': {str(e)}")
+        return (False, None, 0.0)
+
+def has_required_skills(
+    candidate_skills: List[str], 
+    required_skills: List[str],
+    skill_types: Optional[Dict[str, str]] = None,
+    use_semantic_matching: bool = True
+) -> Tuple[bool, Dict]:
+    """
+    Check if candidate has all required skills (case-insensitive, normalized).
+    
+    This function normalizes both candidate and required skills and checks for presence.
+    Handles variations (e.g., "Power BI" matches "Power Bi", "Powerbi").
+    Uses semantic matching for conceptual skills.
+    
+    Args:
+        candidate_skills: List of candidate skill strings (can be raw or canonical)
+        required_skills: List of required skill strings from job description
+        skill_types: Optional dict mapping skill names to their types (technical, soft, concept, etc.)
+        use_semantic_matching: Whether to use semantic matching for conceptual skills
+    
+    Returns:
+        Tuple of (has_all_skills, details_dict)
+        details_dict contains: found_skills, missing_skills, match_methods
+    """
+    if not required_skills:
+        return (True, {
+            "found_skills": [],
+            "missing_skills": [],
+            "match_methods": {}
+        })
+    
+    if not candidate_skills:
+        logger.warning("Candidate has no skills - missing all required skills")
+        return (False, {
+            "found_skills": [],
+            "missing_skills": required_skills,
+            "match_methods": {}
+        })
+    
+    # Import skill categorizer
+    from app.services.skill_categorizer import categorize_skill
+    
+    # Normalize all skills to lowercase for comparison
+    candidate_normalized = [s.lower().strip() for s in candidate_skills if s and s.strip()]
+    required_normalized = [s.lower().strip() for s in required_skills if s and s.strip()]
+    
+    # Keep original case for semantic matching (more accurate)
+    candidate_original = [s.strip() for s in candidate_skills if s and s.strip()]
+    
+    found_skills = []
+    missing_skills = []
+    match_methods = {}  # Track how each skill was matched
+    
+    # Check each required skill
+    for idx, required_skill in enumerate(required_normalized):
+        required_original = required_skills[idx] if idx < len(required_skills) else required_skill
+        found = False
+        matched_candidate_skill = None
+        match_method = "none"
+        
+        # Determine skill type
+        skill_type = None
+        if skill_types and required_original in skill_types:
+            skill_type = skill_types[required_original]
+        else:
+            skill_type = categorize_skill(required_original)
+        
+        # CRITICAL: For single-character skills (like "R", "C"), use strict matching
+        # Single characters are almost always specific technologies and should match exactly
+        # Allow matching "R" to "R Programming" or "R Language" but NOT to "relational" or "react"
+        is_single_char = len(required_skill) == 1
+        
+        # Debug logging for single-character skills
+        if is_single_char:
+            logger.debug(f"Checking for single-char skill '{required_original}' in candidate skills (total: {len(candidate_normalized)})")
+            logger.debug(f"  Candidate skills sample: {candidate_normalized[:10]}")
+        
+        # CRITICAL: Check single-character FIRST, before exact match
+        # This prevents false positives like "R" matching "relational" or "react"
+        if is_single_char:
+            # For single-character skills, check if it appears as:
+            # 1. Exact match: "R" matches "R" or "r"
+            # 2. At start of skill name: "R" matches "R Programming", "R Language", etc.
+            # This prevents "R" from matching "relational", "react", "angular", etc.
+            # Pattern: "R" at start of string followed by space, dash, slash, or end of string
+            # OR "R" as a standalone word (word boundary before and after)
+            pattern_start = r'^' + re.escape(required_skill) + r'(?:\s|$|[-/\(\.])'  # Start of string, followed by space/end/punctuation
+            pattern_word = r'\b' + re.escape(required_skill) + r'\b'  # Word boundary (standalone word)
+            
+            for candidate_idx, candidate_skill in enumerate(candidate_normalized):
+                # Check if it's at the start of the skill name
+                if re.match(pattern_start, candidate_skill, re.IGNORECASE):
+                    found = True
+                    matched_candidate_skill = candidate_original[candidate_idx] if candidate_idx < len(candidate_original) else candidate_skill
+                    match_method = "exact (single-char at start)"
+                    logger.debug(f"  ✅ Matched '{required_original}' to '{matched_candidate_skill}' using method: {match_method}")
+                    break
+                # Check if it's a standalone word (but not in the middle of another word)
+                elif re.search(pattern_word, candidate_skill, re.IGNORECASE):
+                    # Additional check: ensure it's not part of a longer word
+                    # If the character before or after is a lowercase letter, it's part of a word
+                    match_obj = re.search(pattern_word, candidate_skill, re.IGNORECASE)
+                    if match_obj:
+                        start_pos = match_obj.start()
+                        end_pos = match_obj.end()
+                        # Check characters before and after
+                        before_ok = start_pos == 0 or not candidate_skill[start_pos - 1].isalpha()
+                        after_ok = end_pos >= len(candidate_skill) or not candidate_skill[end_pos].islower()
+                        if before_ok and after_ok:
+                            found = True
+                            matched_candidate_skill = candidate_original[candidate_idx] if candidate_idx < len(candidate_original) else candidate_skill
+                            match_method = "exact (single-char standalone)"
+                            logger.debug(f"  ✅ Matched '{required_original}' to '{matched_candidate_skill}' using method: {match_method}")
+                            break
+            if not found:
+                match_method = "none (single-char requires exact match)"
+                logger.debug(f"Single-char skill '{required_original}' not found in candidate skills: {candidate_normalized[:10]}")
+        else:
+            # Try exact match for multi-character skills
+            if required_skill in candidate_normalized:
+                found = True
+                matched_candidate_skill = required_skill
+                match_method = "exact"
+                logger.debug(f"Exact match found: '{required_original}' = '{matched_candidate_skill}'")
+            else:
+                # Try substring/contains match with word boundaries and minimum length
+                # Require at least 3 characters to prevent false positives like "r" matching "relational"
+                min_length = 3
+                if len(required_skill) >= min_length:
+                    for candidate_idx, candidate_skill in enumerate(candidate_normalized):
+                        # Use word boundary matching to prevent false positives
+                        # Example: "sql" matches "SQL" but "r" doesn't match "relational" (word boundary)
+                        pattern = r'\b' + re.escape(required_skill) + r'\b'
+                        if re.search(pattern, candidate_skill, re.IGNORECASE):
+                            found = True
+                            matched_candidate_skill = candidate_original[candidate_idx] if candidate_idx < len(candidate_original) else candidate_skill
+                            match_method = "substring"
+                            logger.debug(f"Substring match found: '{required_original}' = '{matched_candidate_skill}'")
+                            break
+                        
+                        # Also check if candidate skill is contained in required (for compound skills)
+                        # Example: "Power BI" in "Microsoft Power BI"
+                        if len(candidate_skill) >= min_length:
+                            candidate_pattern = r'\b' + re.escape(candidate_skill) + r'\b'
+                            if re.search(candidate_pattern, required_skill, re.IGNORECASE):
+                                found = True
+                                matched_candidate_skill = candidate_original[candidate_idx] if candidate_idx < len(candidate_original) else candidate_skill
+                                match_method = "substring"
+                                logger.debug(f"Substring match found: '{required_original}' in '{matched_candidate_skill}'")
+                                break
+                else:
+                    # For 2-character skills, only exact match
+                    found = any(required_skill == cand for cand in candidate_normalized)
+        
+        # If not found and skill is conceptual, try semantic matching
+        # CRITICAL: NEVER use semantic matching for single-character skills
+        if not found and use_semantic_matching and not is_single_char:
+            # Check if skill type is concept or soft
+            if skill_type in ["concept", "soft"]:
+                semantic_found, semantic_match, similarity = match_skill_semantically(
+                    required_original, candidate_original, threshold=0.7
+                )
+                if semantic_found:
+                    found = True
+                    matched_candidate_skill = semantic_match
+                    match_method = f"semantic (similarity: {similarity:.3f})"
+            
+            # FALLBACK: If still not found and skill looks conceptual, try semantic matching anyway
+            # This handles cases where categorization might have been wrong
+            elif not found:
+                # Check if required skill contains conceptual keywords
+                conceptual_keywords = ["process", "processes", "pipeline", "pipelines", 
+                                      "database", "databases", "analysis", "analytics", 
+                                      "methodology", "framework", "design", "modeling"]
+                if any(keyword in required_original.lower() for keyword in conceptual_keywords):
+                    # Try semantic matching with lower threshold for concepts
+                    semantic_found, semantic_match, similarity = match_skill_semantically(
+                        required_original, candidate_original, threshold=0.65
+                    )
+                    if semantic_found:
+                        found = True
+                        matched_candidate_skill = semantic_match
+                        match_method = f"semantic_fallback (similarity: {similarity:.3f})"
+                        logger.info(f"Semantic fallback match: '{required_original}' ~ '{semantic_match}' (similarity: {similarity:.3f})")
+        
+        if found:
+            found_skills.append(f"{required_original} (matched: {matched_candidate_skill}, method: {match_method})")
+            match_methods[required_original] = match_method
+            logger.debug(f"✅ Found required skill '{required_original}' → matched to '{matched_candidate_skill}' via {match_method}")
+        else:
+            missing_skills.append(required_original)
+            match_methods[required_original] = "none"
+            logger.debug(f"❌ Missing required skill '{required_original}' - no match found in candidate skills")
+    
+    # Log detailed results
+    details = {
+        "found_skills": found_skills,
+        "missing_skills": missing_skills,
+        "match_methods": match_methods
+    }
+    
+    if missing_skills:
+        logger.warning(f"❌ Candidate missing required skills: {missing_skills}")
+        logger.info(f"   Found skills: {found_skills}")
+        return (False, details)
+    else:
+        logger.info(f"✅ Candidate has all required skills: {found_skills}")
+        return (True, details)
+
 def calculate_skill_mismatch_penalty(merged_json: Dict) -> float:
     """
     Calculate penalty for complete skill mismatch (0-30 pts penalty) using semantic similarity
@@ -336,16 +678,62 @@ def calculate_skill_mismatch_penalty(merged_json: Dict) -> float:
         logger.warning("Must-have skills normalized to empty, returning 0.0 penalty")
         return 0.0
     
-    # CRITICAL: Check for technology mismatches FIRST, before semantic matching
-    # Use LLM-based dynamic detection to identify incompatible technology pairs
+    # Filter to only technical skills for mismatch checking
+    from app.services.skill_categorizer import filter_technical_skills
+    
+    # Only check technical skills for technology mismatch
+    must_have_technical = filter_technical_skills(must_have_normalized)
+    
+    if not must_have_technical:
+        logger.info("No technical skills in must_have after filtering - skipping technology mismatch penalty")
+        return 0.0
+    
+    logger.info(f"Checking technical skills only: {must_have_technical} (filtered from {len(must_have_normalized)} total)")
+    
+    # CRITICAL: Check if candidate has required technical skills FIRST
+    # Only apply technology mismatch penalty if candidate is MISSING required technical skills
+    candidate_has_required_skills, skill_match_details = has_required_skills(
+        all_candidate_skills, must_have_technical, use_semantic_matching=True
+    )
+    
+    # Always get mismatch result for use in semantic matching
     mismatch_result = detect_technology_mismatch(job_desc, candidate)
     
-    if mismatch_result.get("mismatch_detected") and mismatch_result.get("severity") == "critical":
-        logger.warning(f"🚨 CRITICAL TECHNOLOGY MISMATCH: {mismatch_result.get('mismatch_details', '')}")
-        logger.warning(f"   Required: {mismatch_result.get('required_technologies', [])}")
-        logger.warning(f"   Candidate has incompatible: {mismatch_result.get('incompatible_technologies', [])}")
-        logger.warning(f"   Applying maximum penalty (30 pts)")
-        return 30.0  # Maximum penalty for critical technology mismatch
+    # CRITICAL: Detect contradictions between has_required_skills() and mismatch detector
+    if mismatch_result.get("mismatch_detected") and candidate_has_required_skills:
+        logger.warning("⚠️ CONTRADICTION DETECTED: Technology mismatch detector says missing, but has_required_skills() says found")
+        logger.warning(f"   Mismatch detector result: {mismatch_result}")
+        logger.warning(f"   Skill match details: {skill_match_details}")
+        logger.warning(f"   Required technologies from mismatch: {mismatch_result.get('required_technologies', [])}")
+        logger.warning(f"   Found skills from has_required_skills: {skill_match_details.get('found_skills', [])}")
+        
+        # Use stricter validation: if has_required_skills says found, trust it (it uses same logic)
+        # But log the contradiction for investigation
+        logger.warning("   Resolving contradiction: Using has_required_skills() result (candidate has required skills)")
+        mismatch_result["mismatch_detected"] = False
+        mismatch_result["severity"] = None
+    
+    if candidate_has_required_skills:
+        logger.info(f"✅ Candidate has all required technical skills: {must_have_technical}")
+        logger.info(f"   Match details: {skill_match_details.get('found_skills', [])}")
+        logger.info("   Skipping technology mismatch penalty - candidate has required technical skills")
+        # If mismatch was detected but candidate has required skills, reduce severity
+        if mismatch_result.get("mismatch_detected"):
+            logger.info(f"   Technology mismatch detected but candidate has required skills - ignoring mismatch")
+            # Override to prevent penalty
+            mismatch_result["mismatch_detected"] = False
+            mismatch_result["severity"] = None
+    else:
+        logger.warning(f"❌ Candidate is missing some required technical skills: {must_have_technical}")
+        logger.warning(f"   Missing: {skill_match_details.get('missing_skills', [])}")
+        logger.info(f"   Found: {skill_match_details.get('found_skills', [])}")
+        # Check for technology mismatches if candidate is missing required skills
+        if mismatch_result.get("mismatch_detected") and mismatch_result.get("severity") == "critical":
+            logger.warning(f"🚨 CRITICAL TECHNOLOGY MISMATCH: {mismatch_result.get('mismatch_details', '')}")
+            logger.warning(f"   Required: {mismatch_result.get('required_technologies', [])}")
+            logger.warning(f"   Candidate has incompatible: {mismatch_result.get('incompatible_technologies', [])}")
+            logger.warning(f"   Applying maximum penalty (30 pts)")
+            return 30.0  # Maximum penalty for critical technology mismatch
     
     # Get incompatible technologies from mismatch result for use in semantic matching
     incompatible_techs = []
@@ -362,8 +750,8 @@ def calculate_skill_mismatch_penalty(merged_json: Dict) -> float:
         candidate_skills_text = " ".join(all_candidate_skills)
         candidate_embedding = get_embeddings(candidate_skills_text)
         
-        # Check each required skill
-        for required_skill in must_have_normalized:
+        # Check each required technical skill (already filtered above)
+        for required_skill in must_have_technical:
             skill_found = False
             
             # First try exact/substring match (fast check)
@@ -451,14 +839,14 @@ def calculate_skill_mismatch_penalty(merged_json: Dict) -> float:
         
     except Exception as e:
         logger.error(f"Error in semantic skill matching: {str(e)}, falling back to exact matching")
-        # Fallback to simple exact matching
-        must_have_lower = [s.lower() for s in must_have_normalized]
+        # Fallback to simple exact matching (use technical skills only)
+        must_have_lower = [s.lower() for s in must_have_technical]
         candidate_skills_lower = [s.lower() for s in all_candidate_skills]
         matched_skills = sum(1 for req in must_have_lower 
                            if any(req in cand or cand in req for cand in candidate_skills_lower))
     
     # Calculate match ratio
-    match_ratio = matched_skills / len(must_have_normalized) if must_have_normalized else 0.0
+    match_ratio = matched_skills / len(must_have_technical) if must_have_technical else 0.0
     
     # Apply penalty based on match ratio
     # 0% match = 20 pts penalty
@@ -478,12 +866,12 @@ def calculate_skill_mismatch_penalty(merged_json: Dict) -> float:
         penalty = 0.0   # Good match
     
     # Log the match details for debugging
-    logger.info(f"Skill mismatch calculation: matched {matched_skills}/{len(must_have_normalized)} must-have skills, match_ratio={match_ratio:.2f}, base_penalty={penalty:.1f}")
+    logger.info(f"Skill mismatch calculation: matched {matched_skills}/{len(must_have_technical)} technical must-have skills, match_ratio={match_ratio:.2f}, base_penalty={penalty:.1f}")
     
     # Clamp to max 30 pts (framework mismatches already return 30.0 early, so this is for other cases)
     penalty = min(30.0, penalty)
     
-    logger.info(f"Final skill mismatch penalty: {penalty:.1f} (matched {matched_skills}/{len(must_have_normalized)} skills, ratio: {match_ratio:.2f})")
+    logger.info(f"Final skill mismatch penalty: {penalty:.1f} (matched {matched_skills}/{len(must_have_technical)} technical skills, ratio: {match_ratio:.2f})")
     
     return penalty
 
@@ -493,9 +881,39 @@ def calculate_technology_mismatch_penalty(merged_json: Dict) -> float:
     
     Uses LLM-based dynamic detection to identify incompatible technology pairs
     without any hardcoded technology names.
+    
+    CRITICAL: Only applies penalty if candidate is MISSING required skills.
+    If candidate has all required skills, no penalty is applied.
     """
     job_desc = merged_json.get("job_description", {})
     candidate = merged_json.get("candidate", {})
+    
+    # Check if candidate has required skills FIRST
+    must_have_skills = job_desc.get("must_have", [])
+    candidate_skills_raw = candidate.get("skills_raw", [])
+    candidate_skills_canonical = candidate.get("skills_canonical", [])
+    all_candidate_skills = list(set(candidate_skills_raw + candidate_skills_canonical))
+    
+    if must_have_skills:
+        # Filter to only technical skills for mismatch checking
+        from app.services.skill_categorizer import filter_technical_skills
+        must_have_technical = filter_technical_skills(must_have_skills)
+        
+        if must_have_technical:
+            # Use same has_required_skills() function to ensure consistency
+            candidate_has_required_skills, skill_match_details = has_required_skills(
+                all_candidate_skills, must_have_technical, use_semantic_matching=True
+            )
+            if candidate_has_required_skills:
+                logger.info(f"✅ Candidate has all required technical skills - skipping technology mismatch penalty")
+                logger.info(f"   Match details: {skill_match_details.get('found_skills', [])}")
+                return 0.0
+            else:
+                logger.info(f"❌ Candidate missing some required technical skills - checking for technology mismatch")
+                logger.info(f"   Missing: {skill_match_details.get('missing_skills', [])}")
+        else:
+            logger.info("No technical skills in must_have - skipping technology mismatch penalty")
+            return 0.0
     
     # Use LLM-based dynamic technology mismatch detection
     mismatch_result = detect_technology_mismatch(job_desc, candidate)

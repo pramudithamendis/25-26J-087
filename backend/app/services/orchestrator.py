@@ -2,7 +2,7 @@ from bson import ObjectId
 from app.models.user_model import users_collection
 from app.models.job_model import jobs_collection
 from app.services.preprocessing import preprocess_pdf
-from app.services.extractors.cv_extractor import extract_from_cv
+from app.services.extractors.cv_extractor import extract_from_cv, extract_handle_from_url
 from app.services.extractors.linkedin_extractor import extract_from_linkedin
 from app.services.extractors.github_analyzer import analyze_github
 from app.services.extractors.jd_extractor import extract_from_jd
@@ -35,6 +35,7 @@ def run_evaluation(user_id: str, job_id: str) -> dict:
         "name": user.get("name", ""),
         "email": user.get("email", ""),
         "github_handle": user.get("github_handle", ""),
+        "github_url": user.get("github_url", ""),
         "cv_file_path": user.get("cv_file_path"),
         "linkedin_file_path": user.get("linkedin_file_path")
     }
@@ -105,13 +106,37 @@ def run_evaluation(user_id: str, job_id: str) -> dict:
             "endorsements": []
         }
     
-    # 4. Call GitHub analyzer - prioritize handle from CV, fallback to database
-    github_handle = extracted_github_handle or candidate.get("github_handle", "")
+    # 4. Call GitHub analyzer - prioritize handle from CV, then extract from github_url, then use github_handle
+    github_handle = ""
+    source = ""
+    
+    # First, use handle from CV if available
+    if extracted_github_handle:
+        github_handle = extracted_github_handle
+        source = "CV"
+    else:
+        # Second, try to extract from github_url
+        github_url = candidate.get("github_url", "")
+        if github_url:
+            extracted_handle = extract_handle_from_url(github_url)
+            if extracted_handle:
+                github_handle = extracted_handle
+                source = "user.github_url"
+            else:
+                logger.debug(f"Could not extract handle from github_url: {github_url}")
+        
+        # Third, fallback to github_handle from user
+        if not github_handle:
+            user_handle = candidate.get("github_handle", "")
+            if user_handle:
+                github_handle = user_handle.strip()
+                source = "user.github_handle"
+    
     if github_handle:
-        logger.info(f"Using GitHub handle: {github_handle} (source: {'CV' if extracted_github_handle else 'database'})")
+        logger.info(f"Using GitHub handle: {github_handle} (source: {source})")
         github_data = analyze_github(github_handle)
     else:
-        logger.info("No GitHub handle found in CV or database")
+        logger.info("No GitHub handle found in CV, user.github_url, or user.github_handle")
         github_data = {
             "repos": [],
             "commits_last_12m": 0,
@@ -123,7 +148,8 @@ def run_evaluation(user_id: str, job_id: str) -> dict:
     # Fix "ob Description" -> "Job Description" if needed
     if jd_text.startswith("ob Description"):
         jd_text = "Job Description" + jd_text[14:]
-    jd_data = extract_from_jd(jd_text)
+    # Pass job_id for caching to ensure same job always extracts same skills
+    jd_data = extract_from_jd(jd_text, job_id=job_id)
     # Ensure jd_text is preserved in jd_data for semantic analysis (use fixed version)
     if "jd_text" not in jd_data:
         jd_data["jd_text"] = jd_text

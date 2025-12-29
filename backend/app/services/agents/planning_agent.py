@@ -84,8 +84,12 @@ What should be done next? Consider:
 2. What needs verification? (DO NOT suggest verify_consistency if experience_consistency is already verified)
 3. What stages are complete?
 4. Are there any errors?
+5. What actions were recently taken? (Check action_history - DO NOT repeat the same action if it was just done)
 
-IMPORTANT: If "experience_consistency" is already verified, DO NOT suggest "verify_consistency" action again.
+IMPORTANT RULES:
+- If "experience_consistency" is already verified, DO NOT suggest "verify_consistency" action again.
+- If an action appears multiple times in action_history, DO NOT suggest it again unless absolutely necessary.
+- Prefer progressing to next stage rather than repeating actions.
 
 Respond with JSON containing action, agent, reasoning, and next_stage."""
         
@@ -127,6 +131,10 @@ Respond with JSON containing action, agent, reasoning, and next_stage."""
     
     def _build_state_summary(self, state: EvaluationState) -> Dict:
         """Build summary of current state for LLM"""
+        # Get action history if available
+        action_history = getattr(state, 'action_history', [])
+        recent_actions = action_history[-5:] if len(action_history) >= 5 else action_history
+        
         return {
             "stage": state.stage.value,
             "extracted": {
@@ -147,6 +155,7 @@ Respond with JSON containing action, agent, reasoning, and next_stage."""
                 "critic_scores": state.critic_scores is not None,
                 "aggregated_score": state.aggregated_score is not None
             },
+            "action_history": recent_actions,  # Include recent actions to help avoid loops
             "errors": state.errors,
             "warnings": state.warnings,
             "iteration_count": state.iteration_count

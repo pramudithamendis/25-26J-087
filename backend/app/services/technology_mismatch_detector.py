@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from app.config import settings
 import logging
 import json
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,77 @@ def detect_technology_mismatch(job_desc: Dict, candidate: Dict) -> Dict:
     candidate_skills = candidate.get("skills_canonical", candidate.get("skills_raw", []))
     candidate_experience = candidate.get("experience", [])
     
+    # CRITICAL: Validate candidate has required skills FIRST
+    # Use same logic as has_required_skills() to ensure consistency
+    # This prevents judge from seeing incorrect mismatch warnings
+    if jd_must_have:
+        from app.services.aggregator import has_required_skills
+        from app.services.skill_categorizer import filter_technical_skills
+        
+        # Filter to technical skills only
+        must_have_technical = filter_technical_skills(jd_must_have)
+        
+        if must_have_technical:
+            # Check if candidate has all required skills FIRST
+            candidate_has_required_skills, skill_match_details = has_required_skills(
+                candidate_skills, must_have_technical, use_semantic_matching=True
+            )
+            
+            if candidate_has_required_skills:
+                logger.info(f"✅ Pre-validation: Candidate has all required technical skills - no mismatch")
+                logger.info(f"   Match details: {skill_match_details.get('found_skills', [])}")
+                logger.info(f"   This prevents judge from seeing incorrect mismatch warnings")
+                # Return immediately - no mismatch, no need to call LLM
+                return {
+                    "mismatch_detected": False,
+                    "mismatch_type": None,
+                    "required_technologies": [],
+                    "candidate_technologies": [],
+                    "incompatible_technologies": [],
+                    "mismatch_details": "All required technologies found in candidate skills",
+                    "severity": None
+                }
+            else:
+                logger.info(f"❌ Pre-validation: Candidate missing some required technical skills")
+                logger.info(f"   Missing: {skill_match_details.get('missing_skills', [])}")
+                logger.info(f"   Found: {skill_match_details.get('found_skills', [])}")
+                logger.info(f"   Proceeding with LLM mismatch detection for detailed analysis")
+    
+    # Only proceed with LLM mismatch detection if candidate is missing required skills
+    
+    # CRITICAL: Build explicit candidate technologies list for validation
+    # Include ALL required technologies, even if not in first 30 skills
+    # This prevents false "missing" reports (e.g., "R" not found because it's skill #31)
+    all_candidate_skills = list(set(candidate_skills))  # Deduplicate
+    required_techs_lower = [tech.lower() for tech in jd_must_have]
+    
+    # Prioritize required technologies in the list
+    prioritized_skills = []
+    other_skills = []
+    
+    for skill in all_candidate_skills:
+        skill_lower = skill.lower()
+        # Check if this skill matches any required technology (exact or substring)
+        matches_required = any(
+            req_tech.lower() in skill_lower or skill_lower in req_tech.lower()
+            for req_tech in jd_must_have
+        )
+        if matches_required:
+            prioritized_skills.append(skill)
+        else:
+            other_skills.append(skill)
+    
+    # Build list: required matches first, then others (limit to 50 total for token efficiency)
+    # CRITICAL: This ensures ALL required technologies are visible to LLM, even if not in first 30
+    candidate_technologies = prioritized_skills + other_skills[:max(0, 50 - len(prioritized_skills))]
+    candidate_tech_list = "\n".join([f"{i+1}. {tech}" for i, tech in enumerate(candidate_technologies)])
+    
+    logger.info(f"Technology mismatch validation list: {len(prioritized_skills)} prioritized (required matches), {len(candidate_technologies)} total")
+    if prioritized_skills:
+        logger.debug(f"  Prioritized skills (required matches): {prioritized_skills[:10]}")
+    
     # Build candidate skills summary
-    candidate_skills_text = ", ".join(candidate_skills[:50])  # Limit to avoid token issues
+    candidate_skills_text = ", ".join(all_candidate_skills[:50])  # Limit to avoid token issues
     
     # Build experience summary
     experience_summary = ""
@@ -92,28 +162,57 @@ Nice-to-Have Skills: {', '.join(jd_nice_to_have[:15])}
 Description: {jd_text[:1000]}
 
 CANDIDATE PROFILE:
-Skills: {candidate_skills_text}
+Skills Summary: {candidate_skills_text}
+
+CANDIDATE TECHNOLOGIES LIST (VERIFY EACH REQUIRED SKILL AGAINST THIS LIST):
+{candidate_tech_list}
+
 Recent Experience:
 {experience_summary}
 
+CRITICAL VALIDATION STEP - VERIFY EACH REQUIRED SKILL AGAINST CANDIDATE TECHNOLOGIES LIST:
+Before analyzing mismatches, you MUST verify each required technology exists in the "CANDIDATE TECHNOLOGIES LIST" above.
+
+For EACH required technology from Must-Have Skills, you MUST:
+1. Search the "CANDIDATE TECHNOLOGIES LIST" above (items 1-{len(candidate_technologies)})
+2. Check for exact match (case-insensitive)
+3. Check for substring match (e.g., "Power BI" matches "Microsoft Power BI", "SQL" matches "SQLite")
+4. Document your check: "Required: [TECH] → Found in list: YES/NO → Match type: [EXACT/SUBSTRING/NONE]"
+
+Example validation:
+- Required: "SQL" → Check list items 1-{len(candidate_technologies)} → If "SQL" or "sql" appears → FOUND → Match: EXACT or SUBSTRING
+- Required: "Power BI" → Check list items 1-{len(candidate_technologies)} → If "Power BI", "power bi", or "powerbi" appears → FOUND → Match: EXACT or SUBSTRING
+
+ONLY proceed to mismatch analysis if a required technology is NOT FOUND in the list.
+If ALL required technologies are FOUND → SET mismatch_detected = false (NO MISMATCH, return immediately)
+
+ONLY flag a mismatch if:
+- The candidate is MISSING one or more required PRIMARY/CORE technologies
+- AND the candidate has DIFFERENT but similar technologies in the same category that are INCOMPATIBLE
+- Example: Job requires Flutter, candidate has React Native but NO Flutter → MISMATCH
+- Example: Job requires SQL and Power BI, candidate has SQL but NO Power BI (has Tableau instead) → MISMATCH
+
 Your task is to:
-1. Extract the PRIMARY/CORE technologies/frameworks required by the job (e.g., Flutter, React Native, Python, Java, React, Vue, Angular, Swift, Kotlin, etc.)
-2. Extract the PRIMARY/CORE technologies/frameworks the candidate has
-3. Determine if there's a mismatch where:
+1. Extract the PRIMARY/CORE technologies/frameworks required by the job from Must-Have Skills (e.g., Flutter, React Native, Python, Java, React, Vue, Angular, Swift, Kotlin, SQL, Power BI, etc.)
+2. For EACH required technology, perform the VALIDATION STEP above using the "CANDIDATE TECHNOLOGIES LIST"
+3. If ALL required technologies are FOUND in the list → mismatch_detected = false (NO MISMATCH, return immediately)
+4. If ANY required technology is NOT FOUND in the list, then determine if there's a mismatch where:
    - The job requires a specific technology/framework (e.g., Flutter)
    - The candidate has a DIFFERENT but similar technology/framework in the same category (e.g., React Native)
    - These technologies are INCOMPATIBLE (cannot substitute one for the other)
 
 IMPORTANT RULES:
-- Only flag CRITICAL mismatches where technologies are in the same category but incompatible
-- Examples of CRITICAL mismatches:
-  * Mobile frameworks: Flutter vs React Native (both mobile but different)
-  * Frontend frameworks: React vs Vue vs Angular (all frontend but different)
-  * Backend languages: Python vs Java vs Node.js (all backend but different)
-  * Mobile platforms: iOS/Swift vs Android/Kotlin (both mobile but different platforms)
+- BEFORE flagging any mismatch, you MUST verify each required technology against the candidate_technologies list
+- If a required technology appears in candidate_technologies (exact or substring match), the candidate HAS that technology
+- ONLY flag CRITICAL mismatches where candidate is MISSING required technologies AND has incompatible alternatives
+- Examples of CRITICAL mismatches (candidate MISSING required tech):
+  * Job requires Flutter, candidate_technologies=['React Native', 'Dart'] → Flutter NOT FOUND → CRITICAL MISMATCH
+  * Job requires React, candidate_technologies=['Vue', 'Angular'] → React NOT FOUND → CRITICAL MISMATCH
+  * Job requires Python, candidate_technologies=['Java', 'C++'] → Python NOT FOUND → CRITICAL MISMATCH
 - Do NOT flag if:
-  * Candidate has the required technology (even if they also have alternatives)
-  * Technologies are complementary (e.g., React + Node.js is fine if job requires both)
+  * Candidate has ALL required technologies in candidate_technologies list → NO MISMATCH (even with additional skills)
+  * Example: Job requires SQL and Power BI, candidate_technologies=['SQL', 'Power BI', 'Python', 'AWS'] → SQL FOUND, Power BI FOUND → NO MISMATCH
+  * Candidate has required technology + complementary technologies → NO MISMATCH
   * Candidate has related but acceptable technologies (e.g., TypeScript if job requires JavaScript)
   * The mismatch is minor or can be learned quickly
 
@@ -140,7 +239,7 @@ If no mismatch is detected, set mismatch_detected to false and return null for o
         response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[
-                {"role": "system", "content": "You are an expert technical recruiter who understands technology relationships and incompatibilities. Analyze job requirements and candidate skills to detect critical technology mismatches."},
+                {"role": "system", "content": "You are an expert technical recruiter who understands technology relationships and incompatibilities. CRITICAL RULES: 1) Before flagging any mismatch, you MUST explicitly verify each required technology exists in the candidate_technologies list by checking it item by item. 2) If a required technology appears in candidate_technologies (exact or substring match), the candidate HAS that technology. 3) Only flag technology mismatches if the candidate is MISSING required technologies. 4) If the candidate HAS all required technologies (even with additional skills), there is NO MISMATCH. Always validate required technologies against candidate_technologies FIRST before flagging any mismatch."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
@@ -149,6 +248,42 @@ If no mismatch is detected, set mismatch_detected to false and return null for o
         
         result_text = response.choices[0].message.content
         result = json.loads(result_text)
+        
+        # Post-processing validation: Check LLM response against actual candidate skills
+        # Use has_required_skills() directly for consistency (same logic everywhere)
+        # This catches LLM hallucination where it reports technologies as missing when they're actually present
+        if result.get("mismatch_detected"):
+            required_techs = result.get("required_technologies", [])
+            
+            # Use has_required_skills() for validation (same logic everywhere)
+            from app.services.aggregator import has_required_skills
+            from app.services.skill_categorizer import filter_technical_skills
+            
+            all_candidate_skills = candidate.get("skills_canonical", candidate.get("skills_raw", []))
+            required_technical = filter_technical_skills(required_techs)
+            
+            if required_technical:
+                candidate_has_required_skills, skill_match_details = has_required_skills(
+                    all_candidate_skills, required_technical, use_semantic_matching=True
+                )
+                
+                if candidate_has_required_skills:
+                    # Override LLM result
+                    logger.warning(f"LLM hallucination detected: Reported mismatch but all required technologies found")
+                    logger.warning(f"  Required technologies: {required_techs}")
+                    logger.warning(f"  Found skills: {skill_match_details.get('found_skills', [])}")
+                    logger.warning(f"  Overriding LLM result: mismatch_detected=False")
+                    result["mismatch_detected"] = False
+                    result["severity"] = None
+                    result["mismatch_details"] = "All required technologies found in candidate skills"
+                    result["incompatible_technologies"] = []
+                else:
+                    # LLM was correct - candidate is missing some technologies
+                    missing_skills = skill_match_details.get("missing_skills", [])
+                    logger.info(f"Validated mismatch: Actually missing {len(missing_skills)} technologies: {missing_skills}")
+                    logger.info(f"  Found skills: {skill_match_details.get('found_skills', [])}")
+                    # Update required_technologies to only include actually missing ones
+                    result["required_technologies"] = missing_skills
         
         logger.info(f"Technology mismatch detection result: mismatch_detected={result.get('mismatch_detected', False)}, severity={result.get('severity')}")
         

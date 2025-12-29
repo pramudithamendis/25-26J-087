@@ -1,11 +1,11 @@
 import re
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-def extract_from_jd(jd_text: str) -> Dict:
+def extract_from_jd(jd_text: str, job_id: Optional[str] = None) -> Dict:
     """
     Extract structured data from job description text
     
@@ -13,6 +13,7 @@ def extract_from_jd(jd_text: str) -> Dict:
     
     Args:
         jd_text: Full job description text
+        job_id: Optional job ID for caching (ensures same job always extracts same skills)
     
     Returns:
         Dictionary with title, must_have, nice_to_have, min_years, jd_text
@@ -22,7 +23,7 @@ def extract_from_jd(jd_text: str) -> Dict:
         try:
             from .jd_extractor_openai import extract_from_jd_openai
             logger.info("Using LLM-based JD extraction")
-            return extract_from_jd_openai(jd_text)
+            return extract_from_jd_openai(jd_text, job_id=job_id)
         except Exception as e:
             logger.warning(f"LLM-based JD extraction failed: {str(e)}, falling back to regex")
     

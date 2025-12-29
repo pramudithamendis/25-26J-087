@@ -155,6 +155,11 @@ Respond with JSON in this format:
             "judge_avg": sum(
                 s.get("score", 0) for s in judge_scores.get("judge_scores", [])
             ) / max(1, len(judge_scores.get("judge_scores", []))),
+            "judge_scores_count": len(judge_scores.get("judge_scores", [])),
+            "judge_scores_detail": [
+                {"criterion": s.get("criterion", ""), "score": s.get("score", 0)}
+                for s in judge_scores.get("judge_scores", [])[:10]  # First 10 for context
+            ],
             "github_activity": github_info.get("commits_last_12m", 0),
             "experience_count": len(experience_info),
             "job_title": merged_json.get("job_description", {}).get("title", "")
@@ -219,20 +224,21 @@ Respond with JSON containing total_score, breakdown, and reasoning."""
                 # If agentic didn't provide experience_recency, use baseline
                 final_breakdown["experience_recency"] = baseline_breakdown.get("experience_recency", 0)
             
-            # Special handling for role_competency: preserve baseline if agentic gives unreasonable value
+            # CRITICAL: Always preserve baseline role_competency - it's calculated from judge scores
+            # Agentic adjustments should not modify role_competency as it's based on objective judge scores
+            baseline_role = baseline_breakdown.get("role_competency", 0)
             if "role_competency" in breakdown:
                 agentic_role = breakdown.get("role_competency", 0)
-                baseline_role = baseline_breakdown.get("role_competency", 0)
-                # If agentic gives a value that's too low (< 5) or too high (> 30), use baseline
-                # Also check if the difference is too large (more than 50% reduction)
-                if agentic_role < 5 or agentic_role > 30 or (baseline_role > 0 and agentic_role < baseline_role * 0.5):
-                    logger.warning(f"Agentic role_competency ({agentic_role}) seems unreasonable, preserving baseline: {baseline_role}")
-                    final_breakdown["role_competency"] = baseline_role
-                else:
+                # Only use agentic if it's very close to baseline (within 10%) and reasonable
+                if abs(agentic_role - baseline_role) <= baseline_role * 0.1 and 5 <= agentic_role <= 30:
+                    logger.info(f"Agentic role_competency ({agentic_role}) close to baseline ({baseline_role}), using agentic")
                     final_breakdown["role_competency"] = agentic_role
+                else:
+                    logger.info(f"Preserving baseline role_competency: {baseline_role} (agentic: {agentic_role})")
+                    final_breakdown["role_competency"] = baseline_role
             else:
                 # If agentic didn't provide role_competency, use baseline
-                final_breakdown["role_competency"] = baseline_breakdown.get("role_competency", 0)
+                final_breakdown["role_competency"] = baseline_role
             
             # CRITICAL: Always preserve bonus_malus from baseline (agentic shouldn't adjust this)
             # bonus_malus is calculated from certifications/endorsements, not agentic reasoning
@@ -375,11 +381,37 @@ Respond with JSON containing total_score, breakdown, and reasoning."""
             Aggregated scores
         """
         if isinstance(state, EvaluationState):
+            # CRITICAL: Use original judge_scores for role_competency calculation, not critic_scores
+            # Critic scores may have adjusted individual scores, but role_competency should be based on original judge scores
+            # We'll use judge_scores for aggregation, but log if critic_scores exist
+            judge_scores_to_use = state.judge_scores or []
+            if state.critic_scores and state.judge_scores:
+                logger.info(f"Using original judge_scores ({len(judge_scores_to_use)} criteria) for role_competency calculation. Critic reviewed {len(state.critic_scores)} criteria.")
+                # Log if critic made adjustments
+                for i, (judge_score, critic_score) in enumerate(zip(judge_scores_to_use, state.critic_scores)):
+                    if judge_score.get("score") != critic_score.get("score"):
+                        logger.info(f"  Critic adjusted {judge_score.get('criterion')}: {judge_score.get('score')} → {critic_score.get('score')}")
+            elif state.critic_scores:
+                logger.warning("Only critic_scores available, using them (judge_scores missing)")
+                judge_scores_to_use = state.critic_scores
+            
+            # CRITICAL: Ensure GitHub data is available for aggregation
+            github_info = state.github_data or {}
+            if not github_info:
+                logger.info("No GitHub data in state - scoring as 0.0 (neutral, not penalized)")
+                # Use empty dict to ensure neutral scoring
+                github_info = {}
+            else:
+                repos_count = len(github_info.get("repos", []))
+                commits = github_info.get("commits_last_12m", 0)
+                prs = github_info.get("external_prs_merged", 0)
+                logger.info(f"GitHub data for aggregation: {repos_count} repos, {commits} commits, {prs} PRs")
+            
             # Aggregate from state
             return self.aggregate_hybrid(
                 state.semantic_features or {},
-                {"judge_scores": state.critic_scores or state.judge_scores or []},
-                state.github_data or {},
+                {"judge_scores": judge_scores_to_use},
+                github_info,  # Use explicitly checked GitHub data
                 state.merged_json.get("candidate", {}).get("experience", []) if state.merged_json else [],
                 state.merged_json or {}
             )

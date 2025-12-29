@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from bson import ObjectId
 from datetime import datetime
 from typing import List, Optional
@@ -265,12 +265,12 @@ async def delete_job(
 @router.post("/{job_id}/apply", status_code=status.HTTP_200_OK)
 async def apply_to_job(
     job_id: str,
-    first_name: Optional[str] = None,
-    last_name: Optional[str] = None,
-    city: Optional[str] = None,
-    phone_number: Optional[str] = None,
-    github_url: Optional[str] = None,
-    linkedin_url: Optional[str] = None,
+    first_name: Optional[str] = Form(None),
+    last_name: Optional[str] = Form(None),
+    city: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    github_url: Optional[str] = Form(None),
+    linkedin_url: Optional[str] = Form(None),
     resume: Optional[UploadFile] = File(None),
     linkedin_resume: Optional[UploadFile] = File(None),
     background_tasks: BackgroundTasks = BackgroundTasks(),
@@ -343,17 +343,21 @@ async def apply_to_job(
                         detail="Invalid GitHub URL format. Use: https://github.com/username or github.com/username"
                     )
                 update_data["github_url"] = github_url_cleaned
+                logger.info(f"Updating user GitHub URL: {github_url_cleaned}")
             else:
                 # Empty string means clear the URL
                 update_data["github_url"] = None
+                logger.info("Clearing user GitHub URL (empty string provided)")
         
         if linkedin_url is not None:
             linkedin_url_cleaned = linkedin_url.strip() if linkedin_url else ""
             if linkedin_url_cleaned:
                 update_data["linkedin_url"] = linkedin_url_cleaned
+                logger.info(f"Updating user LinkedIn URL: {linkedin_url_cleaned}")
             else:
                 # Empty string means clear the URL
                 update_data["linkedin_url"] = None
+                logger.info("Clearing user LinkedIn URL (empty string provided)")
         
         # Handle file uploads
         if resume:
@@ -539,11 +543,11 @@ async def run_evaluation_background(user_id: str, job_id: str, application_id: s
             role_predictions = classify_roles(skills_canonical, jd_info)
             
             # Determine decision
-            decision = "Selected" if total_score >= 75 else ("Review" if total_score >= 60 else "Not Selected")
+            decision = "Selected" if total_score >= 70 else ("Review" if total_score >= 60 else "Not Selected")
             
             # Generate explanations
             why = []
-            if total_score >= 75:
+            if total_score >= 70:
                 why.append(f"Strong match with score of {total_score}/100")
             elif total_score >= 60:
                 why.append(f"Moderate match with score of {total_score}/100 - requires review")

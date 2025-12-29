@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from contextlib import asynccontextmanager
 from app.auth.auth_router import auth_router
 from app.routes.user_router import router as user_router
 from app.routes.job_router import router as job_router
@@ -9,6 +10,7 @@ from app.routes.questions_router import router as questions_router
 from app.routes.admin_router import router as admin_router
 import logging
 import time
+import asyncio
 
 # Configure logging
 logging.basicConfig(
@@ -17,6 +19,36 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for startup and shutdown events.
+    Properly handles cancellation and cleanup.
+    """
+    # Startup
+    try:
+        from app.database import client
+        client.admin.command('ping')
+        logger.info("MongoDB connection successful")
+    except Exception as e:
+        logger.error(f"MongoDB connection failed: {str(e)}")
+        logger.warning("Server will start but database operations may fail")
+    
+    yield
+    
+    # Shutdown
+    try:
+        logger.info("Shutting down application...")
+        # Add any cleanup logic here if needed
+    except asyncio.CancelledError:
+        logger.info("Application shutdown cancelled")
+        raise
+    except Exception as e:
+        logger.error(f"Error during shutdown: {str(e)}")
+    finally:
+        logger.info("Application shutdown complete")
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -45,7 +77,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 app = FastAPI(
     title="CV Analysis API",
     description="CV Analysis System with Agentic AI",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Add logging middleware
@@ -94,13 +127,3 @@ def health_check():
         "mongodb": mongodb_status
     }
 
-@app.on_event("startup")
-async def startup_event():
-    """Startup event - test database connection"""
-    try:
-        from app.database import client
-        client.admin.command('ping')
-        logger.info("MongoDB connection successful")
-    except Exception as e:
-        logger.error(f"MongoDB connection failed: {str(e)}")
-        logger.warning("Server will start but database operations may fail")
