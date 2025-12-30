@@ -1,3 +1,4 @@
+# backend/app/services/article_service.py
 import requests
 import feedparser
 from newspaper import Article

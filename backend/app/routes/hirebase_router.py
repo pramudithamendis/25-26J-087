@@ -6,6 +6,7 @@ from app.schemas.hirebase_schema import (
     HirebaseFetchResponse
 )
 from app.services.hirebase_service import fetch_hirebase_jobs
+from app.services.hirebase_skill_count_service import count_hirebase_skills
 
 router = APIRouter(prefix="/hirebase", tags=["Hirebase"])
 
@@ -31,3 +32,10 @@ def fetch_hirebase_endpoint(
             status_code=500,
             detail=f"Hirebase fetch failed: {str(e)}"
         )
+
+@router.get("/count_skills")    
+def count_skills(user=Depends(get_current_user)):
+    return{
+        "sucess": True,
+        **count_hirebase_skills()
+    }

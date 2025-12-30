@@ -15,6 +15,13 @@ JOB_TITLES_FILE = Path("app/data/job_titles.json")
 def load_job_titles() -> list[str]:
     with open(JOB_TITLES_FILE, "r") as f:
         return json.load(f)["job_titles"]
+    
+def current_week_id():
+    year, week, _ = datetime.utcnow().isocalendar()
+    return f"{year}-W{week:02d}"
+
+def current_month_id():
+    return datetime.utcnow().strftime("%Y-%m")
 
 
 def fetch_hirebase_jobs(
@@ -56,7 +63,11 @@ def fetch_hirebase_jobs(
             "skills": job.get("skills", []),
             "technologies": job.get("technologies", []),
             "source": "hirebase",
+
             "fetch_date": today,
+            "week_id": current_week_id(),
+            "month_id": current_month_id(),
+            
             "processed": False
         }
 
