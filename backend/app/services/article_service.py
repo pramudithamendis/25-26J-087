@@ -6,12 +6,15 @@ import re
 from typing import List, Dict
 from datetime import datetime
 from app.models.article_model import articles_collection
+import json
+from pathlib import Path
+from app.config import settings
+
 
 # -------------------------
 # CONFIG
 # -------------------------
-
-GNEWS_API_KEY = "dff26edec4353fecfdfeeb50ebec103c"
+GNEWS_API_KEY = settings.GNEWS_API_KEY
 
 RSS_FEEDS = {
     "tech_news": [
@@ -22,6 +25,12 @@ RSS_FEEDS = {
 }
 
 ARTICLES_PER_TOPIC = 50
+
+TOPICS_FILE = Path("app/data/topics.json")
+
+def load_article_topics() -> list[str]:
+    with open(TOPICS_FILE, "r") as f:
+        return json.load(f)["article_topics"]
 
 # -------------------------
 # UTILITIES
@@ -65,8 +74,9 @@ def current_month_id() -> str:
 # FETCHERS
 # -------------------------
 
-def fetch_gnews_articles(topics: List[str]) -> List[Dict]:
-    articles = []
+def fetch_gnews_articles() -> List[Dict]:
+    articles: List[Dict] = []
+    topics = load_article_topics()
 
     for topic in topics:
         url = (
@@ -101,7 +111,7 @@ def fetch_gnews_articles(topics: List[str]) -> List[Dict]:
 
 
 def fetch_rss_articles(max_per_feed: int = 20) -> List[Dict]:
-    articles = []
+    articles: List[Dict] = []
 
     for category, feeds in RSS_FEEDS.items():
         for feed_url in feeds:
@@ -133,7 +143,6 @@ def fetch_rss_articles(max_per_feed: int = 20) -> List[Dict]:
 # -------------------------
 
 def fetch_weekly_articles(
-    topics: List[str],
     max_articles_per_topic: int = 50
 ) -> List[Dict]:
     """
@@ -144,21 +153,23 @@ def fetch_weekly_articles(
     week_id = current_week_id()
     month_id = current_month_id()
 
-    articles = []
+    articles: List[Dict] = []
+
     # TODO:how does the fetching switch between gnews and rss?
-    articles += fetch_gnews_articles(topics)  
-    articles += fetch_rss_articles()
+    articles.extend(fetch_gnews_articles())
+    articles.extend(fetch_rss_articles())
 
     if max_articles_per_topic:
         articles = articles[:max_articles_per_topic]
 
-    stored = []
+    stored: List[Dict] = []
 
     for art in articles:
         doc = {
             **art,
             "week_id": week_id,
             "month_id": month_id,
+            "processed": False,
             "created_at": datetime.utcnow()
         }
 

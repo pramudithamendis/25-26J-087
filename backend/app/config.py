@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     
     # GitHub API
     GITHUB_TOKEN: str = ""
+
+    # HireBase API
+    HIREBASE_API_KEY: str = ""
     
     # OpenAI API (for embeddings and LLM)
     OPENAI_API_KEY: str = ""

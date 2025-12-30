@@ -8,11 +8,9 @@ from app.services.skill_extraction_service import extract_skills_from_articles
 
 router = APIRouter(prefix="/article", tags=["Articles"])
 
-
 @router.post("/fetch", response_model=List[ArticleResponse])
 def fetch_articles(payload: ArticleFetchRequest,user=Depends(get_current_user)):
     articles = fetch_weekly_articles(
-        topics=payload.topics,
         max_articles_per_topic=payload.max_articles_per_topic
     )
 
@@ -28,7 +26,6 @@ def fetch_articles(payload: ArticleFetchRequest,user=Depends(get_current_user)):
     ]
 
     return response_articles
-
 
 @router.post("/extract_skills", response_model=SkillExtractionResponse)
 def extract_article_skills(user=Depends(get_current_user)):
