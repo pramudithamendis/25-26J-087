@@ -6,6 +6,7 @@ from app.routes.job_router import router as job_router
 from app.routes.evaluation_router import router as evaluation_router
 from app.routes.articles_router import router as article_router
 from app.routes.hirebase_router import router as hirebase_router
+from app.routes.trends_router import router as trends_router
 
 app = FastAPI()
 
@@ -16,3 +17,5 @@ app.include_router(job_router)
 app.include_router(evaluation_router)
 app.include_router(article_router)
 app.include_router(hirebase_router) 
+app.include_router(trends_router)
+
