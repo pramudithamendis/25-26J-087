@@ -491,6 +491,7 @@ async def run_evaluation_background(user_id: str, job_id: str, application_id: s
                 "total_score": evaluation_result.get("total_score", 0),
                 "decision": evaluation_result.get("decision", "Not Selected"),
                 "role_predictions": evaluation_result.get("role_predictions", []),
+                "breakdown": evaluation_result.get("breakdown", {}),
                 "status": "completed",
                 "created_at": datetime.utcnow().isoformat() + "Z",
                 "agentic": True,
@@ -562,6 +563,7 @@ async def run_evaluation_background(user_id: str, job_id: str, application_id: s
                 "total_score": total_score,
                 "decision": decision,
                 "role_predictions": role_predictions,
+                "breakdown": breakdown,
                 "status": "completed",
                 "created_at": datetime.utcnow().isoformat() + "Z"
             }

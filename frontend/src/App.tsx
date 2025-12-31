@@ -17,7 +17,6 @@ import { AdminJobsPage } from './pages/admin/AdminJobsPage';
 import { AdminApplicationsPage } from './pages/admin/AdminApplicationsPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminEvaluationsPage } from './pages/admin/AdminEvaluationsPage';
-import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { JobApplicantsPage } from './pages/admin/JobApplicantsPage';
 import { JobApplicantDetailPage } from './pages/admin/JobApplicantDetailPage';
 import './App.css';
@@ -166,16 +165,6 @@ function App() {
               <AdminRoute>
                 <DashboardLayout>
                   <AdminEvaluationsPage />
-                </DashboardLayout>
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/dashboard/admin/settings"
-            element={
-              <AdminRoute>
-                <DashboardLayout>
-                  <AdminSettingsPage />
                 </DashboardLayout>
               </AdminRoute>
             }

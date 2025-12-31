@@ -285,6 +285,7 @@ async def evaluate_candidate(
             "total_score": total_score,
             "decision": decision,
             "role_predictions": role_predictions,
+            "breakdown": breakdown,
             "status": "completed",
             "created_at": datetime.utcnow().isoformat() + "Z"
         }
@@ -339,32 +340,41 @@ async def get_evaluation(
         # Build response from stored evaluation
         pipeline_output = evaluation.get("pipeline_output", {})
         
-        # Extract breakdown from pipeline_output if available
-        breakdown = {}
-        if pipeline_output:
-            # Try to reconstruct breakdown from stored data
-            semantic_features = pipeline_output.get("semantic_features", {})
-            candidate_data = pipeline_output.get("candidate", {})
-            github_info = candidate_data.get("github", {})
-            experience_info = candidate_data.get("experience", [])
-            judge_scores = pipeline_output.get("judge_scores", [])
-            
-            # Reconstruct breakdown by re-running aggregator logic
-            if semantic_features and judge_scores:
-                try:
-                    # Re-run aggregator to get breakdown
-                    judge_output = {"judge_scores": judge_scores}
-                    aggregated = aggregate_scores(
-                        semantic_features,
-                        judge_output,
-                        github_info,
-                        experience_info,
-                        pipeline_output
-                    )
-                    breakdown = aggregated.get("breakdown", {})
-                except Exception as e:
-                    logger.warning(f"Could not reconstruct breakdown: {str(e)}")
-                    breakdown = {}
+        # First, try to get breakdown directly from the evaluation document
+        breakdown = evaluation.get("breakdown", {})
+        
+        # If breakdown is not stored, try to reconstruct from pipeline_output
+        if not breakdown or len(breakdown) == 0:
+            if pipeline_output:
+                # Try to get breakdown from aggregated_score in pipeline_output
+                aggregated_score = pipeline_output.get("aggregated_score", {})
+                if aggregated_score and isinstance(aggregated_score, dict):
+                    breakdown = aggregated_score.get("breakdown", {})
+                
+                # If still no breakdown, try to reconstruct it
+                if not breakdown or len(breakdown) == 0:
+                    semantic_features = pipeline_output.get("semantic_features", {})
+                    candidate_data = pipeline_output.get("candidate", {})
+                    github_info = candidate_data.get("github", {})
+                    experience_info = candidate_data.get("experience", [])
+                    judge_scores = pipeline_output.get("judge_scores", [])
+                    
+                    # Reconstruct breakdown by re-running aggregator logic
+                    if semantic_features and judge_scores:
+                        try:
+                            # Re-run aggregator to get breakdown
+                            judge_output = {"judge_scores": judge_scores}
+                            aggregated = aggregate_scores(
+                                semantic_features,
+                                judge_output,
+                                github_info,
+                                experience_info,
+                                pipeline_output
+                            )
+                            breakdown = aggregated.get("breakdown", {})
+                        except Exception as e:
+                            logger.warning(f"Could not reconstruct breakdown: {str(e)}")
+                            breakdown = {}
         
         # Generate why explanations
         why = []

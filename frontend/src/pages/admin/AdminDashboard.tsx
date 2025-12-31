@@ -111,9 +111,6 @@ export const AdminDashboard = () => {
           <Button variant="primary" onClick={() => navigate('/dashboard/admin/evaluations')} className="w-full">
             View Evaluations
           </Button>
-          <Button variant="outline" onClick={() => navigate('/dashboard/admin/settings')} className="w-full">
-            System Settings
-          </Button>
         </div>
       </div>
     </div>
