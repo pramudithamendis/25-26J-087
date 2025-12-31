@@ -3,7 +3,7 @@ from typing import List, Optional
 
 
 class HirebaseFetchRequest(BaseModel):
-    limit: Optional[int] = 50
+    limit: Optional[int] = 10
     page: Optional[int] = 1
 
 
