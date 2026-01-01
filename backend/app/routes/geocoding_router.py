@@ -113,10 +113,10 @@ async def calculate_distance(
         "commute_risk": risk,
         "location_match_score": location_score,
         "interpretation": {
-            "low": "< 5 km - Very manageable commute",
-            "medium": "5-15 km - Moderate commute",
-            "high": "15-30 km - Long commute (especially with traffic)",
-            "very_high": "> 30 km - Very long commute"
+            "low": "< 6 km - Very manageable commute",
+            "medium": "6-18 km - Moderate commute",
+            "high": "18-35 km - Long commute",
+            "very_high": "> 35 km - Very long commute"
         }[risk]
     }
 
