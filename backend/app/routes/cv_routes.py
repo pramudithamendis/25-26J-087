@@ -4,7 +4,7 @@ import tempfile
 from app.parsers.cv_parser import parse_resume
 from app.models.cv_model import cv_collection  # Motor async collection
 
-router = APIRouter(prefix="/cv", tags=["Cv Parsing"])
+router = APIRouter(prefix="/api/cv", tags=["Cv Parsing"])
 
 @router.post("/submit")
 def submit_cv(file: UploadFile = File(...), user: dict = Depends(get_current_user) ):

@@ -1,13 +1,3 @@
-"""
-FULL RESUME PARSER MODULE
--------------------------
-Includes:
-- PDF extraction (text + OCR fallback)
-- Improved section extraction (semantic + fuzzy + headings)
-- Contact info extraction (email, phone, links, name using NER)
-- Combined pipeline for FastAPI
-"""
-
 import re
 import fitz
 from pdf2image import convert_from_path
@@ -18,12 +8,25 @@ from sentence_transformers import SentenceTransformer, util
 import spacy
 
 
-# =======================================================
-# 0. LOAD NER MODEL
-# =======================================================
-# Using spaCy's small English model
-nlp = spacy.load("en_core_web_sm")
+_nlp = None
+_embed_model = None
+_prototype_embeddings = None
 
+def get_nlp():
+    global _nlp
+    if _nlp is None:
+        _nlp = spacy.load("en_core_web_sm")
+    return _nlp
+
+def get_embed_model():
+    global _embed_model, _prototype_embeddings
+    if _embed_model is None:
+        _embed_model = SentenceTransformer("all-mpnet-base-v2")
+        _prototype_embeddings = {
+            k: _embed_model.encode(" . ".join(v), convert_to_tensor=True)
+            for k, v in SECTION_PROTOTYPES.items()
+        }
+    return _embed_model, _prototype_embeddings
 
 # =======================================================
 # 1. PDF → TEXT + OCR FALLBACK
@@ -64,7 +67,7 @@ def extract_text_from_pdf(path: str) -> str:
 
 
 # =======================================================
-# 2. SECTION EXTRACTION (IMPROVED)
+# Section headings & prototype keywords
 # =======================================================
 
 HEADINGS = {
@@ -100,11 +103,6 @@ SECTION_PROTOTYPES = {
 FUZZY_HEADING_THRESHOLD = 70
 SEMANTIC_SIM_THRESHOLD = 0.45
 
-_embed_model = SentenceTransformer("all-mpnet-base-v2")
-_prototype_embeddings = {
-    k: _embed_model.encode(" . ".join(v), convert_to_tensor=True)
-    for k, v in SECTION_PROTOTYPES.items()
-}
 
 _heading_re = re.compile(r'^[A-Z][A-Z &/-]{2,}$')
 _colon_re = re.compile(r':\s*$')
@@ -306,7 +304,7 @@ def extract_name(text: str) -> str:
             return l
 
     # ---- 3. NER fallback ----
-    doc = nlp(text)
+    doc = get_nlp()(text)
     persons = [ent.text.strip() for ent in doc.ents if ent.label_ == "PERSON"]
 
     blacklist = {"streamlit", "python", "developer", "resume"}
