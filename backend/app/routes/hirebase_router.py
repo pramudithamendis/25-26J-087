@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import date
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_admin_user
 from app.schemas.hirebase_schema import (
     HirebaseFetchRequest,
     HirebaseFetchResponse
@@ -8,13 +8,13 @@ from app.schemas.hirebase_schema import (
 from app.services.hirebase_service import fetch_hirebase_jobs
 from app.services.hirebase_skill_count_service import count_hirebase_skills
 
-router = APIRouter(prefix="/hirebase", tags=["Hirebase"])
+router = APIRouter(prefix="/api/hirebase", tags=["Hirebase"])
 
 
 @router.post("/fetch", response_model=HirebaseFetchResponse)
 def fetch_hirebase_endpoint(
     payload: HirebaseFetchRequest,
-    user=Depends(get_current_user)
+    user=Depends(get_admin_user)
 ):
     try:
         jobs = fetch_hirebase_jobs(
@@ -34,7 +34,7 @@ def fetch_hirebase_endpoint(
         )
 
 @router.get("/count_skills")    
-def count_skills(user=Depends(get_current_user)):
+def count_skills(user=Depends(get_admin_user)):
     return{
         "sucess": True,
         **count_hirebase_skills()

@@ -6,6 +6,7 @@ from app.models.hirebase_job_model import hirebase_jobs_collection
 import json
 from pathlib import Path
 from app.config import settings
+from app.utils.date_utils import current_week_id, current_month_id  
 
 HIREBASE_API_KEY = settings.HIREBASE_API_KEY
 HIREBASE_URL = "https://api.hirebase.org/v2/jobs/search"
@@ -16,14 +17,6 @@ def load_job_titles() -> list[str]:
     with open(JOB_TITLES_FILE, "r") as f:
         return json.load(f)["job_titles"]
     
-def current_week_id():
-    year, week, _ = datetime.utcnow().isocalendar()
-    return f"{year}-W{week:02d}"
-
-def current_month_id():
-    return datetime.utcnow().strftime("%Y-%m")
-
-
 def fetch_hirebase_jobs(
     limit: int = 50,
     page: int = 1

@@ -3,13 +3,7 @@ from datetime import datetime
 from app.models.hirebase_skill_stats_model import hirebase_skill_stats_collection
 from app.models.google_trends_model import google_trends_collection
 from app.models.skill_trend_model import skill_trend_collection
-
-def current_week_id():
-    year, week, _ = datetime.utcnow().isocalendar()
-    return f"{year}-W{week:02d}"
-
-def current_month_id():
-    return datetime.utcnow().strftime("%Y-%m")
+from app.utils.date_utils import current_week_id, current_month_id
 
 def calculate_skill_trends():
     week_id = current_week_id()

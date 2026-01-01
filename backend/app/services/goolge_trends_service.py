@@ -5,17 +5,10 @@ from datetime import datetime
 from typing import List
 from app.models.google_trends_model import google_trends_collection
 from app.models.article_model import articles_collection
+import time
+from app.utils.date_utils import current_week_id, current_month_id
 
 pytrends = TrendReq(hl='en-US', tz=0)
-
-def current_week_id() -> str:
-    year, week, _ = datetime.utcnow().isocalendar()
-    return f"{year}-W{week:02d}"
-
-def current_month_id() -> str:
-    return datetime.utcnow().strftime("%Y-%m")
-
-import time
 
 def fetch_google_trends():
     """

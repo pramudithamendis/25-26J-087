@@ -5,13 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from app.models.hirebase_job_model import hirebase_jobs_collection
 from app.models.hirebase_skill_stats_model import hirebase_skill_stats_collection
-
-def current_week_id() -> str:
-    year, week, _ = datetime.utcnow().isocalendar()
-    return f"{year}-W{week:02d}"
-
-def current_month_id() -> str:
-    return datetime.utcnow().strftime("%Y-%m")
+from app.utils.date_utils import current_week_id, current_month_id
 
 def count_hirebase_skills()-> Dict:
     """
