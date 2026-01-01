@@ -7,18 +7,11 @@ from rapidfuzz import fuzz
 from sentence_transformers import SentenceTransformer, util
 import spacy
 
-
-# =======================================================
-# 0. LOAD NER MODEL
-# =======================================================
+# LOAD NER MODEL
 # Using spaCy's small English model
 nlp = spacy.load("en_core_web_sm")
 
-
-# =======================================================
-# 1. PDF → TEXT + OCR FALLBACK
-# =======================================================
-
+# PDF → TEXT + OCR FALLBACK
 def pdf_to_text(path: str) -> str:
     """Extract text from digital PDFs."""
     try:
@@ -52,10 +45,7 @@ def extract_text_from_pdf(path: str) -> str:
         return pdf_to_text_ocr(path)
     return text
 
-
-# =======================================================
-# 2. SECTION EXTRACTION
-# =======================================================
+# SECTION EXTRACTION
 
 HEADINGS = {
     "education": ["education", "academic background", "qualifications", "education & qualifications"],
@@ -192,23 +182,18 @@ def improved_extract_sections(text: str) -> Dict[str, str]:
 
     return {k: v.strip() for k, v in sections.items() if v.strip()}
 
-
-# =======================================================
-# 3. CONTACT EXTRACTION (NER NAME + EMAIL/PHONE/LINKS)
-# =======================================================
-
+# CONTACT EXTRACTION (NER NAME + EMAIL/PHONE/LINKS)
 # EMAIL
 EMAIL_RE = re.compile(
     r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 )
 
-# CORRECT PHONE REGEX
+# PHONE REGEX
 PHONE_RE = re.compile(
     r"(?:\+?\d{1,3}[\s\-\.]?)?"      # optional country code
     r"(?:\(?\d{2,4}\)?[\s\-\.]?)?"   # optional area/initial code
     r"(?:\d{2,4}[\s\-\.]?){2,3}\d{2,4}"  # main number: 2–3 groups
 )
-
 
 # LINKS
 LINKEDIN_RE = re.compile(
@@ -315,10 +300,7 @@ def extract_contact_info(text: str) -> Dict[str, any]:
         "links": extract_links(text)
     }
 
-
-# =======================================================
-# 4. FULL PIPELINE
-# =======================================================
+# FULL PIPELINE
 
 def parse_resume(pdf_path: str) -> Dict[str, any]:
     text = extract_text_from_pdf(pdf_path)
@@ -330,4 +312,3 @@ def parse_resume(pdf_path: str) -> Dict[str, any]:
         "contacts": contacts,
         "sections": sections
     }
-
