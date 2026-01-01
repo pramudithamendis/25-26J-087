@@ -35,20 +35,26 @@ async def close_mongo_connection():
         client.close()
         print(" MongoDB closed")
 
-def get_cv_collection():
-    """Get CVs collection"""
-    if db is None:
-        raise RuntimeError("Database not initialized. Call connect_to_mongo() first.")
-    return db["cvs"]
-
 def get_database():
     """Get database instance"""
     if db is None:
         raise RuntimeError("Database not initialized.")
     return db
 
+def get_cv_collection():
+    """Get CVs collection"""
+    if db is None:
+        raise RuntimeError("Database not initialized. Call connect_to_mongo() first.")
+    return db["cvs"]
+
 def get_turnover_collection():
     """Get turnover results collection"""
     if db is None:
         raise RuntimeError("Database not initialized.")
     return db["turnover_results"]
+
+def get_users_collection():
+    """Get users collection"""
+    if db is None:
+        raise RuntimeError("Database not initialized.")
+    return db["users"]
