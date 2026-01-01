@@ -3,11 +3,13 @@ from typing import Dict, Any, List
 from bson import ObjectId
 import numpy as np
 import pandas as pd
-from app.database import get_cv_collection
-from app.database import get_turnover_collection
+from app.database import get_cv_collection, get_turnover_collection
 from datetime import datetime
 from app.services.feature_engineering import create_feature_vector_from_mongo
 from app.services.model_loader import predict_with_model, get_model
+from app.services.fairness_utils import extract_fairness_metadata, get_fairness_context
+import time
+from app.services.feature_engineering import extract_location_from_jd_enhanced
 
 RISK_LABELS = {
     0: "High Risk (leaves within 6 months)",
@@ -15,18 +17,11 @@ RISK_LABELS = {
     2: "Low Risk (stays longer than 1 year)"
 }
 
-async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_location: str = None) -> Dict[str, Any]:
+async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_location: str = None, user: dict = None) -> Dict[str, Any]:
     """
     Main prediction pipeline using MongoDB stored CV
-    
-    Steps:
-    1. Retrieve parsed CV from MongoDB by cv_id
-    2. Extract/engineer features compatible with model (including commute distance)
-    3. Run model prediction
-    4. Generate SHAP-based explanations
-    5. Generate counterfactual "what-if" scenarios
-    6. Return results with full explainability
     """
+    start_time = time.time()
     
     try:
         # Step 1: Retrieve CV from MongoDB
@@ -40,42 +35,99 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         if not cv_document:
             raise HTTPException(404, f"CV not found with ID: {cv_id}")
         
-        # Step 2: Convert MongoDB document to feature format
+        # Step 1.5: Extract fairness metadata
+        fairness_metadata = extract_fairness_metadata(cv_document)
         
+        if not job_location:
+            jd_location = extract_location_from_jd_enhanced(job_description)
+            print(f" Extracted JD location: {jd_location}")
+        else:
+            jd_location = job_location
+
+        # Step 2: Convert MongoDB document to feature format
         features = await create_feature_vector_from_mongo(
             cv_document,
             job_description,
-            jd_location=job_location
+            jd_location=jd_location 
         )
         
         # Step 3: Predict using model
-       
         predicted_class, probabilities = predict_with_model(features)
         model = get_model()
         
         print(f" Prediction complete: {RISK_LABELS[predicted_class]} (confidence: {probabilities[predicted_class]:.2%})")
         
-        # Step 4: Try to generate SHAP explanations (with timeout protection)
+        # Step 3.5: Override prediction for severe overqualification
+        original_prediction = predicted_class
+        overqualification_override = False
         
-        shap_explanation = generate_shap_explanation_safe(features, predicted_class)
+        if features['is_overqualified'] == 1 and features['exp_match_score'] < 0.6:
+            print(f"  OVERQUALIFICATION DETECTED: {features['total_exp_years']:.1f} years, exp_match={features['exp_match_score']:.2f}")
+            
+            # Only override if prediction was Low Risk (class 2)
+            if predicted_class == 2:
+                print(f"   OVERRIDING prediction from Low Risk → High Risk")
+                predicted_class = 0  # Force HIGH RISK
+                probabilities = np.array([0.80, 0.15, 0.05])  # Recalibrate
+                overqualification_override = True
+        
+        # Step 4: Generate SHAP explanations (with hard timeout)
+        shap_start = time.time()
+        shap_explanation = generate_shap_explanation_safe(features, predicted_class, timeout_seconds=8)
+        shap_elapsed = time.time() - shap_start
+
+        if shap_elapsed > 8.0:
+            print(f"   SHAP generation exceeded timeout ({shap_elapsed:.2f}s)")
+            shap_explanation = get_empty_shap_explanation()
         
         # Step 5: Identify risk factors
         if shap_explanation and shap_explanation.get('top_features'):
-            print(" Using SHAP-based risk factors")
+            print("Using SHAP-based risk factors")
             risk_factors = identify_risk_factors_shap(features, shap_explanation)
         else:
-            print(" Using rule-based risk factors")
+            print("Using rule-based risk factors")
             risk_factors = identify_risk_factors(features)
+        
+        # Add overqualification warning if override occurred
+        if overqualification_override:
+            risk_factors.insert(0, {
+                "factor": " SEVERE OVERQUALIFICATION (Prediction Override)",
+                "value": f"{features['total_exp_years']:.1f} years for entry-level role",
+                "description": f"Candidate is significantly overqualified (exp_match: {features['exp_match_score']:.2f}). Original prediction was '{RISK_LABELS[original_prediction]}', but overridden to High Risk due to career level mismatch and high likelihood of early departure.",
+                "impact": "critical",
+                "override_applied": True,
+                "original_prediction": RISK_LABELS[original_prediction]
+            })
         
         # Step 6: Generate counterfactuals
         if shap_explanation and shap_explanation.get('top_features'):
-            print(" Generating SHAP-guided counterfactuals")
+            print("Generating SHAP-guided counterfactuals")
             counterfactuals = generate_shap_counterfactuals(
                 features, predicted_class, probabilities, model, shap_explanation
             )
         else:
-            print(" Generating simple counterfactuals")
+            print("Generating simple counterfactuals")
             counterfactuals = generate_counterfactuals(features, predicted_class, probabilities, model)
+        
+        # Handle empty counterfactuals for low-risk candidates
+        if not counterfactuals and predicted_class == 2:
+            counterfactuals_note = {
+                "reason": "highly_confident_low_risk_prediction",
+                "explanation": "This candidate's profile demonstrates strong retention indicators. No realistic changes to individual features would significantly alter the low-risk prediction.",
+                "key_strengths": [
+                    f"Stable job history: {features['avg_tenure_months']:.0f} months average tenure",
+                    f"Low job hopping: {features['job_hopping_rate']:.2f} rate",
+                    f"Current role stability: {features['current_job_tenure']:.0f} months"
+                ]
+            }
+        else:
+            counterfactuals_note = None
+
+        # Step 6.5: Get fairness context
+        fairness_context = get_fairness_context(fairness_metadata)
+
+        # STOP TIMER
+        elapsed_time = time.time() - start_time
         
         # Step 7: Build response
         result = {
@@ -105,28 +157,48 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
             },
             "shap_explanation": shap_explanation,
             "risk_factors": risk_factors,
-            "counterfactuals": counterfactuals
+            "counterfactuals": counterfactuals,
+            "fairness": fairness_context,
+            "performance": {
+                "prediction_time_seconds": round(elapsed_time, 3),
+                "meets_sla": elapsed_time < 5.0,
+                "note": "Prediction time includes CV parsing, feature engineering, model inference, and SHAP calculation"
+            }
         }
         
+        if counterfactuals_note:
+            result["counterfactuals_note"] = counterfactuals_note
+        
+        # Add override metadata if applicable
+        if overqualification_override:
+            result["override_metadata"] = {
+                "override_type": "severe_overqualification",
+                "original_prediction": RISK_LABELS[original_prediction],
+                "final_prediction": RISK_LABELS[predicted_class],
+                "reason": "Candidate significantly overqualified for role"
+            }
+
+        # Save to MongoDB
         if result.get("status") == "success":
             try:
                 turnover_coll = get_turnover_collection()
-                
-                # Prepare document for storage
                 db_entry = result.copy()
                 db_entry["cv_id"] = cv_id
+                db_entry["job_description"] = job_description
+                db_entry["job_location"] = job_location
                 db_entry["calculated_at"] = datetime.utcnow()
-                db_entry["user_email"] = user.get("email") if 'user' in locals() else None
-                
-                # Save to MongoDB
+                db_entry["user_email"] = user.get("email") if user else None 
                 await turnover_coll.insert_one(db_entry)
-                print(f" Saved turnover result for CV {cv_id} to MongoDB")
-                
+                print(f"Saved turnover result for CV {cv_id} to MongoDB")
             except Exception as e:
-                # Log error but don't fail the API request
                 print(f"Error saving turnover result to MongoDB: {e}")
-        
-        print(" Response ready")
+
+        if elapsed_time > 5.0:
+            print(f" WARNING: Prediction took {elapsed_time:.2f}s (exceeds 5s SLA)")
+        else:
+            print(f" Prediction completed in {elapsed_time:.2f}s")
+
+        print("Response ready")
         return result
         
     except HTTPException:
@@ -143,53 +215,58 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         }
 
 
-def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: int, timeout_seconds: int = 5) -> Dict[str, Any]:
+def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: int, timeout_seconds: int = 8) -> Dict[str, Any]:
     """
     SAFE wrapper for SHAP explanation generation with timeout and fallback
-    Returns empty explanation if SHAP fails or times out
+    Uses threading for cross-platform timeout support (Windows compatible)
     """
-    import signal
+    import threading
     
-    def timeout_handler(signum, frame):
-        raise TimeoutError("SHAP generation timed out")
+    result = {'explanation': None, 'error': None, 'completed': False}
     
-    try:
-        # Set timeout alarm
-        if hasattr(signal, 'SIGALRM'):
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(timeout_seconds)
-        
-        # Try to load SHAP model and generate explanation
-        from app.services.model_loader import get_model_for_shap
-        import shap
-        
-        shap_model = get_model_for_shap()
-        
-        explanation = generate_shap_explanation_internal(features, shap_model, predicted_class)
-        
-        # Cancel alarm
-        if hasattr(signal, 'SIGALRM'):
-            signal.alarm(0)
-        
+    def generate_with_timeout():
+        try:
+            from app.services.model_loader import get_model_for_shap
+            import shap
+            
+            print("   → Loading SHAP model...")
+            shap_model = get_model_for_shap()
+            
+            print("   → Creating TreeExplainer...")
+            explanation = generate_shap_explanation_internal(features, shap_model, predicted_class)
+            
+            result['explanation'] = explanation
+            result['completed'] = True
+            
+        except Exception as e:
+            result['error'] = str(e)
+            result['completed'] = True
+            print(f"   SHAP error: {e}")
+    
+    # Run SHAP generation in a separate thread with timeout
+    thread = threading.Thread(target=generate_with_timeout, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout_seconds)
+    
+    if thread.is_alive():
+        # Thread is still running - timeout occurred
+        print(f"   SHAP generation timed out after {timeout_seconds}s (thread still running)")
+        print(f"   Continuing without SHAP (thread will be abandoned)")
+        return get_empty_shap_explanation()
+    
+    if not result['completed']:
+        print(f"   SHAP did not complete (unknown reason)")
+        return get_empty_shap_explanation()
+    
+    if result['error']:
+        print(f"   SHAP generation failed: {result['error'][:100]}")
+        return get_empty_shap_explanation()
+    
+    if result['explanation']:
         print("   SHAP explanation generated successfully")
-        return explanation
-        
-    except TimeoutError:
-        print("   SHAP generation timed out - continuing without it")
-        return get_empty_shap_explanation()
-    except ImportError as e:
-        print(f"   SHAP library not available: {e}")
-        return get_empty_shap_explanation()
-    except Exception as e:
-        print(f"   SHAP generation failed: {type(e).__name__}: {str(e)[:100]}")
-        return get_empty_shap_explanation()
-    finally:
-        # Always cancel alarm
-        if hasattr(signal, 'SIGALRM'):
-            try:
-                signal.alarm(0)
-            except:
-                pass
+        return result['explanation']
+    
+    return get_empty_shap_explanation()
 
 
 def get_empty_shap_explanation() -> Dict[str, Any]:
@@ -204,18 +281,13 @@ def get_empty_shap_explanation() -> Dict[str, Any]:
 
 
 def generate_shap_explanation_internal(features: Dict[str, float], model, predicted_class: int) -> Dict[str, Any]:
-    """
-    Internal SHAP generation (called by safe wrapper)
-    Handles CatBoost's multi-dimensional SHAP output format
-    """
+    """Internal SHAP generation - handles CatBoost multi-dimensional output"""
     import shap
     
-    # Convert features to DataFrame
     feature_df = pd.DataFrame([features])
     feature_names = list(features.keys())
     feature_values = list(features.values())
     
-    # Extract classifier from pipeline
     if hasattr(model, 'named_steps'):
         preprocessor = model.named_steps.get('pre')
         clf = model.named_steps.get('clf')
@@ -230,80 +302,44 @@ def generate_shap_explanation_internal(features: Dict[str, float], model, predic
         clf = model
         X_transformed = feature_df.values
     
-    # Create TreeExplainer
     explainer = shap.TreeExplainer(clf)
+
     shap_values = explainer.shap_values(X_transformed)
     
-    # Handle CatBoost's multi-class output format
-    # CatBoost returns shape: (n_samples, n_features, n_classes) or list of arrays
+    # Handle multi-class SHAP output
     if isinstance(shap_values, np.ndarray):
-        # Array format: extract class-specific values
         if len(shap_values.shape) == 3:
-            # Shape: (n_samples=1, n_features, n_classes)
-            # Extract: shap_values[0, :, predicted_class]
             shap_vals = shap_values[0, :, predicted_class]
-            print(f"    Extracted from 3D array: shape {shap_vals.shape}")
         elif len(shap_values.shape) == 2:
-            # Shape: (n_features, n_classes) - extract column
             shap_vals = shap_values[:, predicted_class]
-            print(f"    Extracted from 2D array: shape {shap_vals.shape}")
         else:
-            # Shape: (n_features,) - already 1D
             shap_vals = shap_values
-            print(f"    Using 1D array directly: shape {shap_vals.shape}")
     elif isinstance(shap_values, list):
-        # List format: [class_0_array, class_1_array, class_2_array]
         if len(shap_values) > predicted_class:
-            class_array = shap_values[predicted_class]
-            # Ensure it's 1D
-            shap_vals = np.array(class_array).flatten()
-            print(f"    Extracted from list[{predicted_class}]: shape {shap_vals.shape}")
+            shap_vals = np.array(shap_values[predicted_class]).flatten()
         else:
             shap_vals = np.array(shap_values[0]).flatten()
-            print(f"    Using list[0] as fallback: shape {shap_vals.shape}")
     else:
         raise ValueError(f"Unexpected SHAP values type: {type(shap_values)}")
     
-    # Handle expected_value (base prediction)
     if isinstance(explainer.expected_value, (list, np.ndarray)):
-        if len(explainer.expected_value) > predicted_class:
-            base_value = float(explainer.expected_value[predicted_class])
-        else:
-            base_value = float(explainer.expected_value[0])
+        base_value = float(explainer.expected_value[predicted_class]) if len(explainer.expected_value) > predicted_class else float(explainer.expected_value[0])
     else:
         base_value = float(explainer.expected_value)
     
-    # Create feature contributions
     feature_contributions = []
-    
-    # Match lengths - handle preprocessor expansion
     n_shap = len(shap_vals)
     n_features = len(feature_names)
     
     if n_shap > n_features:
-        # Preprocessor created more features (one-hot encoding)
-        # Use only first N matching original features
-        print(f"     Preprocessor expanded features: {n_features} -> {n_shap}")
         shap_vals = shap_vals[:n_features]
     elif n_shap < n_features:
-        # Pad if needed
-        
         shap_vals = np.pad(shap_vals, (0, n_features - n_shap), constant_values=0)
     
-    # Zip and create contributions
     for fname, fval, shap_val in zip(feature_names, feature_values, shap_vals):
         try:
-            # Safe float conversion
-            if isinstance(shap_val, (list, tuple, np.ndarray)):
-                shap_float = float(np.array(shap_val).flatten()[0])
-            else:
-                shap_float = float(shap_val)
-            
-            # Handle feature value
-            if isinstance(fval, (int, float, np.number)):
-                value_float = float(fval)
-            else:
-                value_float = 0.0  # Categorical features
+            shap_float = float(np.array(shap_val).flatten()[0]) if isinstance(shap_val, (list, tuple, np.ndarray)) else float(shap_val)
+            value_float = float(fval) if isinstance(fval, (int, float, np.number)) else 0.0
             
             feature_contributions.append({
                 "feature": fname,
@@ -314,10 +350,9 @@ def generate_shap_explanation_internal(features: Dict[str, float], model, predic
                 "impact": "increases_risk" if shap_float > 0 else "decreases_risk"
             })
         except Exception as e:
-            print(f"     Skipping feature {fname}: {type(e).__name__}: {e}")
+            print(f"     Skipping feature {fname}: {e}")
             continue
     
-    # Sort by importance
     feature_contributions.sort(key=lambda x: x['abs_shap_value'], reverse=True)
     
     return {
@@ -333,7 +368,6 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
     """Rule-based risk factor identification (fallback)"""
     risk_factors = []
     
-    # Job hopping
     if features['job_hopping_rate'] >= 0.5:
         risk_factors.append({
             "factor": "Frequent job changes",
@@ -342,7 +376,6 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "high"
         })
     
-    # Low skill match
     if features['skill_match_score'] < 0.4:
         risk_factors.append({
             "factor": "Low skill-job match",
@@ -351,7 +384,6 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "high"
         })
     
-    # Low title similarity
     if features['title_match_score'] < 0.4:
         risk_factors.append({
             "factor": "Job role mismatch",
@@ -360,7 +392,7 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "medium"
         })
     
-    # Overqualification
+    # Simple overqualification detection 
     if features['is_overqualified'] == 1:
         risk_factors.append({
             "factor": "Overqualification",
@@ -369,7 +401,6 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "medium"
         })
     
-    # Underqualification
     if features['is_underqualified'] == 1:
         risk_factors.append({
             "factor": "Underqualification",
@@ -378,7 +409,6 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "high"
         })
     
-    # Short average tenure
     if features['avg_tenure_months'] < 12:
         risk_factors.append({
             "factor": "Short average job tenure",
@@ -387,7 +417,6 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "high"
         })
     
-    # Low location match
     if features['location_match_score'] < 0.5:
         risk_factors.append({
             "factor": "Long commute distance",
@@ -396,8 +425,7 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "medium"
         })
     
-    # Sort by impact
-    impact_order = {"high": 3, "medium": 2, "low": 1}
+    impact_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
     risk_factors.sort(key=lambda x: impact_order.get(x["impact"], 0), reverse=True)
     
     return risk_factors[:5]
@@ -437,9 +465,7 @@ def identify_risk_factors_shap(features: Dict[str, float], shap_explanation: Dic
 
 
 def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities: np.ndarray, model, shap_explanation: Dict) -> List[Dict]:
-    """
-    Generate personalized counterfactuals based on top SHAP features
-    """
+    """Generate personalized counterfactuals based on top SHAP features"""
     counterfactuals = []
     
     if not shap_explanation or not shap_explanation.get('top_features'):
@@ -459,15 +485,12 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
         
         # Determine improvement direction
         if 'match' in feature_name or 'score' in feature_name:
-            # Higher is better
             new_value = min(current_value + 0.3, 1.0)
             description = f"had 30% better {feature_name.replace('_', ' ')}"
         elif 'tenure' in feature_name:
-            # Higher is better
-            new_value = current_value + 24  # Add 2 years
+            new_value = current_value + 24
             description = f"had 2 years longer average tenure"
         elif 'hopping' in feature_name:
-            # Lower is better
             new_value = max(current_value - 0.3, 0)
             description = f"had more stable job history"
         else:
@@ -480,7 +503,7 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
         try:
             new_pred, new_proba = predict_with_model(modified_features)
             
-            if new_pred != prediction or abs(new_proba[new_pred] - probabilities[prediction]) > 0.05:
+            if new_pred != prediction or abs(new_proba[new_pred] - probabilities[prediction]) > 0.02:
                 counterfactuals.append({
                     "scenario": f"If candidate {description}",
                     "original_risk": RISK_LABELS[prediction],
