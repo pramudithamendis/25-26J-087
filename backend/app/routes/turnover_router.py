@@ -14,15 +14,6 @@ async def predict_turnover_api(
     """
     Predict employee turnover risk with SHAP-based explainability
     
-    **Commute Distance Feature:**
-    - Uses geocode.maps.co API
-    - Calculates distance between CV location and job location
-    - Converts distance to location match score:
-      * < 5 km: High match (1.0)
-      * 5-15 km: Medium match (0.7)
-      * 15-30 km: Low match (0.4)
-      * > 30 km: Very low match (0.2)
-    
     **Risk Levels:**
     - 0: High Risk (leaves within 6 months)
     - 1: Medium Risk (leaves in 6-12 months)  
@@ -37,7 +28,7 @@ async def predict_turnover_api(
         raise HTTPException(400, "Job description must be at least 50 characters")
     
     # Call prediction service
-    result = await predict_turnover_from_cv_id(cv_id, job_description, job_location)
+    result = await predict_turnover_from_cv_id(cv_id, job_description, job_location, user=user)
     
     return result
 
@@ -83,3 +74,68 @@ async def explain_prediction(
         }
     
     return result
+
+@router.get("/history")
+async def get_prediction_history(
+    user: dict = Depends(get_current_user),
+    limit: int = 10
+):
+    """
+    Get prediction history for the current user
+    """
+    from app.database import get_turnover_collection
+    
+    try:
+        turnover_coll = get_turnover_collection()
+        
+        # Find predictions for this user
+        cursor = turnover_coll.find(
+            {"user_email": user.get("email")},
+            {"_id": 0, "cv_id": 1, "cv_name": 1, "prediction": 1, "calculated_at": 1}
+        ).sort("calculated_at", -1).limit(limit)
+        
+        history = []
+        async for doc in cursor:
+            history.append(doc)
+        
+        return {
+            "status": "success",
+            "count": len(history),
+            "predictions": history
+        }
+        
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching history: {str(e)}")
+
+
+@router.get("/result/{cv_id}")
+async def get_prediction_result(
+    cv_id: str,
+    user: dict = Depends(get_current_user)
+):
+    """
+    Get stored prediction result for a CV
+    """
+    from app.database import get_turnover_collection
+    
+    try:
+        turnover_coll = get_turnover_collection()
+        
+        # Find most recent prediction for this CV by this user
+        result = await turnover_coll.find_one(
+            {"cv_id": cv_id, "user_email": user.get("email")},
+            sort=[("calculated_at", -1)]
+        )
+        
+        if not result:
+            raise HTTPException(404, f"No prediction found for CV {cv_id}")
+        
+        # Remove MongoDB _id
+        result.pop("_id", None)
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching result: {str(e)}")
