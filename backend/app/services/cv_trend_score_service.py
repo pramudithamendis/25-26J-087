@@ -3,36 +3,62 @@ from datetime import datetime
 from app.models.cv_model import cv_collection
 from app.models.skill_trend_model import skill_trend_collection
 from app.models.cv_trend_score_model import cv_trend_scores_collection
-from app.utils.date_utils import current_month_id, current_week_id
+from app.utils.date_utils import current_week_id
 import re
 
-def extract_skills_from_section(skills_text: str) -> list[str]:
-    if not skills_text:
+def normalize_text(text: str) -> str:
+    # Accept non-string inputs gracefully
+    if not isinstance(text, str):
+        if text is None:
+            return ""
+        text = str(text)
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9\s+.#-]", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+def extract_matching_skills_from_text(
+    cv_text: str,
+    trending_skills: list[str]
+) -> list[str]:
+    if not cv_text:
         return []
 
-    # lowercase + split
-    tokens = re.split(r"[•,\n|:]", skills_text.lower())
-    return [t.strip() for t in tokens if len(t.strip()) > 2]
+    normalized_cv = normalize_text(cv_text)
+
+    matched = []
+    for skill in trending_skills:
+        skill_norm = normalize_text(skill)
+        if skill_norm in normalized_cv:
+            matched.append(skill)
+
+    return list(set(matched))
 
 
 def calculate_all_cv_trend_score() -> float:
     week_id = current_week_id()
-    month_id = current_month_id()
 
-    trend_docs = list(skill_trend_collection.find({"week_id": week_id, "month_id": month_id}))
+    trend_docs = list(skill_trend_collection.find({"week_id": week_id}))
     trend_map = {d["skill"]: d["trend_score"] for d in trend_docs}
 
     cvs = cv_collection.find({})
-
+    
     results = []
 
     for cv in cvs:
-        skill_text = cv.get("sections", {}).get("skills", "")
-        skills = extract_skills_from_section(skill_text)
+        cv_text = " ".join([
+            cv.get("sections", {}).get("skills", ""),
+            cv.get("raw_text", "")
+        ])
 
-        matched = [
-            trend_map[s] for s in skills if s in trend_map
-        ]
+        matched = []
+        # pass only skill names (strings) to the extractor
+        matched_skills = extract_matching_skills_from_text(
+            cv_text,
+            [d["skill"] for d in trend_docs]
+        )
+
+        matched = [trend_map[s] for s in matched_skills]
 
         if not matched:
             score = 0.0
@@ -41,25 +67,39 @@ def calculate_all_cv_trend_score() -> float:
 
         doc = {
             "cv_id": cv["_id"],
-            "candidate_id": cv.get("candidate_id"),
             "week_id": week_id,
-            "month_id": month_id,
             "cv_trend_score": score,
-            "total_matched_skills": len(matched),
+            "skills_matched": matched_skills,
             "created_at": datetime.utcnow(),
         }
 
+
         cv_trend_scores_collection.update_one(
-            {"cv_id": cv["_id"], "week_id": week_id, "month_id": month_id},
+            {"cv_id": cv["_id"], "week_id": week_id},
             {"$set": doc},
             upsert=True,
         )
 
         results.append(doc)
 
+        serialized_results = [serialize_doc(doc) for doc in results]
     return{
         "week_id": week_id,
-        "cv_processed": len(results),
+        "resumes_processed": len(results),
+        "cv_processed": serialized_results,
     }
+
+
+# Private helper functions
+
+def serialize_doc(doc):
+    return {
+        "cv_id": str(doc["cv_id"]),  # convert ObjectId to string
+        "week_id": doc["week_id"],
+        "skills_matched": doc["skills_matched"],
+        "cv_trend_score": doc["cv_trend_score"],
+        "created_at": doc["created_at"].isoformat() if isinstance(doc["created_at"], datetime) else doc["created_at"]
+    }
+
     
 

@@ -46,7 +46,7 @@ def calculate_all_cv_trend_scores_endpoint(
         "success": True,
         "week_id": result.get("week_id"),
         "resumes_processed": result.get("resumes_processed", 0),
-        "results": result.get("results", [])
+        "results": result.get("cv_processed", [])
     }
 
 
