@@ -1,0 +1,197 @@
+.shap-explanation.hr-friendly {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  margin: 0 auto 1.5rem;
+}
+
+.shap-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.header-icon {
+  color: #f59e0b;
+  width: 32px;
+  height: 32px;
+}
+
+.shap-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.shap-header p {
+  margin: 0.25rem 0 0 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Factors Sections */
+.factors-section {
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.factors-section.risk-section {
+  border: 2px solid #fecaca;
+  background: #fef2f2;
+}
+
+.factors-section.positive-section {
+  border: 2px solid #86efac;
+  background: #f0fdf4;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+}
+
+.factors-section.risk-section .section-header {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.factors-section.positive-section .section-header {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.section-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.section-header h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Factors List */
+.factors-list {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.factor-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  border-left: 4px solid;
+  transition: all 0.2s;
+}
+
+.factor-card.warning {
+  border-left-color: #ef4444;
+}
+
+.factor-card.positive {
+  border-left-color: #10b981;
+}
+
+.factor-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateX(4px);
+}
+
+.factor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.factor-label {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.9375rem;
+}
+
+.factor-value {
+  font-weight: 700;
+  color: #3b82f6;
+  font-size: 0.9375rem;
+  background: #eff6ff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+}
+
+.factor-explanation {
+  margin: 0 0 1rem 0;
+  color: #4b5563;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Importance Bar */
+.importance-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.importance-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.importance-fill.warning {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.importance-fill.positive {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+/* Explanation Footer */
+.explanation-footer {
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.explanation-footer p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.explanation-footer strong {
+  color: #111827;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .shap-explanation.hr-friendly {
+    padding: 1rem;
+  }
+
+  .factor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .factor-card {
+    padding: 1rem;
+  }
+}
