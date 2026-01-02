@@ -18,7 +18,7 @@ def load_job_titles() -> list[str]:
         return json.load(f)["job_titles"]
     
 def fetch_hirebase_jobs(
-    limit: int = 50,
+    limit: int = 10,
     page: int = 1
 ) -> List[Dict]:
     headers = {
