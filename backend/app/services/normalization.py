@@ -79,6 +79,12 @@ SKILL_MAP: Dict[str, str] = {
     # Microservices
     "microservices architecture": "Microservices",
     "microservice": "Microservices",
+    
+    # Power BI variations
+    "power bi": "Power BI",
+    "powerbi": "Power BI",
+    "microsoft power bi": "Power BI",
+    "ms power bi": "Power BI",
 }
 
 def normalize_skills(skills_raw: List[str]) -> List[str]:

@@ -1,0 +1,42 @@
+{
+  "validation_date": "E:\\yashresearch\\25-26J-087\\backend",
+  "results": {
+    "structure_validation": {
+      "status": "passed",
+      "issues": []
+    },
+    "data_quality": {
+      "status": "passed",
+      "issues": [],
+      "warnings": []
+    },
+    "ground_truth_validation": {
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "total_pairs": 592
+    },
+    "statistics": {
+      "total_evaluation_pairs": 592,
+      "score_statistics": {
+        "min": 45,
+        "max": 85,
+        "mean": 73.16,
+        "median": 70
+      },
+      "decision_distribution": {
+        "Review": 326,
+        "Selected": 262,
+        "Not Selected": 4
+      },
+      "score_distribution": {
+        "0-20": 0,
+        "20-40": 0,
+        "40-60": 4,
+        "60-75": 326,
+        "75-100": 262
+      }
+    },
+    "overall_status": "passed"
+  }
+}

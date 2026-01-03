@@ -13,6 +13,7 @@ class JobResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class JobUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=200)

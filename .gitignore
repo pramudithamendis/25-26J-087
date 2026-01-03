@@ -51,3 +51,11 @@ temp.txt
 
 # backend mypart
 backend-mypart/
+
+#uploads
+uploads/
+
+# Dataset embeddings cache
+Datasetmy/.cache/
+**/.cache/
+*.pkl
