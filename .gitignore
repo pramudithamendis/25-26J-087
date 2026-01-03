@@ -52,6 +52,14 @@ temp.txt
 # backend mypart
 backend-mypart/
 
+# Data files
+backend/app/data/articles/
+
+#models
+backend/app/ml_models/
+
+.idea/
+
 #uploads
 uploads/
 

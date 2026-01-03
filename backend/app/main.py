@@ -6,6 +6,10 @@ from app.auth.auth_router import auth_router
 from app.routes.user_router import router as user_router
 from app.routes.job_router import router as job_router
 from app.routes.evaluation_router import router as evaluation_router
+from app.routes.articles_router import router as article_router
+from app.routes.hirebase_router import router as hirebase_router
+from app.routes.trends_router import router as trends_router
+from app.scheduler import start_scheduler
 from app.routes.questions_router import router as questions_router
 from app.routes.admin_router import router as admin_router
 import logging
@@ -35,9 +39,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"MongoDB connection failed: {str(e)}")
         logger.warning("Server will start but database operations may fail")
-    
+
     yield
-    
+
     # Shutdown
     try:
         logger.info("Shutting down application...")
@@ -56,7 +60,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
         logger.info(f"Incoming request: {request.method} {request.url.path}")
-        
+
         try:
             response = await call_next(request)
             process_time = time.time() - start_time
@@ -98,6 +102,14 @@ app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(job_router)
 app.include_router(evaluation_router)
+app.include_router(article_router)
+app.include_router(hirebase_router)
+app.include_router(trends_router)
+
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+
 app.include_router(questions_router)
 app.include_router(admin_router)
 
@@ -121,7 +133,7 @@ def health_check():
     except Exception as e:
         mongodb_status = f"error: {str(e)}"
         logger.error(f"MongoDB connection failed: {str(e)}")
-    
+
     return {
         "status": "ok",
         "mongodb": mongodb_status
