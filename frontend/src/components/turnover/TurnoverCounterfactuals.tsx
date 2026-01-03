@@ -56,23 +56,7 @@ const TurnoverCounterfactuals: React.FC<TurnoverCounterfactualsProps> = ({
             </div>
 
             <div className="cf-details">
-              <div className="cf-change">
-                <span className="change-label">Confidence Change:</span>
-                <span className={`change-value ${cf.confidence_change > 0 ? 'positive' : 'negative'}`}>
-                  {cf.confidence_change > 0 ? '+' : ''}
-                  {(cf.confidence_change * 100).toFixed(1)}%
-                </span>
-              </div>
               
-              <div className="cf-feature-change">
-                <span className="feature-label">Feature:</span>
-                <span className="feature-name">{cf.feature_changed}</span>
-                <div className="feature-values">
-                  <span className="from-value">{cf.original_value.toFixed(2)}</span>
-                  <ArrowRight size={14} />
-                  <span className="to-value">{cf.new_value.toFixed(2)}</span>
-                </div>
-              </div>
             </div>
           </div>
         ))}

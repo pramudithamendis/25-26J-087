@@ -67,15 +67,7 @@ const TurnoverRiskFactors: React.FC<TurnoverRiskFactorsProps> = ({ riskFactors }
             </div>
 
             <div className="factor-content">
-              <div className="factor-value">
-                <span className="value-label">Current Value:</span>
-                <span className="value-number">
-                  {typeof factor.value === 'number' 
-                    ? factor.value.toFixed(2) 
-                    : factor.value}
-                </span>
-              </div>
-              <p className="factor-description">{factor.description}</p>
+              
             </div>
           </div>
         ))}

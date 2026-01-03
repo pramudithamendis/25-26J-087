@@ -161,7 +161,7 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
                 <div key={idx} className="factor-card warning">
                   <div className="factor-header">
                     <span className="factor-label">{label}</span>
-                    <span className="factor-value">{feature.value_display}</span>
+                   
                   </div>
                   <p className="factor-explanation">{explanation}</p>
                   <div className="importance-bar">
@@ -193,7 +193,7 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
                 <div key={idx} className="factor-card positive">
                   <div className="factor-header">
                     <span className="factor-label">{label}</span>
-                    <span className="factor-value">{feature.value_display}</span>
+                    {/* <span className="factor-value">{feature.value_display}</span> */}
                   </div>
                   <p className="factor-explanation">{explanation}</p>
                   <div className="importance-bar">

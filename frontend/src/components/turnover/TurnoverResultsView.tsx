@@ -108,7 +108,7 @@ const TurnoverResultsView: React.FC = () => {
           Back to History
         </button>
         <h1>Turnover Risk Prediction</h1>
-        <p className="subtitle">Stored prediction results</p>
+        
       </div>
 
       <div className="dashboard-content">
