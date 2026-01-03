@@ -237,9 +237,9 @@ const TurnoverHistoryPage: React.FC = () => {
                 }}>
                   {pred.prediction.risk_label}
                 </div>
-                <div className="confidence-label">
+                {/* <div className="confidence-label">
                   {(pred.prediction.confidence * 100).toFixed(0)}% confidence
-                </div>
+                </div> */}
               </div>
             </div>
           ))}
