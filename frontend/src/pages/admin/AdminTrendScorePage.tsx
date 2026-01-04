@@ -12,11 +12,12 @@ export const AdminTrendScorePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [weekId, setWeekId] = useState<string>('');
+  const [expandedSkills, setExpandedSkills] = useState<Record<string, boolean>>({});
   
   // Filters
   const [scoreFilter, setScoreFilter] = useState('');
   const [skip, setSkip] = useState(0);
-  const [limit] = useState(5);
+  const [limit] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
@@ -78,6 +79,13 @@ export const AdminTrendScorePage = () => {
     return 'bg-red-100 text-red-800';
   };
 
+  const toggleSkills = (cvId: string) => {
+    setExpandedSkills(prev => ({
+      ...prev,
+      [cvId]: !prev[cvId]
+    }));
+  };
+
   const columns = [
     { 
       key: 'email', 
@@ -107,30 +115,43 @@ export const AdminTrendScorePage = () => {
     },
   {
       key: 'skills',
-      header: 'All Skills',
+      header: 'Skills',
       render: (item: CVTrendScore) => {
         const skills = item.skills_matched || [];
         const sortedSkills = [...skills].sort((a, b) => b.score - a.score);
+        const isExpanded = expandedSkills[item.cv_id || ''] || false;
+        const displaySkills = isExpanded ? sortedSkills : sortedSkills.slice(0, 5);
         
         return (
-          <div className="max-w-lg">
-            <div className="flex flex-wrap gap-1.5">
-              {sortedSkills.map((skillMatch, index) => (
-                <div 
+          <div className="max-w-sm">
+            <div className="flex flex-wrap gap-1 mb-1">
+              {displaySkills.map((skillMatch, index) => (
+                <span 
                   key={index}
-                  className="inline-flex items-center gap-1"
+                  className={`px-2 py-1 rounded text-xs ${getSkillScoreColor(skillMatch.score)}`}
                   title={`${skillMatch.skill}: ${(skillMatch.score * 100).toFixed(1)}%`}
                 >
-                  <span className={`px-2 py-1 rounded text-xs ${getSkillScoreColor(skillMatch.score)}`}>
-                    {skillMatch.skill}
-                  </span>
-                  <span className="text-xs text-gray-500 font-medium">
-                    {(skillMatch.score * 100).toFixed(0)}%
-                  </span>
-                </div>
+                  {skillMatch.skill}
+                </span>
               ))}
+              {skills.length > 5 && !isExpanded && (
+                <button
+                  onClick={() => toggleSkills(item.cv_id || '')}
+                  className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200 transition-colors"
+                >
+                  +{skills.length - 5} more
+                </button>
+              )}
+              {isExpanded && skills.length > 5 && (
+                <button
+                  onClick={() => toggleSkills(item.cv_id || '')}
+                  className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200 transition-colors"
+                >
+                  Show less
+                </button>
+              )}
             </div>
-            <div className="text-xs text-gray-500 mt-2">
+            <div className="text-xs text-gray-500">
               {skills.length} skills • Avg: {(item.cv_trend_score * 100).toFixed(1)}%
             </div>
           </div>
@@ -238,30 +259,6 @@ export const AdminTrendScorePage = () => {
           </div>
         </div>
       </div>
-
-      {/* Stats Summary 
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <p className="text-sm text-gray-500">Total CVs Analyzed</p>
-            <p className="text-2xl font-bold text-gray-900">{results.length}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <p className="text-sm text-gray-500">Average Score</p>
-            <p className={`text-2xl font-bold ${getScoreColor(stats.avg).replace('font-semibold', '')}`}>
-              {(stats.avg * 100).toFixed(1)}%
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <p className="text-sm text-gray-500">High Scores (≥70%)</p>
-            <p className="text-2xl font-bold text-green-600">{stats.excellent}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <p className="text-sm text-gray-500">Low Scores (&lt;40%)</p>
-            <p className="text-2xl font-bold text-red-600">{stats.fair + stats.poor}</p>
-          </div>
-        </div>
-      )}
 
       {/* Evaluations Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
