@@ -109,7 +109,7 @@ export const AdminDashboard = () => {
             Manage Users
           </Button>
           <Button variant="primary" onClick={() => navigate('/dashboard/admin/evaluations')} className="w-full">
-            View Evaluations
+            View Multi-Source-Evaluations
           </Button>
         </div>
       </div>
