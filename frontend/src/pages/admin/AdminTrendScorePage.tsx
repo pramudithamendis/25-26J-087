@@ -17,7 +17,7 @@ export const AdminTrendScorePage = () => {
   // Filters
   const [scoreFilter, setScoreFilter] = useState('');
   const [skip, setSkip] = useState(0);
-  const [limit] = useState(10);
+  const [limit] = useState(5);
   const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
@@ -47,10 +47,10 @@ export const AdminTrendScorePage = () => {
   };
 
   const getSkillScoreColor = (score: number) => {
-    if (score >= 0.5) return 'bg-green-100 text-green-800';
-    if (score >= 0.3) return 'bg-yellow-100 text-yellow-800';
-    if (score >= 0.1) return 'bg-blue-100 text-blue-800';
-    return 'bg-gray-100 text-gray-800';
+    if (score >= 0.5) return 'bg-green-100 text-green-800 border border-green-200 hover:bg-green-200';
+    if (score >= 0.3) return 'bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200';
+    if (score >= 0.1) return 'bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200';
+    return 'bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200';
   };
 
   // Get paginated results with filtering and sorting
@@ -84,6 +84,11 @@ export const AdminTrendScorePage = () => {
       ...prev,
       [cvId]: !prev[cvId]
     }));
+  };
+
+  // Check if skill needs attention (low score)
+  const needsAttention = (score: number) => {
+    return score < 0.1; // Skills below 10% might need attention
   };
 
   const columns = [
@@ -123,21 +128,33 @@ export const AdminTrendScorePage = () => {
         const displaySkills = isExpanded ? sortedSkills : sortedSkills.slice(0, 5);
         
         return (
-          <div className="max-w-sm">
-            <div className="flex flex-wrap gap-1 mb-1">
+          <div className="max-w-lg">
+            <div className="flex flex-wrap gap-1.5">
               {displaySkills.map((skillMatch, index) => (
-                <span 
+                <div 
                   key={index}
-                  className={`px-2 py-1 rounded text-xs ${getSkillScoreColor(skillMatch.score)}`}
-                  title={`${skillMatch.skill}: ${(skillMatch.score * 100).toFixed(1)}%`}
+                  className="inline-flex items-center gap-1 group relative"
+                  title={`${skillMatch.skill}: ${(skillMatch.score * 100).toFixed(1)}% match`}
                 >
-                  {skillMatch.skill}
-                </span>
+                  <span className={`px-2 py-1 rounded text-xs transition-all duration-200 ${getSkillScoreColor(skillMatch.score)}`}>
+                    {skillMatch.skill}
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">
+                    {(skillMatch.score * 100).toFixed(0)}%
+                  </span>
+                  {/* Attention indicator for very low scores */}
+                  {needsAttention(skillMatch.score) && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-[8px] text-white font-bold">!</span>
+                    </div>
+                  )}
+                </div>
               ))}
               {skills.length > 5 && !isExpanded && (
                 <button
                   onClick={() => toggleSkills(item.cv_id || '')}
-                  className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200 transition-colors"
+                  className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200 transition-colors border border-gray-300"
+                  title={`Show all ${skills.length} skills`}
                 >
                   +{skills.length - 5} more
                 </button>
@@ -145,15 +162,24 @@ export const AdminTrendScorePage = () => {
               {isExpanded && skills.length > 5 && (
                 <button
                   onClick={() => toggleSkills(item.cv_id || '')}
-                  className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200 transition-colors"
+                  className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200 transition-colors border border-gray-300"
                 >
                   Show less
                 </button>
               )}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 mt-2">
               {skills.length} skills • Avg: {(item.cv_trend_score * 100).toFixed(1)}%
             </div>
+            {/* Legend for attention indicators */}
+            {skills.some(s => needsAttention(s.score)) && (
+              <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                <div className="w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-[8px] text-white font-bold">!</span>
+                </div>
+                <span>Skills below 10% match</span>
+              </div>
+            )}
           </div>
         );
       },
@@ -174,24 +200,24 @@ export const AdminTrendScorePage = () => {
     },
   ];
 
-  const calculateStats = () => {
-    if (results.length === 0) return null;
+  // const calculateStats = () => {
+  //   if (results.length === 0) return null;
     
-    const scores = results.map(r => r.cv_trend_score);
-    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const max = Math.max(...scores);
-    const min = Math.min(...scores);
+  //   const scores = results.map(r => r.cv_trend_score);
+  //   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  //   const max = Math.max(...scores);
+  //   const min = Math.min(...scores);
     
-    // Count by score ranges
-    const excellent = scores.filter(s => s >= 0.7).length;
-    const good = scores.filter(s => s >= 0.4 && s < 0.7).length;
-    const fair = scores.filter(s => s >= 0.2 && s < 0.4).length;
-    const poor = scores.filter(s => s < 0.2).length;
+  //   // Count by score ranges
+  //   const excellent = scores.filter(s => s >= 0.7).length;
+  //   const good = scores.filter(s => s >= 0.4 && s < 0.7).length;
+  //   const fair = scores.filter(s => s >= 0.2 && s < 0.4).length;
+  //   const poor = scores.filter(s => s < 0.2).length;
     
-    return { avg, max, min, excellent, good, fair, poor };
-  };
+  //   return { avg, max, min, excellent, good, fair, poor };
+  // };
 
-  const stats = calculateStats();
+  //const stats = calculateStats();
   const paginatedResults = getPaginatedResults();
   const filteredTotalCount = scoreFilter ? 
     results.filter(r => {
