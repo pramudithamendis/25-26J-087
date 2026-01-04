@@ -6,6 +6,7 @@ import { Alert } from '../Alert';
 import { ScoreBreakdown } from '../evaluations/ScoreBreakdown';
 import { getApplicationDetails, downloadResume, downloadLinkedInResume } from '../../services/adminService';
 import { getEvaluation } from '../../services/evaluationService';
+import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import type { ApplicationDetailResponse, ApplicationTimelineEvent } from '../../types/adminTypes';
 import type { EvaluationResponse } from '../../types/evaluationTypes';
 
@@ -298,7 +299,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {evaluation.decision}
+                        {getDecisionDisplayValue(evaluation.decision)}
                       </div>
                     </div>
                   </div>
@@ -378,7 +379,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                               )}
                               {event.metadata.decision && (
                                 <p className="text-xs text-gray-600">
-                                  Decision: <span className="font-medium">{event.metadata.decision}</span>
+                                  Decision: <span className="font-medium">{getDecisionDisplayValue(event.metadata.decision)}</span>
                                 </p>
                               )}
                             </div>

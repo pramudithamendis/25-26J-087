@@ -6,6 +6,7 @@ import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { ScoreBreakdown } from './ScoreBreakdown';
 import { RolePredictions } from './RolePredictions';
 import { getEvaluation } from '../../services/evaluationService';
+import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import type { EvaluationResponse } from '../../types/evaluationTypes';
 
 interface EvaluationDetailProps {
@@ -107,7 +108,7 @@ export const EvaluationDetail = ({ evaluationId }: EvaluationDetailProps) => {
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getDecisionColor(evaluation.decision)}`}
             >
-              {evaluation.decision}
+              {getDecisionDisplayValue(evaluation.decision)}
             </span>
           </div>
 
