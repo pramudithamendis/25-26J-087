@@ -105,11 +105,6 @@ app.include_router(evaluation_router)
 app.include_router(article_router)
 app.include_router(hirebase_router)
 app.include_router(trends_router)
-
-@app.on_event("startup")
-def startup_event():
-    start_scheduler()
-
 app.include_router(questions_router)
 app.include_router(admin_router)
 
@@ -138,4 +133,10 @@ def health_check():
         "status": "ok",
         "mongodb": mongodb_status
     }
+
+
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+
 

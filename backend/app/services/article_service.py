@@ -1,7 +1,6 @@
 # backend/app/services/article_service.py
 import requests
 import feedparser
-from newspaper import Article
 import time
 import re
 from typing import List, Dict
@@ -10,6 +9,11 @@ from app.models.article_model import articles_collection
 import json
 from pathlib import Path
 from app.config import settings
+
+def get_article_parser():
+    from newspaper import Article
+    return Article
+
 
 
 # -------------------------
@@ -48,7 +52,7 @@ def clean_text(text: str) -> str:
 # Fetch full article text using newspaper3k
 def get_full_article(url: str) -> str:
     try:
-        article = Article(url) # Initialize article object
+        article = get_article_parser(url) 
         article.download()
         article.parse()
         return clean_text(article.text)

@@ -10,6 +10,7 @@ import type {
   ApiError,
   JobApplicantListItem,
   JobApplicantListResponse,
+  CVTrendScoreListResponse
 } from '../types/adminTypes';
 
 /**
@@ -420,6 +421,25 @@ export const updateSettings = async (settings: SystemSettings): Promise<SystemSe
   } catch (error: any) {
     const apiError: ApiError = {
       detail: error.response?.data?.detail || 'Failed to update settings.',
+      statusCode: error.response?.status,
+    };
+    throw apiError;
+  }
+};
+
+/**
+ * List all CV trend scores (admin only)
+ */
+export const listAllCVTrendScores = async (weekId?: string): Promise<CVTrendScoreListResponse> => {
+  try {
+    const params = new URLSearchParams();
+    if (weekId) params.append('week_id', weekId);
+
+    const response = await apiClient.get<CVTrendScoreListResponse>(`/api/trends/cv/calculate?${params.toString()}`);
+    return response.data;
+  } catch (error: any) {
+    const apiError: ApiError = {
+      detail: error.response?.data?.detail || 'Failed to fetch CV trend scores.',
       statusCode: error.response?.status,
     };
     throw apiError;

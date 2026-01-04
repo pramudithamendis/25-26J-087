@@ -4,6 +4,7 @@ from pytrends.request import TrendReq
 from datetime import datetime
 from typing import List
 from app.models.google_trends_model import google_trends_collection
+from app.models.hirebase_skill_stats_model import hirebase_skill_stats_collection
 from app.models.article_model import articles_collection
 import time
 from app.utils.date_utils import current_week_id, current_month_id
@@ -19,15 +20,21 @@ def fetch_google_trends():
     month_id = current_month_id()
 
     # Get skills from this week's articles
-    skills = list({
+    article_skills = {
         s.lower().strip()
         for a in articles_collection.find({"week_id": week_id, "month_id": month_id})
         for s in a.get("skills", [])
-    })
+    }
+
+    hirebase_doc = hirebase_skill_stats_collection.find_one({"week_id": week_id, "month_id": month_id})
+    hirebase_skills = set(hirebase_doc.get("skill_counts", {}).keys()) if hirebase_doc else set()
+
+    skills = article_skills.union(hirebase_skills)
 
     if not skills:
         return {"message": "No skills found for the current week/month."}
-
+    
+    skills = list(skills)
     batch_size = 5
     stored = []
 

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 interface TableColumn<T> {
   key: keyof T | string;

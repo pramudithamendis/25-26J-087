@@ -58,18 +58,19 @@ def calculate_all_cv_trend_score() -> float:
             [d["skill"] for d in trend_docs]
         )
 
-        matched = [trend_map[s] for s in matched_skills]
+        matched = [{"skill": s, "score": trend_map[s]} for s in matched_skills]
 
         if not matched:
             score = 0.0
         else:
-            score = round(sum(matched) / len(matched),4)
+            score = round(sum([s["score"] for s in matched]) / len(matched),4)
 
         doc = {
             "cv_id": cv["_id"],
             "week_id": week_id,
             "cv_trend_score": score,
-            "skills_matched": matched_skills,
+            "skills_matched": matched,
+            "email": cv.get("user_email", ""),
             "created_at": datetime.utcnow(),
         }
 
@@ -82,7 +83,7 @@ def calculate_all_cv_trend_score() -> float:
 
         results.append(doc)
 
-        serialized_results = [serialize_doc(doc) for doc in results]
+    serialized_results = [serialize_doc(doc) for doc in results]
     return{
         "week_id": week_id,
         "resumes_processed": len(results),
@@ -98,6 +99,7 @@ def serialize_doc(doc):
         "week_id": doc["week_id"],
         "skills_matched": doc["skills_matched"],
         "cv_trend_score": doc["cv_trend_score"],
+        "email": doc["email"],
         "created_at": doc["created_at"].isoformat() if isinstance(doc["created_at"], datetime) else doc["created_at"]
     }
 
