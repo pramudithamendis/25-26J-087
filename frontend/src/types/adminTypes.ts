@@ -129,3 +129,26 @@ export interface ApiError {
   statusCode?: number;
 }
 
+// types/cvTrendScore.ts
+export interface CVTrendScore {
+  cv_id: string;               // ObjectId as string
+  week_id: string;             // e.g., "2026-W01"
+  skills_matched: SkillMatch[];    // list of matched skills
+  cv_trend_score: number;      // trend score (0.0 - 1.0, for example)
+  email: string;               // user's email
+  created_at: string;          // ISO datetime string
+}
+
+export interface CVTrendScoreListResponse {
+  week_id: string;
+  resumes_processed: number;
+  results: CVTrendScore[];
+}
+
+export interface SkillMatch {
+  skill: string;
+  score: number;
+}
+
+
+

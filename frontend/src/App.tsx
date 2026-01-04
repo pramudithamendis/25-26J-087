@@ -19,6 +19,7 @@ import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminEvaluationsPage } from './pages/admin/AdminEvaluationsPage';
 import { JobApplicantsPage } from './pages/admin/JobApplicantsPage';
 import { JobApplicantDetailPage } from './pages/admin/JobApplicantDetailPage';
+import { AdminTrendScorePage } from './pages/admin/AdminTrendScorePage'
 import './App.css';
 
 function App() {
@@ -165,6 +166,16 @@ function App() {
               <AdminRoute>
                 <DashboardLayout>
                   <AdminEvaluationsPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+           <Route
+            path="/dashboard/admin/trendscore"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminTrendScorePage />
                 </DashboardLayout>
               </AdminRoute>
             }

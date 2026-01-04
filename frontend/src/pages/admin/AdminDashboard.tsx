@@ -111,6 +111,9 @@ export const AdminDashboard = () => {
           <Button variant="primary" onClick={() => navigate('/dashboard/admin/evaluations')} className="w-full">
             View Evaluations
           </Button>
+          <Button variant="primary" onClick={() => navigate('/dashboard/admin/trendscore')} className="w-full">
+            View Trend Score
+          </Button>
         </div>
       </div>
     </div>
