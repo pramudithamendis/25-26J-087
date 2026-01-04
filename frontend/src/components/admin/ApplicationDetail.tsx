@@ -173,7 +173,7 @@ export const ApplicationDetail = ({ applicationId, onClose, onApprove, onReject 
                   navigate(`/dashboard/evaluations/${application.evaluation_id}`);
                 }}
               >
-                View Evaluation
+                View Multi-Source-Evaluations
               </Button>
             </div>
           )}

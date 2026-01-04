@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from bson import ObjectId
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 import logging
 
 from app.models.evaluation_model import evaluations_collection
@@ -73,11 +73,38 @@ def build_github_summary(github_info: Dict) -> str:
     return ", ".join(parts)
 
 
-def determine_decision(total_score: int) -> str:
-    """Determine decision based on score thresholds"""
-    if total_score >= 70:
+def determine_decision(
+    total_score: int,
+    role_predictions: Optional[List[Dict]] = None,
+    job_title: Optional[str] = None
+) -> str:
+    """
+    Determine decision based on score thresholds, with optional role match adjustments.
+    
+    Args:
+        total_score: Total evaluation score
+        role_predictions: Optional list of predicted roles
+        job_title: Optional job title for role matching
+    
+    Returns:
+        Decision string: "Selected", "Review", or "Not Selected"
+    """
+    # Default thresholds
+    selected_threshold = 70
+    review_threshold = 60
+    
+    # Adjust thresholds based on role match if available
+    if role_predictions and job_title:
+        from app.utils.role_matcher import calculate_role_match, get_adjusted_threshold
+        
+        role_match = calculate_role_match(job_title, role_predictions)
+        thresholds = get_adjusted_threshold(total_score, role_match, selected_threshold, review_threshold)
+        selected_threshold = thresholds["selected_threshold"]
+        review_threshold = thresholds["review_threshold"]
+    
+    if total_score >= selected_threshold:
         return "Selected"
-    elif total_score >= 60:
+    elif total_score >= review_threshold:
         return "Review"
     else:
         return "Not Selected"
@@ -115,6 +142,22 @@ def generate_explanations(
     if role_predictions:
         top_role = role_predictions[0]
         explanations.append(f"Best fit: {top_role['role']} ({top_role['similarity']*100:.0f}% match)")
+        
+        # Add role match bonus explanation if applicable
+        role_match_bonus = breakdown.get("role_match_bonus", 0)
+        if role_match_bonus != 0:
+            job_title = jd_info.get("title", "")
+            if job_title:
+                from app.utils.role_matcher import calculate_role_match
+                role_match = calculate_role_match(job_title, role_predictions)
+                match_type = role_match.get("match_type", "")
+                
+                if match_type == "overqualified" and role_match_bonus > 0:
+                    explanations.append(f"Strong role match: Predicted as {top_role['role']} (overqualified for {job_title}) - bonus applied")
+                elif match_type == "exact_match" and role_match_bonus > 0:
+                    explanations.append(f"Exact role match: Predicted role aligns with job title - bonus applied")
+                elif match_type == "underqualified" and role_match_bonus < 0:
+                    explanations.append(f"Role mismatch: Predicted role level below job requirements")
     
     # Check breakdown highlights
     if breakdown.get("semantic_fit", 0) > 20:

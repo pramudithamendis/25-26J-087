@@ -143,6 +143,9 @@ def aggregate_scores(
     # 7. Technology mismatch penalty (already calculated above for semantic fit adjustment)
     # The penalty is applied both to semantic fit (reduction) and as a direct penalty
     
+    # 8. Role match bonus (based on predicted role vs job title)
+    role_match_bonus = calculate_role_match_bonus(merged_json)
+    
     # Build breakdown first
     breakdown = {
         "semantic_fit": semantic_fit,
@@ -150,6 +153,7 @@ def aggregate_scores(
         "experience_recency": experience_recency,
         "github_evidence": github_evidence,
         "bonus_malus": bonus_malus,
+        "role_match_bonus": round(role_match_bonus, 1),
         "skill_mismatch_penalty": round(skill_mismatch_penalty, 1),
         "technology_mismatch_penalty": round(technology_mismatch_penalty, 1)
     }
@@ -160,13 +164,14 @@ def aggregate_scores(
         breakdown["role_competency"] +
         breakdown["experience_recency"] +
         breakdown["github_evidence"] +
-        breakdown["bonus_malus"] -
+        breakdown["bonus_malus"] +
+        breakdown["role_match_bonus"] -
         breakdown["skill_mismatch_penalty"] -
         breakdown["technology_mismatch_penalty"]
     )
     
     # Log calculation breakdown for debugging
-    logger.info(f"Score calculation: {semantic_fit} + {role_competency} + {experience_recency} + {github_evidence} + {bonus_malus} - {skill_mismatch_penalty} - {technology_mismatch_penalty} = {calculated_total}")
+    logger.info(f"Score calculation: {semantic_fit} + {role_competency} + {experience_recency} + {github_evidence} + {bonus_malus} + {role_match_bonus} - {skill_mismatch_penalty} - {technology_mismatch_penalty} = {calculated_total}")
     
     # Clamp to 0-100 and round to integer
     total_score = max(0, min(100, int(round(calculated_total))))
@@ -938,4 +943,52 @@ def calculate_technology_mismatch_penalty(merged_json: Dict) -> float:
         logger.info(f"Minor technology mismatch: {mismatch_details}")
     
     return penalty
+
+
+def calculate_role_match_bonus(merged_json: Dict) -> float:
+    """
+    Calculate role match bonus based on predicted roles vs job title.
+    
+    This bonus rewards candidates whose predicted role matches or exceeds
+    the job level (e.g., predicted as "Data Scientist" applying for "Data Science Intern").
+    
+    Args:
+        merged_json: Merged JSON containing candidate and job description data
+    
+    Returns:
+        Bonus points (-5 to +5)
+    """
+    try:
+        # Get job title and role predictions
+        jd_info = merged_json.get("job_description", {})
+        job_title = jd_info.get("title", "")
+        
+        # Try to get role predictions from merged_json (may not be available yet)
+        # Role predictions are typically added after aggregation, so this might return 0
+        role_predictions = merged_json.get("role_predictions", [])
+        
+        if not job_title or not role_predictions:
+            # Role predictions might not be available at aggregation time
+            # This is expected - role match bonus will be 0
+            return 0.0
+        
+        # Calculate role match using role_matcher utility
+        from app.utils.role_matcher import calculate_role_match
+        
+        role_match = calculate_role_match(job_title, role_predictions)
+        bonus = role_match.get("bonus", 0.0)
+        
+        # Clamp bonus to -5 to +5
+        bonus = max(-5.0, min(5.0, bonus))
+        
+        if bonus != 0.0:
+            match_type = role_match.get("match_type", "")
+            similarity = role_match.get("similarity", 0.0)
+            logger.info(f"Role match bonus: {bonus:.1f} (type: {match_type}, similarity: {similarity:.2f})")
+        
+        return bonus
+        
+    except Exception as e:
+        logger.error(f"Error calculating role match bonus: {str(e)}")
+        return 0.0
 

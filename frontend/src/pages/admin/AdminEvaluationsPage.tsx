@@ -6,6 +6,7 @@ import { Alert } from '../../components/Alert';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { listAllEvaluations, exportEvaluations } from '../../services/adminService';
 import { listJobs } from '../../services/jobService';
+import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import type { EvaluationListItem } from '../../types/adminTypes';
 import type { Job } from '../../types/jobTypes';
 
@@ -95,7 +96,7 @@ export const AdminEvaluationsPage = () => {
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[decision] || 'bg-gray-100 text-gray-800'}`}>
-        {decision}
+        {getDecisionDisplayValue(decision)}
       </span>
     );
   };
@@ -196,9 +197,9 @@ export const AdminEvaluationsPage = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             >
               <option value="">All Decisions</option>
-              <option value="Selected">Selected</option>
-              <option value="Review">Review</option>
-              <option value="Not Selected">Not Selected</option>
+              <option value="Selected">Proceed</option>
+              <option value="Review">Review Required</option>
+              <option value="Not Selected">Do Not Proceed</option>
             </select>
           </div>
           <div>
