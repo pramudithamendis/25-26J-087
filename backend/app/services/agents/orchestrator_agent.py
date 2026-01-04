@@ -553,8 +553,9 @@ class AgenticOrchestrator:
         logger.info(f"  Breakdown: semantic_fit={breakdown.get('semantic_fit', 0)}, role_competency={breakdown.get('role_competency', 0)}, experience_recency={breakdown.get('experience_recency', 0)}, github_evidence={breakdown.get('github_evidence', 0)}, bonus_malus={breakdown.get('bonus_malus', 0)}, skill_penalty={breakdown.get('skill_mismatch_penalty', 0)}, tech_penalty={breakdown.get('technology_mismatch_penalty', 0)}")
         
         # Determine decision and generate explanations
-        decision = self._determine_decision(total_score)
         role_predictions = self._classify_roles(state)
+        job_title = state.jd_data.get("title", "") if state.jd_data else ""
+        decision = self._determine_decision(total_score, role_predictions, job_title)
         explanations = self._generate_explanations(state, total_score, breakdown, role_predictions)
         
         # Store aggregated result but don't set final result yet
@@ -576,7 +577,9 @@ class AgenticOrchestrator:
                 original_score = state.aggregated_score.get("total_score", 0) if state.aggregated_score else 0
                 logger.info(f"Dataset validation {result.get('status', 'failed')}, using original score: {original_score}")
                 
-                decision = self._determine_decision(original_score)
+                role_predictions = state.role_predictions or self._classify_roles(state)
+                job_title = state.jd_data.get("title", "") if state.jd_data else ""
+                decision = self._determine_decision(original_score, role_predictions, job_title)
                 role_predictions = self._classify_roles(state)
                 explanations = self._generate_explanations(
                     state,
@@ -608,8 +611,9 @@ class AgenticOrchestrator:
                         state.aggregated_score["dataset_calibration"] = result
                     
                     # Determine decision and generate explanations with calibrated score
-                    decision = self._determine_decision(calibrated_score)
-                    role_predictions = self._classify_roles(state)
+                    role_predictions = self._classify_roles(state) if not state.role_predictions else state.role_predictions
+                    job_title = state.jd_data.get("title", "") if state.jd_data else ""
+                    decision = self._determine_decision(calibrated_score, role_predictions, job_title)
                     explanations = self._generate_explanations(
                         state, 
                         calibrated_score, 
@@ -625,8 +629,9 @@ class AgenticOrchestrator:
                 else:
                     # Calibrated score same as original, use original path
                     logger.info(f"Calibrated score same as original: {original_score} (confidence: {confidence:.2f})")
-                    decision = self._determine_decision(original_score)
-                    role_predictions = self._classify_roles(state)
+                    role_predictions = self._classify_roles(state) if not state.role_predictions else state.role_predictions
+                    job_title = state.jd_data.get("title", "") if state.jd_data else ""
+                    decision = self._determine_decision(original_score, role_predictions, job_title)
                     explanations = self._generate_explanations(
                         state,
                         original_score,
@@ -639,8 +644,9 @@ class AgenticOrchestrator:
                 # Use original score if confidence is low
                 logger.info(f"Using original score: {original_score} (confidence: {confidence:.2f})")
                 
-                decision = self._determine_decision(original_score)
-                role_predictions = self._classify_roles(state)
+                role_predictions = self._classify_roles(state) if not state.role_predictions else state.role_predictions
+                job_title = state.jd_data.get("title", "") if state.jd_data else ""
+                decision = self._determine_decision(original_score, role_predictions, job_title)
                 explanations = self._generate_explanations(
                     state,
                     original_score,
@@ -675,8 +681,9 @@ class AgenticOrchestrator:
             
             # Fallback to original score
             original_score = state.aggregated_score.get("total_score", 0) if state.aggregated_score else 0
-            decision = self._determine_decision(original_score)
-            role_predictions = self._classify_roles(state)
+            role_predictions = self._classify_roles(state) if not state.role_predictions else state.role_predictions
+            job_title = state.jd_data.get("title", "") if state.jd_data else ""
+            decision = self._determine_decision(original_score, role_predictions, job_title)
             explanations = self._generate_explanations(
                 state,
                 original_score,
@@ -793,8 +800,9 @@ class AgenticOrchestrator:
             # If we have aggregated score, we can complete
             if state.aggregated_score and state.total_score is None:
                 total_score = state.aggregated_score.get("total_score", 0)
-                decision = self._determine_decision(total_score)
                 role_predictions = self._classify_roles(state) if not state.role_predictions else state.role_predictions
+                job_title = state.jd_data.get("title", "") if state.jd_data else ""
+                decision = self._determine_decision(total_score, role_predictions, job_title)
                 explanations = self._generate_explanations(
                     state,
                     total_score,
@@ -813,8 +821,9 @@ class AgenticOrchestrator:
                     state.set_intermediate_result("aggregated_score", result)
                     state.aggregated_score = result
                     total_score = result.get("total_score", 0)
-                    decision = self._determine_decision(total_score)
                     role_predictions = self._classify_roles(state)
+                    job_title = state.jd_data.get("title", "") if state.jd_data else ""
+                    decision = self._determine_decision(total_score, role_predictions, job_title)
                     explanations = self._generate_explanations(
                         state,
                         total_score,
@@ -1051,11 +1060,39 @@ class AgenticOrchestrator:
         
         return ", ".join(parts)
     
-    def _determine_decision(self, total_score: int) -> str:
-        """Determine decision based on score"""
-        if total_score >= 70:
+    def _determine_decision(
+        self,
+        total_score: int,
+        role_predictions: Optional[List[Dict]] = None,
+        job_title: Optional[str] = None
+    ) -> str:
+        """
+        Determine decision based on score thresholds, with optional role match adjustments.
+        
+        Args:
+            total_score: Total evaluation score
+            role_predictions: Optional list of predicted roles
+            job_title: Optional job title for role matching
+        
+        Returns:
+            Decision string: "Selected", "Review", or "Not Selected"
+        """
+        # Default thresholds
+        selected_threshold = 70
+        review_threshold = 60
+        
+        # Adjust thresholds based on role match if available
+        if role_predictions and job_title:
+            from app.utils.role_matcher import calculate_role_match, get_adjusted_threshold
+            
+            role_match = calculate_role_match(job_title, role_predictions)
+            thresholds = get_adjusted_threshold(total_score, role_match, selected_threshold, review_threshold)
+            selected_threshold = thresholds["selected_threshold"]
+            review_threshold = thresholds["review_threshold"]
+        
+        if total_score >= selected_threshold:
             return "Selected"
-        elif total_score >= 60:
+        elif total_score >= review_threshold:
             return "Review"
         else:
             return "Not Selected"
@@ -1123,6 +1160,22 @@ class AgenticOrchestrator:
         if role_predictions:
             top_role = role_predictions[0]
             explanations.append(f"Best fit: {top_role['role']} ({top_role['similarity']*100:.0f}% match)")
+            
+            # Add role match bonus explanation if applicable
+            role_match_bonus = breakdown.get("role_match_bonus", 0)
+            if role_match_bonus != 0:
+                job_title = state.jd_data.get("title", "") if state.jd_data else ""
+                if job_title:
+                    from app.utils.role_matcher import calculate_role_match
+                    role_match = calculate_role_match(job_title, role_predictions)
+                    match_type = role_match.get("match_type", "")
+                    
+                    if match_type == "overqualified" and role_match_bonus > 0:
+                        explanations.append(f"Strong role match: Predicted as {top_role['role']} (overqualified for {job_title}) - bonus applied")
+                    elif match_type == "exact_match" and role_match_bonus > 0:
+                        explanations.append(f"Exact role match: Predicted role aligns with job title - bonus applied")
+                    elif match_type == "underqualified" and role_match_bonus < 0:
+                        explanations.append(f"Role mismatch: Predicted role level below job requirements")
         
         # Breakdown highlights
         if breakdown.get("semantic_fit", 0) > 20:

@@ -201,9 +201,9 @@ Respond with JSON containing total_score, breakdown, and reasoning."""
             total_score = result.get("total_score", baseline_score)
             total_score = max(0, min(100, int(total_score)))
             
-            # CRITICAL: Preserve penalties and GitHub evidence from baseline breakdown
+            # CRITICAL: Preserve penalties, GitHub evidence, and role_match_bonus from baseline breakdown
             breakdown = result.get("breakdown", {})
-            # Merge with baseline to ensure penalties and GitHub evidence are included
+            # Merge with baseline to ensure penalties, GitHub evidence, and role_match_bonus are included
             final_breakdown = baseline_breakdown.copy()
             
             # Update semantic_fit (no validation needed)
@@ -270,19 +270,24 @@ Respond with JSON containing total_score, breakdown, and reasoning."""
             if "technology_mismatch_penalty" in baseline_breakdown:
                 final_breakdown["technology_mismatch_penalty"] = baseline_breakdown["technology_mismatch_penalty"]
             
+            # CRITICAL: Preserve role_match_bonus from baseline (calculated from role predictions)
+            if "role_match_bonus" in baseline_breakdown:
+                final_breakdown["role_match_bonus"] = baseline_breakdown["role_match_bonus"]
+            
             # Recalculate total_score from final_breakdown to ensure consistency
             total_score = (
                 final_breakdown.get("semantic_fit", 0) +
                 final_breakdown.get("role_competency", 0) +
                 final_breakdown.get("experience_recency", 0) +
                 final_breakdown.get("github_evidence", 0) +
-                final_breakdown.get("bonus_malus", 0) -
+                final_breakdown.get("bonus_malus", 0) +
+                final_breakdown.get("role_match_bonus", 0) -
                 final_breakdown.get("skill_mismatch_penalty", 0) -
                 final_breakdown.get("technology_mismatch_penalty", 0)
             )
             # Clamp to 0-100 and round to integer
             total_score = max(0, min(100, int(round(total_score))))
-            logger.info(f"Recalculated total_score from breakdown: {total_score} (components: semantic_fit={final_breakdown.get('semantic_fit', 0)}, role_competency={final_breakdown.get('role_competency', 0)}, experience_recency={final_breakdown.get('experience_recency', 0)}, github_evidence={final_breakdown.get('github_evidence', 0)}, bonus_malus={final_breakdown.get('bonus_malus', 0)}, skill_penalty={final_breakdown.get('skill_mismatch_penalty', 0)}, tech_penalty={final_breakdown.get('technology_mismatch_penalty', 0)})")
+            logger.info(f"Recalculated total_score from breakdown: {total_score} (components: semantic_fit={final_breakdown.get('semantic_fit', 0)}, role_competency={final_breakdown.get('role_competency', 0)}, experience_recency={final_breakdown.get('experience_recency', 0)}, github_evidence={final_breakdown.get('github_evidence', 0)}, bonus_malus={final_breakdown.get('bonus_malus', 0)}, role_match_bonus={final_breakdown.get('role_match_bonus', 0)}, skill_penalty={final_breakdown.get('skill_mismatch_penalty', 0)}, tech_penalty={final_breakdown.get('technology_mismatch_penalty', 0)})")
             
             reasoning = result.get("reasoning", "Agentic adjustment applied")
             
