@@ -17,7 +17,7 @@ export const AdminTrendScorePage = () => {
   // Filters
   const [scoreFilter, setScoreFilter] = useState('');
   const [skip, setSkip] = useState(0);
-  const [limit] = useState(5);
+  const [limit] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
@@ -72,12 +72,12 @@ export const AdminTrendScorePage = () => {
     return filteredResults.slice(skip, skip + limit);
   };
 
-  const getScoreBadge = (score: number) => {
-    if (score >= 0.7) return 'bg-green-100 text-green-800';
-    if (score >= 0.4) return 'bg-yellow-100 text-yellow-800';
-    if (score >= 0.2) return 'bg-orange-100 text-orange-800';
-    return 'bg-red-100 text-red-800';
-  };
+  // const getScoreBadge = (score: number) => {
+  //   if (score >= 0.7) return 'bg-green-100 text-green-800';
+  //   if (score >= 0.4) return 'bg-yellow-100 text-yellow-800';
+  //   if (score >= 0.2) return 'bg-orange-100 text-orange-800';
+  //   return 'bg-red-100 text-red-800';
+  // };
 
   const toggleSkills = (cvId: string) => {
     setExpandedSkills(prev => ({
@@ -86,10 +86,6 @@ export const AdminTrendScorePage = () => {
     }));
   };
 
-  // Check if skill needs attention (low score)
-  const needsAttention = (score: number) => {
-    return score < 0.1; // Skills below 10% might need attention
-  };
 
   const columns = [
     { 
@@ -109,10 +105,7 @@ export const AdminTrendScorePage = () => {
             <span className={getScoreColor(item.cv_trend_score)}>
               {percentage.toFixed(1)}%
             </span>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreBadge(item.cv_trend_score)}`}>
-              {item.cv_trend_score >= 0.7 ? 'High' : 
-               item.cv_trend_score >= 0.4 ? 'Medium' : 
-               item.cv_trend_score >= 0.2 ? 'Low' : 'Minimal'}
+            <span className={` ${item.cv_trend_score}`}>
             </span>
           </div>
         );
@@ -139,15 +132,8 @@ export const AdminTrendScorePage = () => {
                   <span className={`px-2 py-1 rounded text-xs transition-all duration-200 ${getSkillScoreColor(skillMatch.score)}`}>
                     {skillMatch.skill}
                   </span>
-                  <span className="text-xs text-gray-500 font-medium">
-                    {(skillMatch.score * 100).toFixed(0)}%
-                  </span>
-                  {/* Attention indicator for very low scores */}
-                  {needsAttention(skillMatch.score) && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
-                      <span className="text-[8px] text-white font-bold">!</span>
-                    </div>
-                  )}
+                 
+                
                 </div>
               ))}
               {skills.length > 5 && !isExpanded && (
@@ -169,17 +155,9 @@ export const AdminTrendScorePage = () => {
               )}
             </div>
             <div className="text-xs text-gray-500 mt-2">
-              {skills.length} skills • Avg: {(item.cv_trend_score * 100).toFixed(1)}%
+              {skills.length} skills 
             </div>
-            {/* Legend for attention indicators */}
-            {skills.some(s => needsAttention(s.score)) && (
-              <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-[8px] text-white font-bold">!</span>
-                </div>
-                <span>Skills below 10% match</span>
-              </div>
-            )}
+            
           </div>
         );
       },
