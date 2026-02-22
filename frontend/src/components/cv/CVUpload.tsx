@@ -112,7 +112,7 @@ const CVUpload: React.FC = () => {
                 <div className="upload-prompt">
                   <Upload size={48} />
                   <p>Click to browse or drag and drop</p>
-                  <small>PDF, TXT, or DOCX (max 10MB)</small>
+                  <small>PDF (max 10MB)</small>
                 </div>
               )}
             </div>
@@ -179,9 +179,9 @@ const CVUpload: React.FC = () => {
                 </div>
               </div>
 
-              <button onClick={handleReset} className="upload-another">
+              {/* <button onClick={handleReset} className="upload-another">
                 Upload Another CV
-              </button>
+              </button> */}
             </div>
           </>
         )}
