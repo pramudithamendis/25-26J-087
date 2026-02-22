@@ -943,7 +943,11 @@ class AgenticOrchestrator:
             # Ensure min_years is present (fallback)
             if "min_years" not in job_description and "min_years" in state.job_data:
                 job_description["min_years"] = state.job_data["min_years"]
-        
+
+        # Pass project_type from job document for evaluation weight presets
+        if state.job_data and state.job_data.get("project_type") is not None:
+            job_description["project_type"] = state.job_data["project_type"]
+
         # Ensure jd_text is present and fixed
         if not job_description.get("jd_text"):
             if state.job_data and "jd_text" in state.job_data:

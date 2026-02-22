@@ -39,16 +39,19 @@ async def create_job(
             "jd_text": job.jd_text,
             "created_at": datetime.utcnow().isoformat() + "Z"
         }
-        
+        if job.project_type is not None:
+            job_doc["project_type"] = job.project_type
+
         # Insert into MongoDB
         result = jobs_collection.insert_one(job_doc)
-        
+
         # Return as dict to ensure _id is included in JSON serialization
         return {
             "_id": str(result.inserted_id),
             "title": job_doc["title"],
             "jd_text": job_doc["jd_text"],
-            "created_at": job_doc["created_at"]
+            "created_at": job_doc["created_at"],
+            "project_type": job_doc.get("project_type")
         }
     
     except HTTPException:
@@ -92,7 +95,8 @@ async def list_jobs(
                 "title": job.get("title", ""),
                 "jd_text": job.get("jd_text", ""),
                 "created_at": job.get("created_at", datetime.utcnow().isoformat() + "Z"),
-                "application_count": application_count
+                "application_count": application_count,
+                "project_type": job.get("project_type")
             }
             job_list.append(job_dict)
         
@@ -143,9 +147,10 @@ async def get_job(
             "title": job.get("title", ""),
             "jd_text": job.get("jd_text", ""),
             "created_at": job.get("created_at", datetime.utcnow().isoformat() + "Z"),
-            "application_count": application_count
+            "application_count": application_count,
+            "project_type": job.get("project_type")
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -185,20 +190,24 @@ async def update_job(
             update_data["title"] = job_update.title
         if job_update.jd_text is not None:
             update_data["jd_text"] = job_update.jd_text
-        
+        if job_update.project_type is not None:
+            update_data["project_type"] = job_update.project_type
+
         # Update job
-        jobs_collection.update_one(
-            {"_id": ObjectId(job_id)},
-            {"$set": update_data}
-        )
-        
+        if update_data:
+            jobs_collection.update_one(
+                {"_id": ObjectId(job_id)},
+                {"$set": update_data}
+            )
+
         # Return updated job as dict to ensure _id is included
         updated_job = jobs_collection.find_one({"_id": ObjectId(job_id)})
         return {
             "_id": str(updated_job["_id"]),
             "title": updated_job.get("title", ""),
             "jd_text": updated_job.get("jd_text", ""),
-            "created_at": updated_job.get("created_at", datetime.utcnow().isoformat() + "Z")
+            "created_at": updated_job.get("created_at", datetime.utcnow().isoformat() + "Z"),
+            "project_type": updated_job.get("project_type")
         }
     
     except HTTPException:

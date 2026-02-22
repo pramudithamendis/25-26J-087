@@ -133,7 +133,14 @@ export const AdminJobsPage = () => {
                 onClick={() => navigate(`/dashboard/admin/jobs/${job._id}/applicants`)}
               >
                 <div className="flex-1">
-                  <h3 className="font-medium text-gray-900">{job.title}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-medium text-gray-900">{job.title}</h3>
+                    {job.project_type && (
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 capitalize">
+                        {job.project_type === 'r_and_d' ? 'R&D' : job.project_type}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500 mt-1">
                     {job.application_count !== undefined && `${job.application_count} applications`}
                   </p>
@@ -173,7 +180,7 @@ export const AdminJobsPage = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         title="Create New Job"
-        size="lg"
+        size="xl"
       >
         <JobForm
           onSubmit={handleCreate}
