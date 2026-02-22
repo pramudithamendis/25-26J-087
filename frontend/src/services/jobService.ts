@@ -67,3 +67,24 @@ export const updateJob = async (
   }
 };
 
+export interface UserApplicationStatus {
+  application_id: string;
+  job_id: string;
+  status: 'submitted' | 'under_review' | 'reviewed';
+  created_at: string;
+  job_title?: string;
+}
+
+export const getMyApplicationStatus = async (jobId: string): Promise<UserApplicationStatus> => {
+  try {
+    const response = await apiClient.get<UserApplicationStatus>(`/api/jobs/${jobId}/my-application-status`);
+    return response.data;
+  } catch (error: any) {
+    const apiError: ApiError = {
+      detail: error.response?.data?.detail || 'Failed to fetch application status.',
+      statusCode: error.response?.status,
+    };
+    throw apiError;
+  }
+};
+

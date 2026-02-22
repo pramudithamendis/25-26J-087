@@ -153,6 +153,10 @@ export const getJobApplicants = async (
         status: app.status,
         created_at: app.created_at,
         evaluation_id: app.evaluation_id,
+        evaluation_status: app.evaluation_status as 'pending' | 'processing' | 'evaluated' | 'failed' | undefined,
+        processing_started_at: app.processing_started_at,
+        processing_completed_at: app.processing_completed_at,
+        error_message: app.error_message,
         total_score: evaluation?.total_score,
         decision: evaluation?.decision,
         has_evaluation: !!app.evaluation_id,
@@ -212,6 +216,46 @@ export const getApplicationDetails = async (applicationId: string): Promise<Appl
   } catch (error: any) {
     const apiError: ApiError = {
       detail: error.response?.data?.detail || 'Failed to fetch application details.',
+      statusCode: error.response?.status,
+    };
+    throw apiError;
+  }
+};
+
+/**
+ * Get application status (admin only)
+ */
+export const getApplicationStatus = async (applicationId: string): Promise<{
+  application_id: string;
+  status: string;
+  evaluation_status: string;
+  processing_started_at?: string;
+  processing_completed_at?: string;
+  error_message?: string;
+  evaluation_id?: string;
+}> => {
+  try {
+    const response = await apiClient.get(`/api/admin/applications/${applicationId}/status`);
+    return response.data;
+  } catch (error: any) {
+    const apiError: ApiError = {
+      detail: error.response?.data?.detail || 'Failed to fetch application status.',
+      statusCode: error.response?.status,
+    };
+    throw apiError;
+  }
+};
+
+/**
+ * Get application evaluation details (admin only)
+ */
+export const getApplicationEvaluation = async (applicationId: string): Promise<any> => {
+  try {
+    const response = await apiClient.get(`/api/admin/applications/${applicationId}/evaluation`);
+    return response.data;
+  } catch (error: any) {
+    const apiError: ApiError = {
+      detail: error.response?.data?.detail || 'Failed to fetch evaluation details.',
       statusCode: error.response?.status,
     };
     throw apiError;

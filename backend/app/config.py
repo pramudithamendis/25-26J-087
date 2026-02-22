@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     DATASET_TOP_K: int = 5  # Number of similar cases to retrieve
     DATASET_CALIBRATION_WEIGHT: float = 0.3  # Weight for dataset-based calibration (0.3 = 30% dataset, 70% original)
     
+    # Redis Queue settings
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str = ""  # Optional
+    EVALUATION_QUEUE_NAME: str = "evaluations"
+    
     @property
     def CV_UPLOAD_FOLDER(self) -> str:
         """Get CV upload folder path"""
