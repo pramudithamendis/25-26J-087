@@ -1,8 +1,8 @@
 .turnover-job-details-form {
-  background: white;
+  background: #f8fafc; 
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 4px grey;
   max-width: 800px;
   margin: 0 auto;
   position: relative;
@@ -147,9 +147,9 @@
 
 
 .submit-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #764ba2 0%, #5a3a7a 100%) !important;
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important; 
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
 }
 
 

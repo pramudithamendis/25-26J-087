@@ -13,19 +13,19 @@ const getRecommendation = (riskLevel: number): { title: string; description: str
     return {
       title: "Strong Candidate - Recommend to Hire",
       description: "This candidate shows excellent stability indicators and strong fit for the role. They are likely to stay long-term and contribute effectively.",
-      emoji: "✅"
+      emoji: ""
     };
   } else if (riskLevel === 1) {
     return {
       title: "Proceed with Caution",
       description: "This candidate has some concerns but could be a good fit. Consider discussing career goals, work environment expectations, and long-term plans during interview.",
-      emoji: "⚠️"
+      emoji: ""
     };
   } else {
     return {
       title: "High Risk - Careful Evaluation Needed",
       description: "This candidate shows warning signs for early departure. If proceeding, have frank discussions about expectations, provide strong onboarding support, and ensure competitive compensation.",
-      emoji: "🚨"
+      emoji: ""
     };
   }
 };

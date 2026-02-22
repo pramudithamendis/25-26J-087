@@ -118,7 +118,7 @@ const TurnoverResultsView: React.FC = () => {
             View All History
           </button>
           <button className="reset-button" onClick={handleNewPrediction} style={{ marginLeft: '0.5rem' }}>
-            🔄 New Prediction
+             New Prediction
           </button>
         </div>
 

@@ -96,7 +96,7 @@ const TurnoverJobDetailsForm: React.FC<TurnoverJobDetailsFormProps> = ({
         {/* Job Location */}
         <div className="form-group">
           <label htmlFor="jobLocation">
-            <MapPin size={16} className="inline" /> Job Location (Optional)
+            <MapPin size={16} className="inline" /> Job Location
           </label>
           <input
             type="text"

@@ -1,6 +1,6 @@
 .turnover-dashboard {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8fafc;
   padding: 2rem 1rem;
 }
 
@@ -8,7 +8,7 @@
   max-width: 900px;
   margin: 0 auto 2rem;
   text-align: center;
-  color: white;
+  color: #111827;
 }
 
 .back-button {
@@ -16,9 +16,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -28,7 +28,7 @@
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #f3f4f6;
   transform: translateX(-4px);
 }
 
@@ -76,6 +76,7 @@
 .dashboard-content {
   max-width: 900px;
   margin: 0 auto;
+  
 }
 
 .results-actions {
@@ -90,8 +91,8 @@
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   background: white;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: #2563eb;
+  border: 2px solid #2563eb;
   border-radius: 8px;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -100,10 +101,10 @@
 }
 
 .reset-button:hover {
-  background: #667eea;
-  color: white;
+  background: #2563eb;
+  color: white; 
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 /* ============================================================
@@ -131,7 +132,7 @@
   width: 80px;
   height: 80px;
   border: 6px solid #e5e7eb;
-  border-top-color: #667eea;
+  border-top-color:  #2563eb;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 2rem;
