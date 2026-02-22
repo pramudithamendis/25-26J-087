@@ -529,7 +529,7 @@ async def list_all_evaluations(
                 "user_id": evaluation.get("user_id", ""),
                 "job_id": evaluation.get("job_id", ""),
                 "total_score": evaluation.get("total_score", 0),
-                "decision": evaluation.get("decision", "Not Selected"),
+                "decision": evaluation.get("decision", "Do Not Proceed"),
                 "status": evaluation.get("status", "completed"),
                 "created_at": evaluation.get("created_at", datetime.utcnow().isoformat() + "Z")
             }

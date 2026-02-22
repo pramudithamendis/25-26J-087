@@ -252,12 +252,12 @@ def get_adjusted_threshold(
     Args:
         total_score: Current total score
         role_match: Role match result from calculate_role_match()
-        default_selected: Default threshold for "Selected" (default 70)
+        default_selected: Default threshold for "Proceed" (default 70)
         default_review: Default threshold for "Review" (default 60)
     
     Returns:
         Dictionary with adjusted thresholds:
-        - selected_threshold: Adjusted threshold for "Selected"
+        - selected_threshold: Adjusted threshold for "Proceed"
         - review_threshold: Adjusted threshold for "Review"
         - adjustment_applied: Whether adjustment was made
     """

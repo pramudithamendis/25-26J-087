@@ -6,7 +6,6 @@ import { Alert } from '../Alert';
 import { ScoreBreakdown } from '../evaluations/ScoreBreakdown';
 import { getApplicationDetails, downloadResume, downloadLinkedInResume } from '../../services/adminService';
 import { getEvaluation } from '../../services/evaluationService';
-import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import type { ApplicationDetailResponse, ApplicationTimelineEvent } from '../../types/adminTypes';
 import type { EvaluationResponse } from '../../types/evaluationTypes';
 
@@ -292,14 +291,14 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                       </div>
                       <div
                         className={`mt-2 inline-flex items-center rounded-md px-3 py-1 text-sm font-medium ${
-                          evaluation.decision === 'Selected'
+                          evaluation.decision === 'Proceed'
                             ? 'bg-green-100 text-green-800'
                             : evaluation.decision === 'Review'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {getDecisionDisplayValue(evaluation.decision)}
+                        {evaluation.decision}
                       </div>
                     </div>
                   </div>
@@ -379,7 +378,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                               )}
                               {event.metadata.decision && (
                                 <p className="text-xs text-gray-600">
-                                  Decision: <span className="font-medium">{getDecisionDisplayValue(event.metadata.decision)}</span>
+                                  Decision: <span className="font-medium">{event.metadata.decision}</span>
                                 </p>
                               )}
                             </div>

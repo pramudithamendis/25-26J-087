@@ -87,7 +87,7 @@ def determine_decision(
         job_title: Optional job title for role matching
     
     Returns:
-        Decision string: "Selected", "Review", or "Not Selected"
+        Decision string: "Proceed", "Review", or "Do Not Proceed"
     """
     # Default thresholds
     selected_threshold = 70
@@ -103,11 +103,11 @@ def determine_decision(
         review_threshold = thresholds["review_threshold"]
     
     if total_score >= selected_threshold:
-        return "Selected"
+        return "Proceed"
     elif total_score >= review_threshold:
         return "Review"
     else:
-        return "Not Selected"
+        return "Do Not Proceed"
 
 
 def generate_explanations(
@@ -238,7 +238,7 @@ async def evaluate_candidate(
                 "job_id": job_id,
                 "pipeline_output": evaluation_result.get("raw_pipeline", {}),
                 "total_score": evaluation_result.get("total_score", 0),
-                "decision": evaluation_result.get("decision", "Not Selected"),
+                "decision": evaluation_result.get("decision", "Do Not Proceed"),
                 "role_predictions": evaluation_result.get("role_predictions", []),
                 "status": "completed",
                 "created_at": datetime.utcnow().isoformat() + "Z",
@@ -439,7 +439,7 @@ async def get_evaluation(
             "user_id": evaluation.get("user_id", evaluation.get("candidate_id", "")),  # Support both for migration
             "job_id": evaluation.get("job_id", ""),
             "total_score": evaluation.get("total_score", 0),
-            "decision": evaluation.get("decision", "Not Selected"),
+            "decision": evaluation.get("decision", "Do Not Proceed"),
             "role_predictions": evaluation.get("role_predictions", []),
             "why": why,
             "breakdown": breakdown,

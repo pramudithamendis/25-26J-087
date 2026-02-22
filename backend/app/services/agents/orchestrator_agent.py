@@ -835,12 +835,12 @@ class AgenticOrchestrator:
             # If we have nothing, set defaults
             elif state.total_score is None:
                 logger.error("No evaluation data available, setting defaults")
-                state.set_final_result(0, "Not Selected", [], ["Evaluation incomplete - insufficient data"])
+                state.set_final_result(0, "Do Not Proceed", [], ["Evaluation incomplete - insufficient data"])
         except Exception as e:
             logger.error(f"Error completing evaluation: {str(e)}")
             # Set defaults as last resort
             if state.total_score is None:
-                state.set_final_result(0, "Not Selected", [], [f"Evaluation failed: {str(e)}"])
+                state.set_final_result(0, "Do Not Proceed", [], [f"Evaluation failed: {str(e)}"])
     
     def _build_merged_json(self, state: EvaluationState) -> Dict:
         """Build merged JSON from state"""
@@ -1075,7 +1075,7 @@ class AgenticOrchestrator:
             job_title: Optional job title for role matching
         
         Returns:
-            Decision string: "Selected", "Review", or "Not Selected"
+            Decision string: "Proceed", "Review", or "Do Not Proceed"
         """
         # Default thresholds
         selected_threshold = 70
@@ -1091,11 +1091,11 @@ class AgenticOrchestrator:
             review_threshold = thresholds["review_threshold"]
         
         if total_score >= selected_threshold:
-            return "Selected"
+            return "Proceed"
         elif total_score >= review_threshold:
             return "Review"
         else:
-            return "Not Selected"
+            return "Do Not Proceed"
     
     def _classify_roles(self, state: EvaluationState) -> List[Dict]:
         """Classify candidate into roles"""
@@ -1199,14 +1199,14 @@ class AgenticOrchestrator:
         """Build final evaluation result"""
         # Ensure we have valid values - never None
         total_score = state.total_score if state.total_score is not None else 0
-        decision = state.decision if state.decision is not None else "Not Selected"
+        decision = state.decision if state.decision is not None else "Do Not Proceed"
         role_predictions = state.role_predictions or []
         explanations = state.explanations or []
         
         # If we still don't have a score, try to get it from aggregated_score
         if total_score == 0 and state.aggregated_score:
             total_score = state.aggregated_score.get("total_score", 0)
-            if decision == "Not Selected" and total_score > 0:
+            if decision == "Do Not Proceed" and total_score > 0:
                 decision = self._determine_decision(total_score)
         
         # If still no score and we have some data, set a default
@@ -1307,7 +1307,7 @@ class AgenticOrchestrator:
         role_predictions = classify_roles(skills_canonical, jd_info)
         
         # Decision
-        decision = "Selected" if total_score >= 70 else ("Review" if total_score >= 60 else "Not Selected")
+        decision = "Proceed" if total_score >= 70 else ("Review" if total_score >= 60 else "Do Not Proceed")
         
         return {
             "user_id": user_id,

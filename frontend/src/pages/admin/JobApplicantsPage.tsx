@@ -7,7 +7,6 @@ import { Alert } from '../../components/Alert';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { getJobApplicants } from '../../services/adminService';
 import { getJob } from '../../services/jobService';
-import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import type { JobApplicantListItem } from '../../types/adminTypes';
 import type { Job } from '../../types/jobTypes';
 
@@ -76,13 +75,13 @@ export const JobApplicantsPage = () => {
     if (!decision) return <span className="text-gray-500">-</span>;
     let colorClass = '';
     switch (decision.toLowerCase()) {
-      case 'selected':
+      case 'proceed':
         colorClass = 'bg-green-100 text-green-800';
         break;
       case 'review':
         colorClass = 'bg-yellow-100 text-yellow-800';
         break;
-      case 'not selected':
+      case 'do not proceed':
         colorClass = 'bg-red-100 text-red-800';
         break;
       default:
@@ -90,7 +89,7 @@ export const JobApplicantsPage = () => {
     }
     return (
       <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${colorClass}`}>
-        {getDecisionDisplayValue(decision)}
+        {decision}
       </span>
     );
   };
@@ -255,9 +254,9 @@ export const JobApplicantsPage = () => {
               onChange={(e) => setDecisionFilter(e.target.value)}
             >
               <option value="">All Decisions</option>
-              <option value="Selected">Proceed</option>
+              <option value="Proceed">Proceed</option>
               <option value="Review">Review Required</option>
-              <option value="Not Selected">Do Not Proceed</option>
+              <option value="Do Not Proceed">Do Not Proceed</option>
             </select>
           </div>
 

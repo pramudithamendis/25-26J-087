@@ -489,7 +489,7 @@ async def run_evaluation_background(user_id: str, job_id: str, application_id: s
                 "job_id": job_id,
                 "pipeline_output": evaluation_result.get("raw_pipeline", {}),
                 "total_score": evaluation_result.get("total_score", 0),
-                "decision": evaluation_result.get("decision", "Not Selected"),
+                "decision": evaluation_result.get("decision", "Do Not Proceed"),
                 "role_predictions": evaluation_result.get("role_predictions", []),
                 "breakdown": evaluation_result.get("breakdown", {}),
                 "status": "completed",
@@ -544,7 +544,7 @@ async def run_evaluation_background(user_id: str, job_id: str, application_id: s
             role_predictions = classify_roles(skills_canonical, jd_info)
             
             # Determine decision
-            decision = "Selected" if total_score >= 70 else ("Review" if total_score >= 60 else "Not Selected")
+            decision = "Proceed" if total_score >= 70 else ("Review" if total_score >= 60 else "Do Not Proceed")
             
             # Generate explanations
             why = []
