@@ -1,7 +1,7 @@
 export const RISK_LABELS = {
-  0: 'High Risk (0-6 months)',
-  1: 'Medium Risk (6-12 months)',
-  2: 'Low Risk (>1 year)'
+  0: 'High Risk (Likely to leave within 6 months)',
+  1: 'Medium Risk (Likely to leave within 6-12 months)',
+  2: 'Low Risk (Likely to stay for more than a year)'
 } as const;
 
 export const RISK_COLORS = {
