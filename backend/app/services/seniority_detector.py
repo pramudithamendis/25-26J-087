@@ -180,3 +180,7 @@ def _fallback_seniority_detection(role_title: str) -> Dict:
         "confidence": 0.6  # Lower confidence for fallback
     }
 
+
+
+
+
