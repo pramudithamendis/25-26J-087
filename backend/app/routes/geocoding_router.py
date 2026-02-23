@@ -24,7 +24,7 @@ async def test_geocoding_api():
     
     # Test with a simple address
     geocoding = get_geocoding_service()
-    coords = await geocoding.geocode_address("Colombo, Sri Lanka")
+    coords = geocoding.geocode_address("Colombo, Sri Lanka")
     
     if coords:
         return {
@@ -66,7 +66,7 @@ async def geocode_address(
         raise HTTPException(400, "Geocoding API not configured")
     
     geocoding = get_geocoding_service()
-    coords = await geocoding.geocode_address(address)
+    coords = geocoding.geocode_address(address)
     
     if coords:
         return {
@@ -98,7 +98,7 @@ async def calculate_distance(
         raise HTTPException(400, "Geocoding API not configured")
     
     geocoding = get_geocoding_service()
-    distance_km, risk = await geocoding.calculate_commute_distance(
+    distance_km, risk = geocoding.calculate_commute_distance(
         from_address, 
         to_address
     )
