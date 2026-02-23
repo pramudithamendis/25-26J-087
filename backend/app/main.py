@@ -1,153 +1,152 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
-
-# Database
-from app.database import connect_to_mongo, close_mongo_connection
-
-# Routers
 from app.auth.auth_router import auth_router
 from app.routes.user_router import router as user_router
+from app.routes.job_router import router as job_router
+from app.routes.evaluation_router import router as evaluation_router
+from app.routes.articles_router import router as article_router
+from app.routes.hirebase_router import router as hirebase_router
+from app.routes.trends_router import router as trends_router
+from app.scheduler import start_scheduler
+from app.routes.questions_router import router as questions_router
+from app.routes.admin_router import router as admin_router
+from app.services.model_downloader import ensure_model_files
+from app.services.model_loader import load_model, load_preprocessor
 from app.routes.cv_routes import router as cv_router
 from app.routes.turnover_router import router as turnover_router
 from app.routes.geocoding_router import router as geocoding_router
 from app.routes.esco_router import router as esco_router
 
-# Model loading
-from app.services.model_downloader import ensure_model_files
-from app.services.model_loader import load_model, load_preprocessor
+import logging
+import time
+import asyncio
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Startup and shutdown events
-    - Connect to MongoDB
-    - Download models if missing
-    - Load ML models
+    Lifespan context manager for startup and shutdown events.
+    Properly handles cancellation and cleanup.
     """
     # Startup
-    print(" Starting up...")
-    
-    # Connect to MongoDB
     try:
-        await connect_to_mongo()
-    except Exception as e:
-        print(f"  MongoDB connection failed: {e}")
-        print("   Application will start but database features won't work")
-
-    # Load ESCO Mapper
-    try:
-        from app.services.esco_mapper import get_esco_mapper
-        esco = get_esco_mapper()
-        if esco:
-            print(" ESCO Mapper loaded successfully")
-        else:
-            print("  ESCO Mapper unavailable, using fallback matching")
-    except Exception as e:
-        print(f"  ESCO loading error: {e}")
-    
-    #  Ensure model files are present (download if missing)
-    try:
+        from app.database import client
+        client.admin.command('ping')
+        logger.info("MongoDB connection successful")
         ensure_model_files()
-    except Exception as e:
-        print(f"  Model download check failed: {e}")
-    
-    # Load ML models
-    try:
         load_model()
         load_preprocessor()
-        print(" Models loaded successfully")
     except Exception as e:
-        print(f"  Model loading error: {e}")
-        print("   Application will start but predictions will fail")
-        print("   Check if model files are present in models/ folder")
-    
-    print(" Application ready")
-    
-    yield
-    
-    # Shutdown
-    print(" Shutting down...")
-    await close_mongo_connection()
-    print(" Cleanup complete")
+        logger.error(f"MongoDB connection failed: {str(e)}")
+        logger.warning("Server will start but database operations may fail")
+        logger.warning(f"Model loading failed: {e}")
 
-# Create FastAPI app
+    yield
+
+    # Shutdown
+    try:
+        logger.info("Shutting down application...")
+        # Add any cleanup logic here if needed
+    except asyncio.CancelledError:
+        logger.info("Application shutdown cancelled")
+        raise
+    except Exception as e:
+        logger.error(f"Error during shutdown: {str(e)}")
+    finally:
+        logger.info("Application shutdown complete")
+
+
+class LoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware to log all requests"""
+    async def dispatch(self, request: Request, call_next):
+        start_time = time.time()
+        logger.info(f"Incoming request: {request.method} {request.url.path}")
+
+        try:
+            response = await call_next(request)
+            process_time = time.time() - start_time
+            logger.info(
+                f"Request completed: {request.method} {request.url.path} "
+                f"Status: {response.status_code} Time: {process_time:.3f}s"
+            )
+            return response
+        except Exception as e:
+            process_time = time.time() - start_time
+            logger.error(
+                f"Request failed: {request.method} {request.url.path} "
+                f"Error: {str(e)} Time: {process_time:.3f}s",
+                exc_info=True
+            )
+            raise
+
 app = FastAPI(
-    title="AI-Based CV Analysis & Turnover Prediction API",
-    description="Pre-hire attrition risk prediction using ML",
+    title="CV Analysis API",
+    description="CV Analysis System with Agentic AI",
     version="1.0.0",
     lifespan=lifespan
 )
 
-# CORS middleware
+# Add logging middleware
+app.add_middleware(LoggingMiddleware)
+
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],  # In production, replace with specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
+# Register routers
 app.include_router(auth_router)
 app.include_router(user_router)
-app.include_router(cv_router)
-app.include_router(turnover_router)
-app.include_router(geocoding_router)
-app.include_router(esco_router)
+app.include_router(job_router)
+app.include_router(evaluation_router)
+app.include_router(article_router)
+app.include_router(hirebase_router)
+app.include_router(trends_router)
+app.include_router(questions_router)
+app.include_router(admin_router)
 
 @app.get("/")
-def home():
+def root():
+    """Root endpoint"""
     return {
-        "message": "AI-Based CV Analysis & Turnover Prediction API",
+        "message": "CV Analysis API",
         "version": "1.0.0",
-        "status": "operational",
-        "endpoints": {
-            "auth": {
-                "register": "POST /auth/register",
-                "login": "POST /auth/login"
-            },
-            "cv_management": {
-                "submit": "POST /cv/submit",
-                "list": "GET /cv/list",
-                "retrieve": "GET /cv/{cv_id}"
-            },
-            "prediction": {
-                "predict": "POST /turnover/predict",
-                "health": "GET /turnover/health"
-            },
-            "geocoding": {
-                "test": "GET /geocoding/test",
-                "geocode": "GET /geocoding/geocode",
-                "distance": "GET /geocoding/distance",
-                "usage": "GET /geocoding/usage"
-            },
-            "user": {
-                "me": "GET /users/me"
-            }
-        },
-        "documentation": {
-            "swagger_ui": "/docs",
-            "redoc": "/redoc",
-            "openapi_json": "/openapi.json"
-        }
+        "docs": "/docs"
     }
 
 @app.get("/health")
 def health_check():
+    """Health check endpoint"""
+    try:
+        from app.database import client
+        client.admin.command('ping')
+        mongodb_status = "connected"
+        logger.debug("MongoDB connection successful")
+    except Exception as e:
+        mongodb_status = f"error: {str(e)}"
+        logger.error(f"MongoDB connection failed: {str(e)}")
+
     return {
-        "status": "healthy",
-        "components": {
-            "database": "connected",
-            "ml_model": "loaded"
-        }
+        "status": "ok",
+        "mongodb": mongodb_status
     }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+
