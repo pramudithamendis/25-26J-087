@@ -83,10 +83,10 @@ async def get_prediction_history(
     """
     Get prediction history for the current user
     """
-    from app.database import get_turnover_collection
+    from app.database import turnover_collection
     
     try:
-        turnover_coll = get_turnover_collection()
+        turnover_coll = turnover_collection
         
         # Find predictions for this user
         cursor = turnover_coll.find(
@@ -95,7 +95,7 @@ async def get_prediction_history(
         ).sort("calculated_at", -1).limit(limit)
         
         history = []
-        async for doc in cursor:
+        for doc in cursor:
             history.append(doc)
         
         return {
@@ -122,7 +122,7 @@ async def get_prediction_result(
         turnover_coll = get_turnover_collection()
         
         # Find most recent prediction for this CV by this user
-        result = await turnover_coll.find_one(
+        result = turnover_coll.find_one(
             {"cv_id": cv_id, "user_email": user.get("email")},
             sort=[("calculated_at", -1)]
         )
