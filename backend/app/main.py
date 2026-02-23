@@ -12,6 +12,13 @@ from app.routes.trends_router import router as trends_router
 from app.scheduler import start_scheduler
 from app.routes.questions_router import router as questions_router
 from app.routes.admin_router import router as admin_router
+from app.services.model_downloader import ensure_model_files
+from app.services.model_loader import load_model, load_preprocessor
+from app.routes.cv_routes import router as cv_router
+from app.routes.turnover_router import router as turnover_router
+from app.routes.geocoding_router import router as geocoding_router
+from app.routes.esco_router import router as esco_router
+
 import logging
 import time
 import asyncio
@@ -36,9 +43,13 @@ async def lifespan(app: FastAPI):
         from app.database import client
         client.admin.command('ping')
         logger.info("MongoDB connection successful")
+        ensure_model_files()
+        load_model()
+        load_preprocessor()
     except Exception as e:
         logger.error(f"MongoDB connection failed: {str(e)}")
         logger.warning("Server will start but database operations may fail")
+        logger.warning(f"Model loading failed: {e}")
 
     yield
 
@@ -138,5 +149,4 @@ def health_check():
 @app.on_event("startup")
 def startup_event():
     start_scheduler()
-
 

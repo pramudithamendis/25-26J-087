@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     MAX_AGENT_ITERATIONS: int = 20  # Maximum iterations in agentic loop
     AGENT_TEMPERATURE: float = 0.3  # LLM temperature for agents
     
+    # Turnover Prediction
+    GEOCODING_API_KEY: str = ""
+    MODEL_DIR: Path = Path(__file__).parent.parent.parent / "notebooks" / "fair-prehire-attrition-prediction" / "models"
+    
     # Dataset validation settings
     DATASET_PATH: str = "backend/dataset"  # Path to dataset directory
     DATASET_VALIDATION_ENABLED: bool = True  # Enable/disable dataset validation
