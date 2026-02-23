@@ -1,75 +1,240 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import AuthForm from './components/auth/AuthForm';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
+import { DashboardLayout } from './components/layout/DashboardLayout';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { Dashboard } from './pages/Dashboard';
+import { ProfilePage } from './pages/ProfilePage';
+import { JobsPage } from './pages/JobsPage';
+import { JobDetailPage } from './pages/JobDetailPage';
+import { JobApplicationPage } from './pages/JobApplicationPage';
+import { ApplicationConfirmationPage } from './pages/ApplicationConfirmationPage';
+import { EvaluationDetailPage } from './pages/EvaluationDetailPage';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminJobsPage } from './pages/admin/AdminJobsPage';
+import { AdminApplicationsPage } from './pages/admin/AdminApplicationsPage';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { AdminEvaluationsPage } from './pages/admin/AdminEvaluationsPage';
+import { JobApplicantsPage } from './pages/admin/JobApplicantsPage';
+import { JobApplicantDetailPage } from './pages/admin/JobApplicantDetailPage';
+import { AdminTrendScorePage } from './pages/admin/AdminTrendScorePage'
 import CVUpload from './components/cv/CVUpload';
 import TurnoverDashboard from './components/turnover/TurnoverDashboard';
 import TurnoverHistoryPage from './components/turnover/TurnoverHistoryPage';
 import TurnoverResultsView from './components/turnover/TurnoverResultsView';
-import { isAuthenticated } from './services/auth.service';
-
-// Protected Route wrapper
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-  return <>{children}</>;
-};
+import './App.css';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* ============================================ */}
-        {/* PUBLIC ROUTES */}
-        {/* ============================================ */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<AuthForm />} />
-        <Route path="/register" element={<AuthForm />} />
-
-        {/* ============================================ */}
-        {/* SHARED ROUTES*/}
-        {/* ============================================ */}
-        <Route
-          path="/cv/upload"
-          element={
-            <ProtectedRoute>
-              <CVUpload />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ============================================ */}
-        {/* TURNOVER PREDICTION */}
-        {/* ============================================ */}
-        <Route
-          path="/turnover"
-          element={
-            <ProtectedRoute>
-              <TurnoverDashboard />
-            </ProtectedRoute>
-          }
-        />
-        
-        <Route
-          path="/turnover/history"
-          element={
-            <ProtectedRoute>
-              <TurnoverHistoryPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/turnover/results"
-          element={
-            <ProtectedRoute>
-              <TurnoverResultsView />
-            </ProtectedRoute>
-          }
-        />
-
-
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Dashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/profile"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ProfilePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/jobs"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <JobsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/jobs/:jobId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <JobDetailPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/jobs/:jobId/apply"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <JobApplicationPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/jobs/:jobId/apply/confirmation"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ApplicationConfirmationPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/evaluations/:evaluationId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <EvaluationDetailPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          {/* Admin Routes */}
+          <Route
+            path="/dashboard/admin"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminDashboard />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/jobs"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminJobsPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/jobs/:jobId/applicants"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <JobApplicantsPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/jobs/:jobId/applicants/:applicationId"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <JobApplicantDetailPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/applications"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminApplicationsPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/users"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminUsersPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/evaluations"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminEvaluationsPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+           <Route
+            path="/dashboard/admin/trendscore"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminTrendScorePage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/dashboard" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/cv-upload"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <CVUpload />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/turnover"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <TurnoverDashboard />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/turnover/history"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <TurnoverHistoryPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/turnover/results"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <TurnoverResultsView />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
