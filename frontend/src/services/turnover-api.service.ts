@@ -1,20 +1,10 @@
-import axios from 'axios';
+import apiClient from '../config/api';
+
 import type {
   TurnoverPredictionRequest,
   TurnoverPredictionResponse,
   TurnoverHealthResponse
 } from '../types/turnover.types';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-
-// Create axios instance with auth token
-const createAuthHeaders = () => {
-  const token = localStorage.getItem('access_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
 
 // ============================================================
 // TURNOVER PREDICTION ENDPOINTS
@@ -34,25 +24,17 @@ export const predictTurnover = async (
       formData.append('job_location', data.job_location);
     }
 
-    const response = await axios.post<TurnoverPredictionResponse>(
-      `${API_BASE_URL}/turnover/predict`,
-      formData,
-      {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      }
+    const response = await apiClient.post<TurnoverPredictionResponse>(
+      '/turnover/predict',
+      formData
     );
 
     return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.detail || 
-        'Failed to predict turnover risk'
-      );
-    }
-    throw error;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.detail ||
+      'Failed to predict turnover risk'
+    );
   }
 };
 
@@ -61,18 +43,13 @@ export const predictTurnover = async (
  */
 export const checkTurnoverHealth = async (): Promise<TurnoverHealthResponse> => {
   try {
-    const response = await axios.get<TurnoverHealthResponse>(
-      `${API_BASE_URL}/turnover/health`
-    );
+    const response = await apiClient.get<TurnoverHealthResponse>('/turnover/health');
     return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.detail || 
-        'Failed to check model health'
-      );
-    }
-    throw error;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.detail ||
+      'Failed to check model health'
+    );
   }
 };
 
@@ -102,9 +79,9 @@ export const getRiskLevelText = (riskLevel: number): string => {
 /**
  * Validate job description length
  */
-export const validateJobDescription = (description: string): { 
-  valid: boolean; 
-  error?: string 
+export const validateJobDescription = (description: string): {
+  valid: boolean;
+  error?: string
 } => {
   if (!description || description.trim().length < 50) {
     return {
