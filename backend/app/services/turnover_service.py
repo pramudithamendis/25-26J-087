@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 from bson import ObjectId
 import numpy as np
 import pandas as pd
-from app.database import get_cv_collection, get_turnover_collection
+from app.database import cv_collection, turnover_collection
 from datetime import datetime
 from app.services.feature_engineering import create_feature_vector_from_mongo
 from app.services.model_loader import predict_with_model, get_model
@@ -25,10 +25,10 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
     
     try:
         # Step 1: Retrieve CV from MongoDB
-        cv_collection = get_cv_collection()
+        
         
         try:
-            cv_document = await cv_collection.find_one({"_id": ObjectId(cv_id)})
+            cv_document = cv_collection.find_one({"_id": ObjectId(cv_id)})
         except:
             raise HTTPException(400, f"Invalid CV ID format: {cv_id}")
         
@@ -181,14 +181,14 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         # Save to MongoDB
         if result.get("status") == "success":
             try:
-                turnover_coll = get_turnover_collection()
+                turnover_coll = turnover_collection
                 db_entry = result.copy()
                 db_entry["cv_id"] = cv_id
                 db_entry["job_description"] = job_description
                 db_entry["job_location"] = job_location
                 db_entry["calculated_at"] = datetime.utcnow()
                 db_entry["user_email"] = user.get("email") if user else None 
-                await turnover_coll.insert_one(db_entry)
+                turnover_coll.insert_one(db_entry)
                 print(f"Saved turnover result for CV {cv_id} to MongoDB")
             except Exception as e:
                 print(f"Error saving turnover result to MongoDB: {e}")
