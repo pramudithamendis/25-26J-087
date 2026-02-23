@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app.auth.dependencies import get_current_user
 from app.schemas.cv_schema import CVSubmitResponse, CVParsed
-from app.database import get_cv_collection
+from app.database import cv_collection
 import tempfile
 from datetime import datetime
 from bson import ObjectId
@@ -46,8 +46,8 @@ async def submit_cv(
         }
         
         # Store in MongoDB
-        cv_collection = get_cv_collection()
-        result = await cv_collection.insert_one(document)
+        
+        result = cv_collection.insert_one(document)
         
         # Add cv_id to document
         document["_id"] = str(result.inserted_id)
@@ -74,7 +74,7 @@ async def submit_cv(
 @router.get("/list")
 async def list_cvs(user: dict = Depends(get_current_user)):
     """Get all CVs submitted by the current user"""
-    cv_collection = get_cv_collection()
+    
     
     cursor = cv_collection.find(
         {"user_email": user.get("email")},
@@ -82,7 +82,7 @@ async def list_cvs(user: dict = Depends(get_current_user)):
     )
     
     cvs = []
-    async for cv in cursor:
+    for cv in cursor:
         cv["cv_id"] = str(cv["_id"])
         del cv["_id"]
         cvs.append(cv)
@@ -93,10 +93,10 @@ async def list_cvs(user: dict = Depends(get_current_user)):
 @router.get("/{cv_id}")
 async def get_cv(cv_id: str, user: dict = Depends(get_current_user)):
     """Retrieve a specific CV by ID"""
-    cv_collection = get_cv_collection()
+   
     
     try:
-        cv = await cv_collection.find_one(
+        cv = cv_collection.find_one(
             {"_id": ObjectId(cv_id), "user_email": user.get("email")}
         )
         
@@ -118,10 +118,10 @@ async def get_parsed_experience(cv_id: str, user: dict = Depends(get_current_use
     Get structured experience data extracted from CV
     Useful for debugging feature engineering
     """
-    cv_collection = get_cv_collection()
+    
     
     try:
-        cv = await cv_collection.find_one(
+        cv = cv_collection.find_one(
             {"_id": ObjectId(cv_id), "user_email": user.get("email")}
         )
         
