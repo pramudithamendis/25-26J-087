@@ -1,7 +1,7 @@
+import apiClient from '../../config/api'; 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { History, TrendingUp, TrendingDown, Minus, Search, Filter, Clock, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
 import './TurnoverHistoryPage.css';
 
 interface PredictionHistoryItem {
@@ -38,17 +38,7 @@ const TurnoverHistoryPage: React.FC = () => {
     setError('');
     
     try {
-      const token = localStorage.getItem('access_token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-      
-      const response = await axios.get(
-        `${API_BASE_URL}/turnover/history?limit=50`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await apiClient.get('/turnover/history?limit=50');
       
       if (response.data.status === 'success') {
         setPredictions(response.data.predictions);
@@ -78,7 +68,7 @@ const TurnoverHistoryPage: React.FC = () => {
 
   const handleViewDetails = (cvId: string) => {
     // Navigate to results view page instead of the form
-    navigate(`/turnover/results?cv_id=${cvId}`);
+    navigate(`/dashboard/admin/turnover/results?cv_id=${cvId}`);
   };
 
   // Filter predictions
@@ -99,7 +89,7 @@ const TurnoverHistoryPage: React.FC = () => {
   return (
     <div className="turnover-history-page">
       <div className="history-header">
-        <button className="back-button" onClick={() => navigate('/cv/upload')}>
+        <button className="back-button" onClick={() => navigate('/dashboard/admin/cv-upload')}>
           <ArrowLeft size={20} />
           Back to Upload
         </button>
