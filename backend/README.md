@@ -18,27 +18,33 @@ This folder contains the backend for the project. The backend is a **FastAPI** a
 
 ## Project structure
 
-```
+```powershell
 backend/
 ├── app/
 │   ├── main.py              # FastAPI app initialization and entry point
 │   ├── config.py            # Configuration and environment settings
 │   ├── database.py          # Database connection setup
-│   ├── models/              # Database models (e.g., SQLAlchemy, MongoDB)
+│   ├── __init__.py          # Package initialization
+│   ├── auth/                # Authentication and authorization
+│   ├── data/                # Data files and storage
+│   │   ├── articles/        # Cached articles
+│   │   ├── topics.json      # Topics configuration
+│   │   └── __init__.py
+│   ├── models/              # Database models (SQLAlchemy, MongoDB, etc.)
 │   ├── routes/              # API endpoint blueprints
 │   ├── schemas/             # Pydantic models for request/response validation
-│   ├── services/            # Business logic layer
-│   ├── auth/                # Authentication and authorization
-│   ├── utils/               # Utility functions
-│   └── __pycache__/         # Python cache (ignored by .gitignore)
+│   ├── services/            # Business logic layer (fetchers, processors, etc.)
+│   └── utils/               # Utility functions
 ├── requirements.txt         # Python dependencies
 ├── .env                     # Environment variables (not committed)
+├── venv/                    # virtual environment
+├── uploads/
 └── README.md                # This file
 ```
 
 ## Prerequisites
 
-- Python 3.8+ installed and available on `PATH`
+- Python 3.11.8 installed and available on `PATH`
 - Git (optional, to clone the repo)
 
 ## Setup (Windows PowerShell)
@@ -52,7 +58,7 @@ python -m venv venv
 # activate the venv
 .\venv\Scripts\Activate.ps1
 # install dependencies for the backend
-pip install -r backend\requirements.txt
+pip install -r requirements.txt
 ```
 
 Notes:
@@ -64,10 +70,32 @@ Notes:
 Create a `.env` file in the `backend/` folder with variables your app expects. Example:
 
 ```env
-MONGO_URI=mongodb://localhost:27017/mydb
-MONGO_DB=mydatabase
-JWT_SECRET=your-secret-key-here
-ENV=development
+# --- Database ---
+MONGO_URI
+MONGO_DB
+
+# --- Auth ---
+JWT_SECRET
+JWT_ALGORITHM
+
+# --- GitHub ---
+GITHUB_TOKEN=YOUR_GITHUB_TOKEN_HERE
+
+# --- OpenAI API ---
+OPENAI_API_KEY=YOUR_KEY
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+
+# --- Provider Settings ---
+LLM_PROVIDER=openai
+EMBEDDING_PROVIDER=openai
+CV_EXTRACTION_METHOD=openai
+
+# --- Upload Folder ---
+UPLOAD_FOLDER=uploads
+
+# --- Gnews API Key ---
+GNEWS_API_KEY
 ```
 
 The app uses `python-dotenv` to load `.env` automatically when the app starts.
@@ -94,7 +122,7 @@ The app uses `python-dotenv` to load `.env` automatically when the app starts.
 
 4. **Install dependencies:**
    ```powershell
-   pip install -r backend\requirements.txt
+   pip install -r requirements.txt
    ```
 
 5. **(Optional) Create `.env` file** in `backend/` folder with your configuration (see [Environment variables](#environment-variables) section).
@@ -146,6 +174,38 @@ After first-time setup, to start the app:
 - **Services:** Keep business logic in `app/services/` for better separation of concerns
 - **Models:** Database models should live in `app/models/`
 - **Auth:** Authentication logic in `app/auth/`
+
+## Agentic AI System
+
+The backend now includes an **agentic AI system** for CV evaluation that uses autonomous agents to dynamically plan and execute evaluation workflows.
+
+### Features
+
+- **Dynamic Workflow**: Agents decide next steps based on current state (not fixed pipeline)
+- **Hybrid Approach**: Combines rule-based (30%) and agentic reasoning (70%)
+- **Tool System**: Agents use tools to interact with extractors and services
+- **Memory Management**: Tracks reasoning chain for explainability
+- **Fallback Mechanisms**: Automatically falls back to pipeline on errors
+
+### Agentic Endpoints
+
+- `POST /api/evaluate/agentic` - Run agentic evaluation (Admin-only)
+- `POST /api/evaluate/dataset` - Evaluate on full dataset (Admin-only)
+- `GET /api/evaluate/comparison` - Get comparison results (Admin-only)
+
+### Configuration
+
+Set in `.env` or `config.py`:
+- `USE_AGENTIC_EVALUATION=true` - Use agentic system by default
+- `AGENTIC_FALLBACK_TO_PIPELINE=true` - Fallback on errors
+- `MAX_AGENT_ITERATIONS=20` - Max iterations in agentic loop
+- `AGENT_TEMPERATURE=0.3` - LLM temperature for agents
+
+### Documentation
+
+- **Architecture**: See `docs/AGENTIC_ARCHITECTURE.md`
+- **Evaluation Report**: See `docs/EVALUATION_REPORT.md`
+- **Agent Code**: `app/services/agents/`
 
 ### Example: Adding a new route
 

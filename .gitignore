@@ -48,3 +48,22 @@ temp.txt
 
 # Notebook checkpoints
 .ipynb_checkpoints/
+
+# backend mypart
+backend-mypart/
+
+# Data files
+backend/app/data/articles/
+
+#models
+backend/app/ml_models/
+
+.idea/
+
+#uploads
+uploads/
+
+# Dataset embeddings cache
+Datasetmy/.cache/
+**/.cache/
+*.pkl
