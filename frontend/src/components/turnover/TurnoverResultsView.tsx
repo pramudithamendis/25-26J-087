@@ -1,13 +1,14 @@
+import apiClient from '../../config/api';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, History } from 'lucide-react';
-import axios from 'axios';
 import TurnoverPredictionResults from './TurnoverPredictionResults';
 import TurnoverSHAPExplanation from './TurnoverSHAPExplanation';
 import TurnoverRiskFactors from './TurnoverRiskFactors';
 import TurnoverCounterfactuals from './TurnoverCounterfactuals';
 import type { TurnoverPredictionResponse } from '../../types/turnover.types';
 import './TurnoverDashboard.css';
+import axios from 'axios'
 
 const TurnoverResultsView: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const TurnoverResultsView: React.FC = () => {
 
   useEffect(() => {
     if (!cvId) {
-      navigate('/turnover/history');
+      navigate('/dashboard/admin/turnover/history');
       return;
     }
     fetchStoredPrediction();
@@ -31,17 +32,7 @@ const TurnoverResultsView: React.FC = () => {
     setError('');
     
     try {
-      const token = localStorage.getItem('access_token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-      
-      const response = await axios.get(
-        `${API_BASE_URL}/turnover/result/${cvId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await apiClient.get(`/turnover/result/${cvId}`);
       
       setPrediction(response.data);
     } catch (err) {
@@ -56,11 +47,11 @@ const TurnoverResultsView: React.FC = () => {
   };
 
   const handleBackToHistory = () => {
-    navigate('/turnover/history');
+    navigate('/dashboard/admin/turnover/history');
   };
 
   const handleNewPrediction = () => {
-    navigate(`/turnover?cv_id=${cvId}`);
+    navigate(`/dashboard/admin/turnover?cv_id=${cvId}`);
   };
 
   if (loading) {
