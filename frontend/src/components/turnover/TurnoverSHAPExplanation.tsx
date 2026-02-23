@@ -93,7 +93,17 @@ const FEATURE_EXPLANATIONS: Record<string, {
     label: 'Short-Term Jobs',
     increasesRisk: 'Multiple short-term jobs suggest instability',
     decreasesRisk: 'Few or no short-term jobs shows commitment'
-  }
+  },
+  'n_skills': {
+    label: 'Skill Breadth',
+    increasesRisk: 'Limited number of skills may reduce adaptability',
+    decreasesRisk: 'Strong variety of skills shows adaptability and reduces attrition risk'
+  },
+  'has_progression': {
+    label: 'Progression Jumps',
+    increasesRisk: 'Lack of career progression may indicate disengagement',
+    decreasesRisk: 'Career progression across jobs shows ambition and growth mindset'
+  },
 };
 
 const getFeatureExplanation = (feature: SHAPFeature): { label: string; explanation: string } => {

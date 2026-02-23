@@ -446,6 +446,8 @@ def identify_risk_factors_shap(features: Dict[str, float], shap_explanation: Dic
         'title_match_score': ("Job role similarity", "How well current role matches target position", "medium"),
         'avg_tenure_months': ("Average job tenure", "Average duration per previous job", "high"),
         'location_match_score': ("Location compatibility", "Distance between candidate location and job location", "medium"),
+        'n_skills': ("Skill Breadth", "Candidate has a strong variety of skills, reducing attrition risk", "low"),
+        'has_progression': ("Progression Jumps", "Career progression across jobs shows ambition and reduces attrition risk", "low"),
     }
     
     for feat_data in top_risk_features:
