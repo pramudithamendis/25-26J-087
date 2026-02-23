@@ -1,7 +1,6 @@
-import axios from 'axios';
-import type { CVSubmitResponse, CVListResponse, CVParsed } from '../types/cv.types';
+import apiClient from '../config/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import type { CVSubmitResponse, CVListResponse, CVParsed } from '../types/cv.types';
 
 /**
  * Upload and parse CV
@@ -11,13 +10,11 @@ export const uploadCV = async (file: File): Promise<CVSubmitResponse> => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const token = localStorage.getItem('access_token');
-    const response = await axios.post<CVSubmitResponse>(
-      `${API_BASE_URL}/cv/submit`,
+    const response = await apiClient.post<CVSubmitResponse>(
+      '/cv/submit',
       formData,
       {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       }
@@ -27,11 +24,8 @@ export const uploadCV = async (file: File): Promise<CVSubmitResponse> => {
     localStorage.setItem('last_uploaded_cv_id', response.data.cv_id);
 
     return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data?.detail || 'CV upload failed');
-    }
-    throw error;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'CV upload failed');
   }
 };
 
@@ -40,21 +34,10 @@ export const uploadCV = async (file: File): Promise<CVSubmitResponse> => {
  */
 export const listCVs = async (): Promise<CVListResponse> => {
   try {
-    const token = localStorage.getItem('access_token');
-    const response = await axios.get<CVListResponse>(
-      `${API_BASE_URL}/cv/list`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    );
+    const response = await apiClient.get<CVListResponse>('/cv/list');
     return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data?.detail || 'Failed to fetch CVs');
-    }
-    throw error;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to fetch CVs');
   }
 };
 
@@ -63,20 +46,9 @@ export const listCVs = async (): Promise<CVListResponse> => {
  */
 export const getCVById = async (cvId: string): Promise<CVParsed> => {
   try {
-    const token = localStorage.getItem('access_token');
-    const response = await axios.get<CVParsed>(
-      `${API_BASE_URL}/cv/${cvId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    );
+    const response = await apiClient.get<CVParsed>(`/cv/${cvId}`);
     return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data?.detail || 'Failed to fetch CV');
-    }
-    throw error;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to fetch CV');
   }
 };
