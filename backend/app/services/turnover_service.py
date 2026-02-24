@@ -188,7 +188,8 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
                 db_entry["job_location"] = job_location
                 db_entry["calculated_at"] = datetime.utcnow()
                 db_entry["user_email"] = user.get("email") if user else None 
-                turnover_coll.insert_one(db_entry)
+                insert_result = turnover_coll.insert_one(db_entry)  
+                result["result_id"] = str(insert_result.inserted_id) 
                 print(f"Saved turnover result for CV {cv_id} to MongoDB")
             except Exception as e:
                 print(f"Error saving turnover result to MongoDB: {e}")

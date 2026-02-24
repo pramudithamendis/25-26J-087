@@ -5,6 +5,7 @@ import { History, TrendingUp, TrendingDown, Minus, Search, Filter, Clock, ArrowL
 import './TurnoverHistoryPage.css';
 
 interface PredictionHistoryItem {
+  _id: string;
   cv_id: string;
   cv_name: string;
   prediction: {
@@ -66,9 +67,8 @@ const TurnoverHistoryPage: React.FC = () => {
     });
   };
 
-  const handleViewDetails = (cvId: string) => {
-    // Navigate to results view page instead of the form
-    navigate(`/dashboard/admin/turnover/results?cv_id=${cvId}`);
+  const handleViewDetails = (resultId: string) => {
+    navigate(`/dashboard/admin/turnover/results?result_id=${resultId}`);
   };
 
   // Filter predictions
@@ -199,7 +199,7 @@ const TurnoverHistoryPage: React.FC = () => {
             <div
               key={index}
               className="prediction-card"
-              onClick={() => handleViewDetails(pred.cv_id)}
+              onClick={() => handleViewDetails(pred._id || pred.cv_id)}
             >
               <div className="card-left">
                 <div 

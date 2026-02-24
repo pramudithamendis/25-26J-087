@@ -91,11 +91,12 @@ async def get_prediction_history(
         # Find predictions for this user
         cursor = turnover_coll.find(
             {"user_email": user.get("email")},
-            {"_id": 0, "cv_id": 1, "cv_name": 1, "prediction": 1, "calculated_at": 1}
-        ).sort("calculated_at", -1).limit(limit)
+            {"cv_id": 1, "cv_name": 1, "prediction": 1, "calculated_at": 1, "result_id": 1}  # ← remove "_id": 0, add result_id
+            ).sort("calculated_at", -1).limit(limit)
         
         history = []
         for doc in cursor:
+            doc["_id"] = str(doc["_id"])
             history.append(doc)
         
         return {
@@ -133,6 +134,32 @@ async def get_prediction_result(
         # Remove MongoDB _id
         result.pop("_id", None)
         
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching result: {str(e)}")
+    
+
+@router.get("/result-by-id/{result_id}")
+async def get_prediction_by_result_id(
+    result_id: str,
+    user: dict = Depends(get_current_user)
+):
+    """Get prediction result by unique result ID"""
+    from app.database import turnover_collection
+    from bson import ObjectId
+    
+    try:
+        result = turnover_collection.find_one(
+            {"_id": ObjectId(result_id), "user_email": user.get("email")}
+        )
+        
+        if not result:
+            raise HTTPException(404, f"Result not found")
+        
+        result.pop("_id", None)
         return result
         
     except HTTPException:

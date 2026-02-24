@@ -14,26 +14,28 @@ const TurnoverResultsView: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const cvId = searchParams.get('cv_id');
-
+  const resultId = searchParams.get('result_id');
   const [prediction, setPrediction] = useState<TurnoverPredictionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!cvId) {
+    if (!cvId && !resultId) {
       navigate('/dashboard/admin/turnover/history');
       return;
     }
     fetchStoredPrediction();
-  }, [cvId, navigate]);
+  }, [cvId, resultId, navigate]);
 
   const fetchStoredPrediction = async () => {
     setLoading(true);
     setError('');
     
     try {
-      const response = await apiClient.get(`/turnover/result/${cvId}`);
-      
+      const endpoint = resultId 
+      ? `/turnover/result-by-id/${resultId}` 
+      : `/turnover/result/${cvId}`;
+      const response = await apiClient.get(endpoint);
       setPrediction(response.data);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -51,7 +53,8 @@ const TurnoverResultsView: React.FC = () => {
   };
 
   const handleNewPrediction = () => {
-    navigate(`/dashboard/admin/turnover?cv_id=${cvId}`);
+    const id = cvId || prediction?.cv_id;
+    navigate(`/dashboard/admin/turnover?cv_id=${id}`);
   };
 
   if (loading) {
