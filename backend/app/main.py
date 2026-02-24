@@ -118,6 +118,10 @@ app.include_router(hirebase_router)
 app.include_router(trends_router)
 app.include_router(questions_router)
 app.include_router(admin_router)
+app.include_router(cv_router)
+app.include_router(turnover_router)
+app.include_router(geocoding_router)
+app.include_router(esco_router)
 
 @app.get("/")
 def root():
@@ -146,7 +150,7 @@ def health_check():
     }
 
 
-@app.on_event("startup")
-def startup_event():
-    start_scheduler()
+# @app.on_event("startup")
+# def startup_event():
+#     start_scheduler()
 
