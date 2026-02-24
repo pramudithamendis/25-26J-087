@@ -40,11 +40,24 @@ export const useTurnoverPrediction = (): UseTurnoverPredictionReturn => {
       const result = await predictTurnover(data);
       setPrediction(result);
       setStatus(PREDICTION_STATUS.SUCCESS);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to predict turnover risk';
+    } catch (err: any) {
+      let errorMessage = 'Failed to predict turnover risk';
+      
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          // 422 validation error - extract messages
+          errorMessage = detail.map((e: any) => e.msg).join(', ');
+        } else {
+          errorMessage = detail;
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
       setError(errorMessage);
       setStatus(PREDICTION_STATUS.ERROR);
-    } finally {
+    }finally {
       setLoading(false);
     }
   };
