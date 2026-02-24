@@ -53,8 +53,8 @@
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   background: #eff6ff;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: #2563eb;
+  border: 2px solid #2563eb;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -64,7 +64,7 @@
 }
 
 .history-button:hover {
-  background: #667eea;
+  background: #3063d3;
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
@@ -172,12 +172,12 @@
   color: #374151;
 }
 
-.reset-button:hover:not(:disabled) {
+/* .reset-button:hover:not(:disabled) {
   background: #e5e7eb;
-}
+} */
 
 .upload-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background:  #2563eb; 
   color: white;
 }
 

@@ -15,8 +15,8 @@
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   background: white;
-  color: #374151;
-  border: 1px solid rgba(19, 18, 18, 0.3);
+  color: #2563eb;
+  border: 1px solid #2563eb;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -26,7 +26,8 @@
 }
 
 .back-button:hover {
-  background: #f3f4f6;
+  background: #3069dc;
+  color: #eff6ff;
   transform: translateX(-4px);
 }
 
