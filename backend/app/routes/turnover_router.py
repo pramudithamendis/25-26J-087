@@ -116,10 +116,10 @@ async def get_prediction_result(
     """
     Get stored prediction result for a CV
     """
-    from app.database import get_turnover_collection
+    from app.database import turnover_collection
     
     try:
-        turnover_coll = get_turnover_collection()
+        turnover_coll = turnover_collection
         
         # Find most recent prediction for this CV by this user
         result = turnover_coll.find_one(
