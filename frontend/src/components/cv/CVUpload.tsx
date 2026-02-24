@@ -72,13 +72,13 @@ const CVUpload: React.FC = () => {
       <div className="cv-upload-card">
         {/* Header with History Button */}
         <div className="upload-header">
-          <FileText className="header-icon" />
+          <FileText className="header-icon" style={{ color: '#2563eb' }}/>
           <div style={{ flex: 1 }}>
             <h1>Upload Your CV</h1>
             <p>Upload your resume to begin the analysis</p>
           </div>
           <button
-            onClick={() => navigate('/turnover/history')}
+            onClick={() => navigate('/dashboard/admin/turnover/history')}
             className="history-button"
             title="View Prediction History"
           >
@@ -170,7 +170,7 @@ const CVUpload: React.FC = () => {
                 <h3>Choose Analysis Module:</h3>
                 <div className="module-buttons">
                   <button
-                    onClick={() => handleModuleNavigation('/turnover')}
+                    onClick={() => handleModuleNavigation('/dashboard/admin/turnover')}
                     className="module-button turnover"
                   >
                     <span>Turnover Risk Prediction</span>
