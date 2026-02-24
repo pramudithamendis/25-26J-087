@@ -26,7 +26,12 @@ export const predictTurnover = async (
 
     const response = await apiClient.post<TurnoverPredictionResponse>(
       '/turnover/predict',
-      formData
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
     );
 
     return response.data;
