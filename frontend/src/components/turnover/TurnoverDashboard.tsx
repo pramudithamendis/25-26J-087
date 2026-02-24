@@ -31,10 +31,10 @@ const TurnoverDashboard: React.FC = () => {
         setCvId(storedCvId);
       } else {
         // No CV ID found, redirect to CV upload
-        navigate('/cv/upload');
+        navigate('/dashboard/admin/cv-upload');
       }
     }
-  }, [navigate]);
+  }, []);
 
   const handlePredictionSubmit = (jobDescription: string, jobLocation: string) => {
     predict({
@@ -49,11 +49,11 @@ const TurnoverDashboard: React.FC = () => {
   };
 
   const handleBackToUpload = () => {
-    navigate('/cv/upload');
+    navigate('/dashboard/admin/cv-upload');
   };
 
   const handleViewHistory = () => {
-    navigate('/turnover/history');
+    navigate('/dashboard/admin/turnover/history');
   };
 
   return (
