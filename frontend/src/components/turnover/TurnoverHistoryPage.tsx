@@ -97,8 +97,8 @@ const TurnoverHistoryPage: React.FC = () => {
         <div className="header-content">
           <History className="header-icon" style={{ color: '#2563eb' }}/>
           <div>
-            <h1>Prediction History</h1>
-            <p>View all past turnover risk assessments</p>
+            <h1>Turnover Risk Assessment History</h1>
+            
           </div>
         </div>
       </div>
