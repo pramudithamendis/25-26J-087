@@ -1,14 +1,15 @@
 import apiClient from '../../config/api';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, History } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import TurnoverPredictionResults from './TurnoverPredictionResults';
 import TurnoverSHAPExplanation from './TurnoverSHAPExplanation';
 import TurnoverRiskFactors from './TurnoverRiskFactors';
 import TurnoverCounterfactuals from './TurnoverCounterfactuals';
 import type { TurnoverPredictionResponse } from '../../types/turnover.types';
 import './TurnoverDashboard.css';
-import axios from 'axios'
+import { Button } from '../Button';
+import axios from 'axios';
 
 const TurnoverResultsView: React.FC = () => {
   const navigate = useNavigate();
@@ -31,11 +32,11 @@ const TurnoverResultsView: React.FC = () => {
   const fetchStoredPrediction = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
-      const endpoint = resultId 
-      ? `/turnover/result-by-id/${resultId}` 
-      : `/turnover/result/${cvId}`;
+      const endpoint = resultId
+        ? `/turnover/result-by-id/${resultId}`
+        : `/turnover/result/${cvId}`;
       const response = await apiClient.get(endpoint);
       setPrediction(response.data);
     } catch (err) {
@@ -54,8 +55,7 @@ const TurnoverResultsView: React.FC = () => {
   };
 
   const handleNewPrediction = () => {
-    const id = cvId || prediction?.cv_id;
-    navigate(`/dashboard/admin/turnover?cv_id=${id}`);
+    navigate('/dashboard/admin/turnover/new');
   };
 
   if (loading) {
@@ -78,13 +78,12 @@ const TurnoverResultsView: React.FC = () => {
     return (
       <div className="turnover-dashboard">
         <div className="dashboard-header">
-          <button className="back-button" onClick={handleBackToHistory}>
-            <ArrowLeft size={20} />
+          <Button variant="outline" onClick={handleBackToHistory}>
+            <ArrowLeft size={16} />
             Back to History
-          </button>
+          </Button>
           <h1>Turnover Risk Prediction</h1>
         </div>
-
         <div className="dashboard-content">
           <div className="error-banner">
             <span>{error || 'Failed to load prediction'}</span>
@@ -98,55 +97,53 @@ const TurnoverResultsView: React.FC = () => {
   return (
     <div className="turnover-dashboard">
       <div className="dashboard-header">
-        <button className="back-button" onClick={handleBackToHistory}>
-          <ArrowLeft size={20} />
-          Back to History
-        </button>
-        <h1>Turnover Risk Prediction</h1>
-        
-      </div>
+      <Button variant="outline" onClick={handleBackToHistory}>
+        <ArrowLeft size={16} />
+        Back to History
+      </Button>
+      
+      <Button variant="primary" onClick={handleNewPrediction}>
+        New Turnover Risk Assessment
+      </Button>
+      
+    </div>
 
       <div className="dashboard-content">
-        <div className="results-actions">
-          <button className="reset-button" onClick={handleBackToHistory}>
-            <History size={18} />
-            View All History
-          </button>
-          <button className="reset-button" onClick={handleNewPrediction} style={{ marginLeft: '0.5rem' }}>
-             New Prediction
-          </button>
-        </div>
-
-        {/* Job Description & Location Section */}
+      <h1>Turnover Risk Prediction</h1>
+        {/* Job Details Section */}
         {(prediction.job_description || prediction.job_location) && (
           <div className="shap-explanation-card" style={{ marginBottom: '1rem' }}>
-            <div 
-              className="section-header" 
+            <div
+              className="section-header"
               onClick={() => setShowJD(!showJD)}
               style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
             >
               <h3>Job Details</h3>
-              <span>{showJD ? '▲ Hide' : '▼ Show'}</span>
+              {showJD ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </div>
             {showJD && (
               <div style={{ marginTop: '1rem' }}>
                 {prediction.job_location && (
-                  <div style={{ 
+                  <div style={{
                     marginBottom: '0.75rem',
                     padding: '0.5rem 1rem',
                     background: '#eff6ff',
                     borderRadius: '8px',
                     color: '#1d4ed8',
                     fontWeight: '500',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
                   }}>
-                    📍 {prediction.job_location}
+                    <MapPin size={14} />
+                    {prediction.job_location}
                   </div>
                 )}
                 {prediction.job_description && (
-                  <div style={{ 
-                    padding: '1rem', 
-                    background: '#f9fafb', 
+                  <div style={{
+                    padding: '1rem',
+                    background: '#f9fafb',
                     borderRadius: '8px',
                     whiteSpace: 'pre-wrap',
                     fontSize: '0.9rem',
@@ -161,11 +158,11 @@ const TurnoverResultsView: React.FC = () => {
           </div>
         )}
 
-        {/* Show all prediction components */}
         <TurnoverPredictionResults prediction={prediction} />
         <TurnoverSHAPExplanation shapExplanation={prediction.shap_explanation} />
         <TurnoverRiskFactors riskFactors={prediction.risk_factors} />
         <TurnoverCounterfactuals counterfactuals={prediction.counterfactuals} />
+
       </div>
     </div>
   );
