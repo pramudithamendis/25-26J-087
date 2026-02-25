@@ -8,6 +8,8 @@ export interface TurnoverPredictionResponse {
   status: string;
   cv_id: string;
   cv_name: string;
+  job_description?: string; 
+  job_location?: string;  
   prediction: {
     risk_level: number; // 0 = High, 1 = Medium, 2 = Low
     risk_label: string;

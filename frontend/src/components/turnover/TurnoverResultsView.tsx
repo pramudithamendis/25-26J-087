@@ -18,6 +18,7 @@ const TurnoverResultsView: React.FC = () => {
   const [prediction, setPrediction] = useState<TurnoverPredictionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showJD, setShowJD] = useState(false);
 
   useEffect(() => {
     if (!cvId && !resultId) {
@@ -115,6 +116,50 @@ const TurnoverResultsView: React.FC = () => {
              New Prediction
           </button>
         </div>
+
+        {/* Job Description & Location Section */}
+        {(prediction.job_description || prediction.job_location) && (
+          <div className="shap-explanation-card" style={{ marginBottom: '1rem' }}>
+            <div 
+              className="section-header" 
+              onClick={() => setShowJD(!showJD)}
+              style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            >
+              <h3>Job Details</h3>
+              <span>{showJD ? '▲ Hide' : '▼ Show'}</span>
+            </div>
+            {showJD && (
+              <div style={{ marginTop: '1rem' }}>
+                {prediction.job_location && (
+                  <div style={{ 
+                    marginBottom: '0.75rem',
+                    padding: '0.5rem 1rem',
+                    background: '#eff6ff',
+                    borderRadius: '8px',
+                    color: '#1d4ed8',
+                    fontWeight: '500',
+                    fontSize: '0.9rem'
+                  }}>
+                    📍 {prediction.job_location}
+                  </div>
+                )}
+                {prediction.job_description && (
+                  <div style={{ 
+                    padding: '1rem', 
+                    background: '#f9fafb', 
+                    borderRadius: '8px',
+                    whiteSpace: 'pre-wrap',
+                    fontSize: '0.9rem',
+                    color: '#374151',
+                    lineHeight: '1.6'
+                  }}>
+                    {prediction.job_description}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Show all prediction components */}
         <TurnoverPredictionResults prediction={prediction} />
