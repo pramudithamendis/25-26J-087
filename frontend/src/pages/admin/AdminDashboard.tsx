@@ -115,7 +115,7 @@ export const AdminDashboard = () => {
             View Trend Score
           </Button>
           <Button variant="primary" onClick={() => navigate('/dashboard/admin/cv-upload')} className="w-full">
-            Predict Turnover Risk
+            View Turnover Risk
           </Button>
         </div>
       </div>
