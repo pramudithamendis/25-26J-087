@@ -65,10 +65,6 @@ const TurnoverRiskFactors: React.FC<TurnoverRiskFactorsProps> = ({ riskFactors }
                 </span>
               </div>
             </div>
-
-            <div className="factor-content">
-              
-            </div>
           </div>
         ))}
       </div>
