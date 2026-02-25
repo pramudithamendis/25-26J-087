@@ -105,71 +105,35 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
         {/* Likelihood Breakdown */}
         <div className="likelihood-section">
           <h4>How Long Will They Stay?</h4>
-          <div className="probability-grid">
-            {/* High Risk */}
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Leaves within 6 months</span>
-                <span 
-                  className="prob-confidence-label" 
-                  style={{ color: getLikelihoodLabel(pred.probabilities.high_risk).color }}
-                >
-                  {getLikelihoodLabel(pred.probabilities.high_risk).text}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{
-                    width: `${pred.probabilities.high_risk * 100}%`,
-                    backgroundColor: RISK_COLORS[0]
-                  }}
-                />
-              </div>
+          <div className="probability-boxes">
+            <div className="prob-box" style={{ borderColor: RISK_COLORS[0] }}>
+              <span className="prob-box-percent" style={{ color: RISK_COLORS[0] }}>
+                {(pred.probabilities.high_risk * 100).toFixed(0)}%
+              </span>
+              <span className="prob-box-label">Leaves within 6 months</span>
+              <span className="prob-box-likelihood" style={{ color: getLikelihoodLabel(pred.probabilities.high_risk).color }}>
+                {getLikelihoodLabel(pred.probabilities.high_risk).text}
+              </span>
             </div>
 
-            {/* Medium Risk */}
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Leaves within 6-12 months</span>
-                <span 
-                  className="prob-confidence-label"
-                  style={{ color: getLikelihoodLabel(pred.probabilities.medium_risk).color }}
-                >
-                  {getLikelihoodLabel(pred.probabilities.medium_risk).text}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{
-                    width: `${pred.probabilities.medium_risk * 100}%`,
-                    backgroundColor: RISK_COLORS[1]
-                  }}
-                />
-              </div>
+            <div className="prob-box" style={{ borderColor: RISK_COLORS[1] }}>
+              <span className="prob-box-percent" style={{ color: RISK_COLORS[1] }}>
+                {(pred.probabilities.medium_risk * 100).toFixed(0)}%
+              </span>
+              <span className="prob-box-label">Leaves within 6-12 months</span>
+              <span className="prob-box-likelihood" style={{ color: getLikelihoodLabel(pred.probabilities.medium_risk).color }}>
+                {getLikelihoodLabel(pred.probabilities.medium_risk).text}
+              </span>
             </div>
 
-            {/* Low Risk */}
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Stays more than 1 year</span>
-                <span 
-                  className="prob-confidence-label"
-                  style={{ color: getLikelihoodLabel(pred.probabilities.low_risk).color }}
-                >
-                  {getLikelihoodLabel(pred.probabilities.low_risk).text}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{
-                    width: `${pred.probabilities.low_risk * 100}%`,
-                    backgroundColor: RISK_COLORS[2]
-                  }}
-                />
-              </div>
+            <div className="prob-box" style={{ borderColor: RISK_COLORS[2] }}>
+              <span className="prob-box-percent" style={{ color: RISK_COLORS[2] }}>
+                {(pred.probabilities.low_risk * 100).toFixed(0)}%
+              </span>
+              <span className="prob-box-label">Stays more than 1 year</span>
+              <span className="prob-box-likelihood" style={{ color: getLikelihoodLabel(pred.probabilities.low_risk).color }}>
+                {getLikelihoodLabel(pred.probabilities.low_risk).text}
+              </span>
             </div>
           </div>
         </div>
@@ -297,15 +261,24 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
       <div className="interview-tips-card">
         <h3>💡 Recommended Interview Discussion Points</h3>
         <ul className="tips-list">
-          {pred.risk_level <= 1 ? (
+          {pred.risk_level === 2 ? (
+            // Low risk - positive tips
             <>
               <li>Ask about long-term career goals and how this role fits into their plans</li>
               <li>Discuss what motivates them and keeps them engaged in their work</li>
               <li>Explore their expectations for growth and development opportunities</li>
             </>
-          ) : (
+          ) : pred.risk_level === 1 ? (
+            // Medium risk - mixed tips
             <>
-              <li><strong>Critical:</strong> Understand their reasons for frequent job changes</li>
+              <li>Ask about long-term career goals and what would make them stay</li>
+              <li>Discuss work-life balance expectations and commute concerns</li>
+              <li>Explore their expectations for growth and development opportunities</li>
+              <li>Clarify role expectations to ensure alignment</li>
+            </>
+          ) : (
+            // High risk - critical tips
+            <>
               <li><strong>Critical:</strong> Ask what would make them stay long-term at a company</li>
               <li>Discuss work-life balance expectations and commute concerns</li>
               <li>Explore if there are skill gaps and their willingness to learn</li>
