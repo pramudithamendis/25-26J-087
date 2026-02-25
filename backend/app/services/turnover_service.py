@@ -10,6 +10,9 @@ from app.services.model_loader import predict_with_model, get_model
 from app.services.fairness_utils import extract_fairness_metadata, get_fairness_context
 import time
 from app.services.feature_engineering import extract_location_from_jd_enhanced
+import threading
+
+_shap_lock = threading.Lock()
 
 RISK_LABELS = {
     0: "High Risk (leaves within 6 months)",
@@ -217,57 +220,44 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
 
 
 def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: int, timeout_seconds: int = 8) -> Dict[str, Any]:
-    """
-    SAFE wrapper for SHAP explanation generation with timeout and fallback
-    Uses threading for cross-platform timeout support (Windows compatible)
-    """
-    import threading
     
-    result = {'explanation': None, 'error': None, 'completed': False}
+    print("   Waiting for SHAP lock...")
+    # Wait up to 60 seconds for previous SHAP to finish
+    lock_acquired = _shap_lock.acquire(blocking=True, timeout=60)
     
-    def generate_with_timeout():
-        try:
-            from app.services.model_loader import get_model_for_shap
-            import shap
-            
-            print("   → Loading SHAP model...")
-            shap_model = get_model_for_shap()
-            
-            print("   → Creating TreeExplainer...")
-            explanation = generate_shap_explanation_internal(features, shap_model, predicted_class)
-            
-            result['explanation'] = explanation
-            result['completed'] = True
-            
-        except Exception as e:
-            result['error'] = str(e)
-            result['completed'] = True
-            print(f"   SHAP error: {e}")
-    
-    # Run SHAP generation in a separate thread with timeout
-    thread = threading.Thread(target=generate_with_timeout, daemon=True)
-    thread.start()
-    thread.join(timeout=timeout_seconds)
-    
-    if thread.is_alive():
-        # Thread is still running - timeout occurred
-        print(f"   SHAP generation timed out after {timeout_seconds}s (thread still running)")
-        print(f"   Continuing without SHAP (thread will be abandoned)")
+    if not lock_acquired:
+        print("   Could not acquire SHAP lock after 60s - using rule-based")
         return get_empty_shap_explanation()
     
-    if not result['completed']:
-        print(f"   SHAP did not complete (unknown reason)")
+    try:
+        result = {'explanation': None, 'error': None, 'completed': False}
+        
+        def generate_with_timeout():
+            try:
+                from app.services.model_loader import get_model_for_shap
+                import shap
+                explanation = generate_shap_explanation_internal(features, get_model_for_shap(), predicted_class)
+                result['explanation'] = explanation
+                result['completed'] = True
+            except Exception as e:
+                result['error'] = str(e)
+                result['completed'] = True
+        
+        thread = threading.Thread(target=generate_with_timeout, daemon=True)
+        thread.start()
+        thread.join(timeout=timeout_seconds)
+        
+        if thread.is_alive():
+            print(f"   SHAP timed out after {timeout_seconds}s")
+            return get_empty_shap_explanation()
+        
+        if result['explanation']:
+            return result['explanation']
+            
         return get_empty_shap_explanation()
-    
-    if result['error']:
-        print(f"   SHAP generation failed: {result['error'][:100]}")
-        return get_empty_shap_explanation()
-    
-    if result['explanation']:
-        print("   SHAP explanation generated successfully")
-        return result['explanation']
-    
-    return get_empty_shap_explanation()
+        
+    finally:
+        _shap_lock.release()
 
 
 def get_empty_shap_explanation() -> Dict[str, Any]:
@@ -442,13 +432,34 @@ def identify_risk_factors_shap(features: Dict[str, float], shap_explanation: Dic
     ][:5]
     
     feature_descriptions = {
-        'job_hopping_rate': ("Frequent job changes", "High proportion of short-tenure jobs", "high"),
-        'skill_match_score': ("Skill-job alignment", "Degree of match between candidate skills and job requirements", "high"),
-        'title_match_score': ("Job role similarity", "How well current role matches target position", "medium"),
-        'avg_tenure_months': ("Average job tenure", "Average duration per previous job", "high"),
-        'location_match_score': ("Location compatibility", "Distance between candidate location and job location", "medium"),
-        'n_skills': ("Skill Breadth", "Candidate has a strong variety of skills, reducing attrition risk", "low"),
-        'has_progression': ("Progression Jumps", "Career progression across jobs shows ambition and reduces attrition risk", "low"),
+        'job_hopping_rate': ("Frequent Job Changes", "High proportion of short-tenure jobs", "high"),
+        'skill_match_score': ("Skills Alignment", "Weak skill match may lead to frustration and job searching", "high"),
+        'title_match_score': ("Role Similarity", "Different role may cause dissatisfaction or mismatch", "medium"),
+        'avg_tenure_months': ("Average Job Tenure", "Average duration per previous job", "high"),
+        'location_match_score': ("Location Compatibility", "Distance between candidate location and job location", "medium"),
+        'n_skills': ("Skill Breadth", "Candidate has a strong variety of skills", "low"),
+        'has_progression': ("Career Progression", "Career progression across jobs shows ambition", "low"),
+        'overall_match_score': ("Overall Job Fit", "Poor overall fit increases likelihood of early departure", "high"),
+        'exp_match_score': ("Experience Match", "Mismatch between candidate experience and job requirements", "medium"),
+        'edu_match_score': ("Education Match", "Education level doesn't align well with job requirements", "medium"),
+        'is_overqualified': ("Overqualification", "Overqualified candidates often leave for better opportunities", "medium"),
+        'is_underqualified': ("Underqualification", "Underqualified candidates may struggle and leave early", "high"),
+        'current_job_tenure': ("Current Role Stability", "Time spent in current job indicates commitment level", "medium"),
+        'total_exp_years': ("Total Experience", "Overall years of work experience", "medium"),
+        'total_jobs': ("Number of Jobs", "Total number of positions held", "medium"),
+        'short_stints_count': ("Short Stints", "Number of jobs held for less than a year", "high"),
+        'tenure_slope': ("Tenure Trend", "Whether job tenures are increasing or decreasing over time", "medium"),
+        'industry_switches': ("Industry Switches", "Number of times candidate changed industry", "medium"),
+        'progression_jumps': ("Promotion History", "Number of upward career moves", "low"),
+        'has_masters': ("Advanced Education", "Holds a postgraduate degree", "low"),
+        'n_education': ("Education Count", "Number of educational qualifications", "low"),
+        'n_certifications': ("Certifications", "Number of professional certifications held", "low"),
+        'is_remote_cv': ("Remote Work History", "Candidate has remote work experience", "low"),
+        'is_remote_jd': ("Remote Role", "This position is remote", "low"),
+        'work_mode_mismatch': ("Work Mode Mismatch", "Mismatch between candidate work preference and role type", "medium"),
+        'has_career_gap': ("Career Gap", "Candidate has a gap in employment history", "medium"),
+        'career_gap_months': ("Career Gap Duration", "Length of employment gap in months", "medium"),
+        'is_remote_preference': ("Remote Preference", "Candidate prefers remote work", "low"),
     }
     
     for feat_data in top_risk_features:
@@ -492,7 +503,12 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
             description = f"had 30% better {feature_name.replace('_', ' ')}"
         elif 'tenure' in feature_name:
             new_value = current_value + 24
-            description = f"had 2 years longer average tenure"
+            if 'avg' in feature_name:
+                description = f"had 2 years longer average tenure per job"
+            elif 'current' in feature_name:
+                description = f"stayed 2 more years in current role"
+            else:
+                description = f"had 2 years longer tenure"
         elif 'hopping' in feature_name:
             new_value = max(current_value - 0.3, 0)
             description = f"had more stable job history"
@@ -506,7 +522,7 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
         try:
             new_pred, new_proba = predict_with_model(modified_features)
             
-            if new_pred != prediction or abs(new_proba[new_pred] - probabilities[prediction]) > 0.02:
+            if new_pred > prediction:
                 counterfactuals.append({
                     "scenario": f"If candidate {description}",
                     "original_risk": RISK_LABELS[prediction],
@@ -541,7 +557,7 @@ def generate_counterfactuals(features: Dict, prediction: int, probabilities: np.
         try:
             new_pred, new_proba = predict_with_model(modified_features)
             
-            if new_pred != prediction or abs(new_proba[new_pred] - probabilities[prediction]) > 0.02:
+            if new_pred > prediction:
                 counterfactuals.append({
                     "scenario": f"If candidate {description}",
                     "original_risk": RISK_LABELS[prediction],
