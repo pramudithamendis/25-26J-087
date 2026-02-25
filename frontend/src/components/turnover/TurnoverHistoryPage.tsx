@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { History, TrendingUp, TrendingDown, Minus, Search, Filter, Clock, ArrowLeft } from 'lucide-react';
 import './TurnoverHistoryPage.css';
+import { Button } from '../Button';
 
 interface PredictionHistoryItem {
   _id: string;
@@ -89,18 +90,15 @@ const TurnoverHistoryPage: React.FC = () => {
   return (
     <div className="turnover-history-page">
       <div className="history-header">
-        <button className="back-button" onClick={() => navigate('/dashboard/admin/cv-upload')}>
-          <ArrowLeft size={20} />
-          Back to Upload
-        </button>
-        
         <div className="header-content">
           <History className="header-icon" style={{ color: '#2563eb' }}/>
           <div>
             <h1>Turnover Risk Assessment History</h1>
-            
           </div>
         </div>
+        <Button variant="primary" onClick={() => navigate('/dashboard/admin/turnover/new')}>
+          New Turnover Risk Assessment
+      </Button>
       </div>
 
       {/* Statistics Cards */}

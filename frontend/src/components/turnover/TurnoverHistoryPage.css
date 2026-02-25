@@ -1,12 +1,15 @@
 .turnover-history-page {
   min-height: 100vh;
-  padding: 2rem 1rem;
+  /* padding: 0.5rem 1rem; */
   background:#f8fafc; 
 }
 
 .history-header {
-  max-width: 1200px;
-  margin: 0 auto 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;  /* ← pushes button to right */
+  margin-bottom: 5rem;
+  gap: 1rem;
 }
 
 .back-button {
