@@ -166,3 +166,64 @@ async def get_prediction_by_result_id(
         raise
     except Exception as e:
         raise HTTPException(500, f"Error fetching result: {str(e)}")
+    
+
+@router.get("/candidates")
+async def get_all_candidates(
+    user: dict = Depends(get_current_user)
+):
+    """Fetch all candidates from cv_collection"""
+    from app.database import cv_collection
+
+    try:
+        print("DEBUG: fetching candidates")
+        cursor = cv_collection.find(
+            {},
+            {"name": 1, "emails": 1, "uploaded_at": 1}
+        ).sort("uploaded_at", -1)
+
+        candidates = []
+        for doc in cursor:
+            print(f"DEBUG doc: {doc.get('name')}")
+            candidates.append({
+                "_id": str(doc["_id"]),
+                "name": doc.get("name", "Unknown"),
+                "email": doc.get("emails", [""])[0] if doc.get("emails") else "",
+                "uploaded_at": doc.get("uploaded_at", "")
+            })
+
+        return {"status": "success", "candidates": candidates}
+
+    except Exception as e:
+        print(f"ERROR in candidates: {e}")  # ← this will show the real error
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, f"Error fetching candidates: {str(e)}")
+
+
+@router.get("/jobs")
+async def get_all_jobs(
+    user: dict = Depends(get_current_user)
+):
+    """Fetch all jobs from jobs_collection"""
+    from app.models.job_model import jobs_collection
+
+    try:
+        cursor = jobs_collection.find(
+            {},
+            {"title": 1, "jd_text": 1, "created_at": 1}
+        ).sort("created_at", -1)
+
+        jobs = []
+        for doc in cursor:
+            jobs.append({
+                "_id": str(doc["_id"]),
+                "title": doc.get("title", "Untitled"),
+                "jd_text": doc.get("jd_text", ""),
+                "created_at": doc.get("created_at", "")
+            })
+
+        return {"status": "success", "jobs": jobs}
+
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching jobs: {str(e)}")
