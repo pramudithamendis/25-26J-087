@@ -24,6 +24,7 @@ import CVUpload from './components/cv/CVUpload';
 import TurnoverDashboard from './components/turnover/TurnoverDashboard';
 import TurnoverHistoryPage from './components/turnover/TurnoverHistoryPage';
 import TurnoverResultsView from './components/turnover/TurnoverResultsView';
+import TurnoverNewPrediction from './components/turnover/TurnoverNewPrediction';
 import './App.css';
 
 function App() {
@@ -207,7 +208,7 @@ function App() {
             element={
               <AdminRoute>
                 <DashboardLayout>
-                  <TurnoverDashboard />
+                  <TurnoverResultsView />
                 </DashboardLayout>
               </AdminRoute>
             }
@@ -228,6 +229,16 @@ function App() {
               <AdminRoute>
                 <DashboardLayout>
                   <TurnoverResultsView />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/turnover/new"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <TurnoverNewPrediction />
                 </DashboardLayout>
               </AdminRoute>
             }
