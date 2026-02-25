@@ -111,7 +111,7 @@ const CVUpload: React.FC = () => {
               ) : (
                 <div className="upload-prompt">
                   <Upload size={48} />
-                  <p>Click to browse or drag and drop</p>
+                  <p>Click to browse</p>
                   <small>PDF (max 10MB)</small>
                 </div>
               )}
@@ -167,7 +167,7 @@ const CVUpload: React.FC = () => {
 
               {/* Module Navigation */}
               <div className="module-navigation">
-                <h3>Choose Analysis Module:</h3>
+                
                 <div className="module-buttons">
                   <button
                     onClick={() => handleModuleNavigation('/dashboard/admin/turnover')}
@@ -178,10 +178,6 @@ const CVUpload: React.FC = () => {
                   </button>
                 </div>
               </div>
-
-              {/* <button onClick={handleReset} className="upload-another">
-                Upload Another CV
-              </button> */}
             </div>
           </>
         )}
