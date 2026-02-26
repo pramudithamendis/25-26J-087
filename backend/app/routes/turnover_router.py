@@ -176,7 +176,6 @@ async def get_all_candidates(
     from app.database import cv_collection
 
     try:
-        print("DEBUG: fetching candidates")
         cursor = cv_collection.find(
             {},
             {"name": 1, "emails": 1, "uploaded_at": 1}
@@ -184,7 +183,6 @@ async def get_all_candidates(
 
         candidates = []
         for doc in cursor:
-            print(f"DEBUG doc: {doc.get('name')}")
             candidates.append({
                 "_id": str(doc["_id"]),
                 "name": doc.get("name", "Unknown"),
@@ -195,7 +193,7 @@ async def get_all_candidates(
         return {"status": "success", "candidates": candidates}
 
     except Exception as e:
-        print(f"ERROR in candidates: {e}")  # ← this will show the real error
+        print(f"ERROR in candidates: {e}") 
         import traceback
         traceback.print_exc()
         raise HTTPException(500, f"Error fetching candidates: {str(e)}")
