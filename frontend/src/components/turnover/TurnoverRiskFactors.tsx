@@ -1,18 +1,19 @@
 import React from 'react';
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import type { RiskFactor } from '../../types/turnover.types';
-import { IMPACT_COLORS } from '../../utils/turnover-constants';
 import './TurnoverRiskFactors.css';
 
 interface TurnoverRiskFactorsProps {
   riskFactors: RiskFactor[];
 }
 
+const IMPACT_ORDER = { critical: 4, high: 3, medium: 2, low: 1 };
+
 const TurnoverRiskFactors: React.FC<TurnoverRiskFactorsProps> = ({ riskFactors }) => {
   const getImpactIcon = (impact: string) => {
-    if (impact === 'high') return <AlertTriangle size={20} />;
-    if (impact === 'medium') return <AlertCircle size={20} />;
-    return <Info size={20} />;
+    if (impact === 'critical' || impact === 'high') return <AlertTriangle size={18} />;
+    if (impact === 'medium') return <AlertCircle size={18} />;
+    return <Info size={18} />;
   };
 
   const getImpactLabel = (impact: string) => {
@@ -31,6 +32,12 @@ const TurnoverRiskFactors: React.FC<TurnoverRiskFactorsProps> = ({ riskFactors }
     );
   }
 
+  const sortedFactors = [...riskFactors].sort(
+    (a, b) =>
+      (IMPACT_ORDER[b.impact as keyof typeof IMPACT_ORDER] || 0) -
+      (IMPACT_ORDER[a.impact as keyof typeof IMPACT_ORDER] || 0)
+  );
+
   return (
     <div className="turnover-risk-factors">
       <div className="factors-header">
@@ -42,29 +49,28 @@ const TurnoverRiskFactors: React.FC<TurnoverRiskFactorsProps> = ({ riskFactors }
       </div>
 
       <div className="factors-list">
-        {riskFactors.map((factor, index) => (
-          <div 
-            key={index} 
-            className="factor-card"
-            style={{ borderLeftColor: IMPACT_COLORS[factor.impact] }}
+        {sortedFactors.map((factor, index) => (
+          <div
+            key={index}
+            className={`factor-card impact-${factor.impact}`}
           >
             <div className="factor-header">
-              <div className="factor-icon" style={{ color: IMPACT_COLORS[factor.impact] }}>
+              <div className={`factor-icon factor-icon-${factor.impact}`}>
                 {getImpactIcon(factor.impact)}
               </div>
               <div className="factor-title">
                 <h4>{factor.factor}</h4>
-                <span 
-                  className="impact-badge"
-                  style={{ 
-                    backgroundColor: `${IMPACT_COLORS[factor.impact]}20`,
-                    color: IMPACT_COLORS[factor.impact]
-                  }}
-                >
+                <span className={`impact-badge impact-badge-${factor.impact}`}>
                   {getImpactLabel(factor.impact)}
                 </span>
               </div>
             </div>
+
+            {factor.description && (
+              <div className="factor-content">
+                <p className="factor-description">{factor.description}</p>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -72,7 +78,7 @@ const TurnoverRiskFactors: React.FC<TurnoverRiskFactorsProps> = ({ riskFactors }
       <div className="factors-footer">
         <Info size={16} />
         <p>
-          These factors are identified based on historical attrition patterns. 
+          These factors are identified based on historical attrition patterns.
           Consider discussing these areas during the interview process.
         </p>
       </div>
