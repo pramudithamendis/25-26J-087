@@ -7,6 +7,7 @@ import { Button } from '../Button';
 
 interface PredictionHistoryItem {
   _id: string;
+  result_id?: string;
   cv_id: string;
   cv_name: string;
   prediction: {
@@ -58,18 +59,24 @@ const TurnoverHistoryPage: React.FC = () => {
     return <TrendingUp size={20} />;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      // Ensure UTC is recognized by appending Z if missing
+      const normalized = dateStr.endsWith('Z') || dateStr.includes('+') 
+        ? dateStr 
+        : dateStr + 'Z';
+      return new Date(normalized).toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+        timeZone: 'Asia/Colombo'
+      });
+    } catch { return ''; }
   };
 
-  const handleViewDetails = (resultId: string) => {
-    navigate(`/dashboard/admin/turnover/results?result_id=${resultId}`);
+  const handleViewDetails = (item: PredictionHistoryItem) => {
+    const id = item._id;  // _id IS the result_id since we convert it to string
+    navigate(`/dashboard/admin/turnover/results?result_id=${id}`);
   };
 
   // Filter predictions
@@ -197,7 +204,7 @@ const TurnoverHistoryPage: React.FC = () => {
             <div
               key={index}
               className="prediction-card"
-              onClick={() => handleViewDetails(pred._id || pred.cv_id)}
+              onClick={() => handleViewDetails(pred)}
             >
               <div className="card-left">
                 <div 
