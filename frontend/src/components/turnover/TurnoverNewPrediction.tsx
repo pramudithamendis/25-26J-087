@@ -92,9 +92,9 @@ const TurnoverNewPrediction: React.FC = () => {
       });
       console.log('Prediction response:', res.data); 
       if (res.data.result_id) {
-        navigate(`/dashboard/admin/turnover?result_id=${res.data.result_id}`);
+        navigate(`/dashboard/admin/turnover/results?result_id=${res.data.result_id}`);
       } else if (res.data.cv_id) {
-        navigate(`/dashboard/admin/turnover?cv_id=${res.data.cv_id}`);
+        navigate(`/dashboard/admin/turnover/results?cv_id=${res.data.cv_id}`);
       }
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
@@ -141,7 +141,7 @@ const TurnoverNewPrediction: React.FC = () => {
         </Button>
         <div className="tnp-header-text">
           <h1>New Turnover Prediction</h1>
-          <p>Select a candidate and job to predict turnover risk</p>
+          <p>Select a candidate and job to assess turnover risk</p>
         </div>
       </div>
 
@@ -341,7 +341,7 @@ const TurnoverNewPrediction: React.FC = () => {
             {predicting ? (
               <>
                 <Loader2 size={18} className="tnp-spin" />
-                Analyzing... This may take up to 30 seconds
+                Analyzing... This may take up to 10 seconds
               </>
             ) : (
               <>
