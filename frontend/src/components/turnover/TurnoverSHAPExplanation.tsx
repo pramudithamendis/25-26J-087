@@ -162,7 +162,7 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
         <div className="factors-section risk-section">
           <div className="section-header">
             <TrendingUp className="section-icon" />
-            <h4>⚠️ Warning Signs (Increases Risk)</h4>
+            <h4>Warning Signs (Increases Risk)</h4>
           </div>
           <div className="factors-list">
             {increasesRisk.map((feature, idx) => {
@@ -194,7 +194,7 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
         <div className="factors-section positive-section">
           <div className="section-header">
             <TrendingDown className="section-icon" />
-            <h4>✅ Positive Indicators (Reduces Risk)</h4>
+            <h4>Positive Indicators (Reduces Risk)</h4>
           </div>
           <div className="factors-list">
             {decreasesRisk.map((feature, idx) => {

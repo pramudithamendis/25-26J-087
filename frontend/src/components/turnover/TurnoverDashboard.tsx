@@ -67,7 +67,7 @@ const TurnoverDashboard: React.FC = () => {
           <ArrowLeft size={20} />
           Back to CV Upload
         </button>
-        <h1>Turnover Risk Prediction</h1>
+        <h1>Turnover Risk Assessment</h1>
         <p className="subtitle">
           Predict early attrition risk using pre-hire data analysis
         </p>
