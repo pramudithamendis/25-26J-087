@@ -632,9 +632,9 @@ class ESCOMapper:
             return 0.5  # Default if no JD skills mapped
         
         intersection = len(cv_esco_skills & jd_esco_skills)
-        union = len(cv_esco_skills | jd_esco_skills)
-        
-        match_score = intersection / union if union > 0 else 0.0
+        if not jd_esco_skills:
+            return 0.5
+        match_score = intersection / len(jd_esco_skills)
         
         return round(match_score, 3)
 
