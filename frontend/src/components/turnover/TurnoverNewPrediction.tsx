@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Briefcase, Search, MapPin, CheckCircle2, ChevronRight, ArrowLeft, Zap, Loader2, History, FileText, UserCheck } from 'lucide-react';
+import { User, Briefcase, Search, MapPin, CheckCircle2, ChevronRight, ArrowLeft, Loader2, History, FileText, UserCheck } from 'lucide-react';
 import apiClient from '../../config/api';
 import './TurnoverNewPrediction.css';
 import { Button } from '../Button';
@@ -18,6 +18,9 @@ interface Job {
   jd_text: string;
   created_at: string;
 }
+
+const isRemoteJob = (title: string) =>
+  title.toLowerCase().includes('remote');
 
 const TurnoverNewPrediction: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +42,17 @@ const TurnoverNewPrediction: React.FC = () => {
     fetchCandidates();
     fetchJobs();
   }, []);
+
+  // Auto-fill location when job is selected
+  useEffect(() => {
+    if (selectedJob) {
+      if (isRemoteJob(selectedJob.title)) {
+        setJobLocation('Remote');
+      } else {
+        setJobLocation('');
+      }
+    }
+  }, [selectedJob]);
 
   const fetchCandidates = async () => {
     try {
@@ -86,11 +100,12 @@ const TurnoverNewPrediction: React.FC = () => {
       formData.append('cv_id', selectedCandidate._id);
       formData.append('job_description', selectedJob.jd_text);
       formData.append('job_location', jobLocation.trim());
+      formData.append('job_title', selectedJob.title); 
 
       const res = await apiClient.post('/turnover/predict', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      console.log('Prediction response:', res.data); 
+
       if (res.data.result_id) {
         navigate(`/dashboard/admin/turnover/results?result_id=${res.data.result_id}`);
       } else if (res.data.cv_id) {
@@ -98,11 +113,10 @@ const TurnoverNewPrediction: React.FC = () => {
       }
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
-      // detail might be an array of validation errors
       if (Array.isArray(detail)) {
         setError(detail.map((d: any) => d.msg).join(', '));
       } else {
-        setError(typeof detail === 'string' ? detail : 'Prediction failed. Please try again.');
+        setError(typeof detail === 'string' ? detail : 'Assessment failed. Please try again.');
       }
     } finally {
       setPredicting(false);
@@ -127,21 +141,20 @@ const TurnoverNewPrediction: React.FC = () => {
     } catch { return ''; }
   };
 
+  const remote = selectedJob ? isRemoteJob(selectedJob.title) : false;
+
   return (
     <div className="tnp-container">
 
       {/* Header */}
       <div className="tnp-header">
-        <Button
-          variant="outline"
-          onClick={() => navigate('/dashboard/admin/turnover/history')}
-        >
+        <Button variant="outline" onClick={() => navigate('/dashboard/admin/turnover/history')}>
           <History size={16} />
           Back to History
         </Button>
         <div className="tnp-header-text">
-          <h1>New Turnover Prediction</h1>
-          <p>Select a candidate and job to assess turnover risk</p>
+          <h1>New Turnover Risk Assessment</h1>
+          <p>Select a candidate and job to assess retention risk</p>
         </div>
       </div>
 
@@ -163,7 +176,7 @@ const TurnoverNewPrediction: React.FC = () => {
         <div className="tnp-step-line" />
         <div className={`tnp-step ${step >= 3 ? 'active' : ''}`}>
           <div className="tnp-step-circle">3</div>
-          <span>Confirm & Predict</span>
+          <span>Confirm & Assess</span>
         </div>
       </div>
 
@@ -189,23 +202,14 @@ const TurnoverNewPrediction: React.FC = () => {
           </div>
 
           {loadingCandidates ? (
-            <div className="tnp-loading">
-              <Loader2 size={20} className="tnp-spin" />
-              Loading candidates...
-            </div>
+            <div className="tnp-loading"><Loader2 size={20} className="tnp-spin" />Loading candidates...</div>
           ) : filteredCandidates.length === 0 ? (
             <div className="tnp-empty">No candidates found</div>
           ) : (
             <div className="tnp-list">
               {filteredCandidates.map(candidate => (
-                <div
-                  key={candidate._id}
-                  className="tnp-list-item"
-                  onClick={() => handleSelectCandidate(candidate)}
-                >
-                  <div className="tnp-item-avatar">
-                    <User size={18} />
-                  </div>
+                <div key={candidate._id} className="tnp-list-item" onClick={() => handleSelectCandidate(candidate)}>
+                  <div className="tnp-item-avatar"><User size={18} /></div>
                   <div className="tnp-item-info">
                     <span className="tnp-item-name">{candidate.name}</span>
                     <span className="tnp-item-sub">{candidate.email}</span>
@@ -237,7 +241,7 @@ const TurnoverNewPrediction: React.FC = () => {
             <Briefcase size={20} className="tnp-card-icon" />
             <h2>Select a Job</h2>
           </div>
-          <p className="tnp-subtitle">Choose the job position for this prediction</p>
+          <p className="tnp-subtitle">Choose the job position for this assessment</p>
 
           <div className="tnp-search-wrapper">
             <Search size={16} className="tnp-search-icon" />
@@ -250,23 +254,14 @@ const TurnoverNewPrediction: React.FC = () => {
           </div>
 
           {loadingJobs ? (
-            <div className="tnp-loading">
-              <Loader2 size={20} className="tnp-spin" />
-              Loading jobs...
-            </div>
+            <div className="tnp-loading"><Loader2 size={20} className="tnp-spin" />Loading jobs...</div>
           ) : filteredJobs.length === 0 ? (
             <div className="tnp-empty">No jobs found</div>
           ) : (
             <div className="tnp-list">
               {filteredJobs.map(job => (
-                <div
-                  key={job._id}
-                  className="tnp-list-item"
-                  onClick={() => handleSelectJob(job)}
-                >
-                  <div className="tnp-item-avatar tnp-item-avatar-job">
-                    <FileText size={18} />
-                  </div>
+                <div key={job._id} className="tnp-list-item" onClick={() => handleSelectJob(job)}>
+                  <div className="tnp-item-avatar tnp-item-avatar-job"><FileText size={18} /></div>
                   <div className="tnp-item-info">
                     <span className="tnp-item-name">{job.title}</span>
                     <span className="tnp-item-sub">{job.jd_text.substring(0, 80)}...</span>
@@ -282,7 +277,7 @@ const TurnoverNewPrediction: React.FC = () => {
         </div>
       )}
 
-      {/* Step 3 — Confirm & Predict */}
+      {/* Step 3 — Confirm & Assess */}
       {step === 3 && (
         <div className="tnp-card">
           <div className="tnp-card-nav">
@@ -293,7 +288,7 @@ const TurnoverNewPrediction: React.FC = () => {
 
           <div className="tnp-card-title">
             <CheckCircle2 size={20} className="tnp-card-icon tnp-card-icon-green" />
-            <h2>Confirm & Predict</h2>
+            <h2>Confirm & Assess</h2>
           </div>
           <p className="tnp-subtitle">Review your selections and enter the job location</p>
 
@@ -323,14 +318,18 @@ const TurnoverNewPrediction: React.FC = () => {
             <label>
               <MapPin size={15} className="tnp-label-icon" />
               Job Location
+              {remote && (
+                <span className="tnp-remote-badge">Auto-filled: Remote</span>
+              )}
             </label>
             <input
-              className="tnp-location-input"
+              className={`tnp-location-input ${remote ? 'tnp-input-disabled' : ''}`}
               placeholder="e.g. Colombo, Sri Lanka"
               value={jobLocation}
-              onChange={e => setJobLocation(e.target.value)}
+              onChange={e => !remote && setJobLocation(e.target.value)}
+              readOnly={remote}
             />
-            <small>Enter the work location for this position</small>
+            {!remote && <small>Enter the work location for this position</small>}
           </div>
 
           <button
@@ -339,15 +338,9 @@ const TurnoverNewPrediction: React.FC = () => {
             disabled={predicting || !jobLocation.trim()}
           >
             {predicting ? (
-              <>
-                <Loader2 size={18} className="tnp-spin" />
-                Analyzing... This may take up to 10 seconds
-              </>
+              <><Loader2 size={18} className="tnp-spin" />Analysing... This may take up to 10 seconds</>
             ) : (
-              <>
-                <Zap size={18} />
-                Predict Turnover Risk
-              </>
+              'Assess Turnover Risk'
             )}
           </button>
         </div>
