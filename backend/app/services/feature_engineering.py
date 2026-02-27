@@ -5,6 +5,118 @@ from datetime import datetime
 from dateutil import parser as date_parser
 from difflib import SequenceMatcher
 
+BOUNDARY_SKILLS = {
+    'c', 'r', 'go', 'c#', 'c++', 'sql', 'git', 'iis', 'lua', 'sap', 'ssl', 'jwt', 'xml', 'json', 'css', 'html', 'sass', 'tdd', 'bdd', 
+    'nlp', 'llm', 'etl', 'dbt', 'svn', 'ios', 'rag', 'k6', 'wpf'
+}
+
+COMMON_SKILLS = [
+    # ── Languages ──
+    'python', 'java', 'javascript', 'typescript', 'c#', 'c++', 'c',
+    'go', 'rust', 'ruby', 'php', 'scala', 'r', 'perl', 'haskell',
+    'dart', 'kotlin', 'swift', 'objective-c',
+    'bash', 'powershell', 'groovy', 'lua', 'elixir', 'clojure',
+
+    # ── Web Frameworks ──
+    'react', 'angular', 'vue', 'next.js', 'nuxt', 'svelte',
+    'node.js', 'express', 'fastapi', 'django', 'flask',
+    'spring boot', 'spring', 'laravel', 'rails', 'symfony',
+    'asp.net', '.net core', '.net', 'blazor', 'razor',
+    'htmx', 'jquery',
+
+    # ── Mobile ──
+    'flutter', 'react native', 'ionic', 'xamarin',
+    'android', 'ios', 'swift ui', 'jetpack compose',
+    'wpf', 'maui', 'cordova', 'expo', 'capacitor',
+    
+    # ── Data Engineering (add to Data section) ──
+    'delta lake', 'apache iceberg', 'apache flink', 'apache beam',
+    'google bigquery', 'azure synapse', 'duckdb', 'polars', 'plotly',
+    'fivetran', 'great expectations',
+
+    # ── Databases ──
+    'sql', 'mysql', 'postgresql', 'mssql', 'ms sql server', 'sqlite',
+    'mongodb', 'redis', 'cassandra', 'dynamodb', 'firestore',
+    'elasticsearch', 'neo4j', 'influxdb', 'couchdb',
+    'oracle', 'mariadb', 'supabase',
+    'entity framework', 'hibernate', 'prisma', 'sequelize', 
+    'data pipeline', 'data pipelines', 'data warehouse', 'data warehousing',
+    'data modeling', 'data governance', 'data quality',
+    'pyspark', 'apache airflow', 'apache kafka', 'apache spark',
+    'aws redshift', 'aws lambda', 'aws s3',
+    'grafana', 'kibana', 'dbt', 'databricks', 'snowflake',
+
+    # ── Cloud & Infrastructure ──
+    'aws', 'azure', 'gcp', 'google cloud',
+    'docker', 'kubernetes', 'terraform', 'ansible', 'puppet', 'chef',
+    'helm', 'istio', 'nginx', 'apache',
+    'serverless', 'lambda', 'cloud functions',
+    'heroku', 'vercel', 'netlify', 'digitalocean',
+
+    # ── DevOps & CI/CD ──
+    'devops', 'ci/cd', 'jenkins', 'gitlab', 'github actions',
+    'circleci', 'travis ci', 'bamboo', 'argocd',
+    'git', 'github', 'bitbucket', 'svn',
+    'linux', 'unix', 'windows server', 'iis',
+    'azure devops', 'jira', 'confluence',
+    'datadog', 'prometheus', 'opentelemetry', 'new relic', 'loki',
+
+    # ── Firebase & Mobile Backend ──
+    'firebase', 'fcm', 'push notifications',
+    'google play', 'app store', 'testflight',
+
+    # ── APIs & Architecture ──
+    'rest api', 'restful', 'graphql', 'grpc', 'websocket',
+    'microservices', 'event-driven', 'message queue',
+    'rabbitmq', 'kafka', 'activemq',
+    'soap', 'xml', 'json', 'openapi', 'swagger',
+
+    # ── AI / ML / Data ──
+    'machine learning', 'deep learning', 'data science', 'nlp',
+    'computer vision', 'tensorflow', 'pytorch', 'keras',
+    'scikit-learn', 'pandas', 'numpy', 'matplotlib',
+    'data analysis', 'data engineering', 'etl',
+    'spark', 'hadoop', 'airflow', 'dbt',
+    'power bi', 'tableau', 'looker',
+    'openai', 'langchain', 'llm',
+    'generative ai', 'prompt engineering', 'rag', 'vector database', 
+    'hugging face', 'embeddings', 'fine-tuning', 'llamaindex', 'ollama',
+    'pinecone', 'weaviate',
+
+    # ── Security ──
+    'cybersecurity', 'penetration testing', 'owasp',
+    'oauth', 'jwt', 'ssl', 'encryption',
+    'siem', 'vulnerability assessment',
+    'devsecops', 'sonarqube', 'snyk',
+
+    # ── Testing ──
+    'unit testing', 'integration testing', 'selenium',
+    'cypress', 'jest', 'pytest', 'junit',
+    'postman', 'test automation', 'tdd', 'bdd',
+    'playwright', 'vitest', 'k6', 'locust',
+
+    # ── Design & Frontend ──
+    'html', 'css', 'sass', 'tailwind', 'bootstrap',
+    'figma', 'adobe xd', 'ui/ux',
+    'responsive design', 'accessibility',
+
+    # ── Methodologies ──
+    'agile', 'scrum', 'kanban', 'waterfall',
+    'solid', 'design patterns', 'clean architecture',
+    'tdd', 'pair programming', 'code review',
+    'domain driven design', 'event sourcing', 'cqrs', 'protobuf',
+
+    # ── Other Common ──
+    'blockchain', 'web3', 'solidity',
+    'iot', 'embedded', 'raspberry pi', 'arduino',
+    'unity', 'unreal', 'game development',
+    'sap', 'salesforce', 'dynamics',
+    'sharepoint', 'power automate',
+    
+    # ── Sri Lanka specific ──
+    'wso2', 'odoo', 'zoho',
+]
+
 def extract_location_from_jd_enhanced(jd_text: str) -> str:
     """Enhanced JD location extraction"""
     if not jd_text:
@@ -43,44 +155,128 @@ def extract_location_from_jd_enhanced(jd_text: str) -> str:
 # EXPERIENCE PARSING
 # ============================================================
 
+def normalize_experience_text(text: str) -> str:
+    """
+    Normalize PDF-extracted experience text by joining broken lines.
+    Handles arbitrary line wrapping from PDF extraction.
+    """
+    lines = text.split('\n')
+    result = []
+    i = 0
+    
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        if not line:
+            i += 1
+            continue
+        
+        # Keep joining next line if current line is "incomplete"
+        while i + 1 < len(lines):
+            next_line = lines[i + 1].strip()
+            
+            if not next_line:
+                break
+            
+            # Case 1: Line ends with a dash (split date range)
+            # "Jan 2022 –" + "Present"
+            if re.search(r'(?:–|—|-)\s*$', line):
+                if re.match(r'^(?:Present|Current|Now|\d{4}|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)', next_line, re.IGNORECASE):
+                    line = line.rstrip() + ' ' + next_line
+                    i += 1
+                    continue
+            
+            # Case 2: Next line is just "Present" or a year (orphaned date end)
+            if re.match(r'^(?:Present|Current|Now)$', next_line, re.IGNORECASE):
+                if re.search(r'(?:–|—|-|to)\s*$', line):
+                    line = line.rstrip() + ' ' + next_line
+                    i += 1
+                    continue
+            
+            # Case 3: Line ends mid-sentence (no punctuation, not a bullet, not a date line)
+            # "Designed and maintained dimensional schemas in AWS" + "Redshift to support..."
+            is_incomplete = (
+                not re.search(r'[.!?|]\s*$', line) and        # doesn't end with punctuation
+                not re.match(r'^[•\*\-]', next_line) and       # next isn't a bullet
+                not re.search(r'\d{4}', line[-15:]) and        # current line doesn't end with year
+                not re.search(r'^(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|\d{4})', next_line, re.IGNORECASE) and  # next isn't a date
+                len(line) > 40 and                             # current line is long (mid-sentence)
+                len(next_line) > 5                             # next line is meaningful
+            )
+            
+            if is_incomplete:
+                line = line + ' ' + next_line
+                i += 1
+                continue
+            
+            break
+        
+        result.append(line)
+        i += 1
+    
+    return '\n'.join(result)
+
 def parse_experience_from_sections(sections: Dict[str, str]) -> List[Dict]:
     experience_text = sections.get("experience", "")
     if not experience_text:
         return []
 
+    experience_text = normalize_experience_text(experience_text)
     jobs = []
-    # Stop words to prevent bleeding into Education/Projects
     stop_keywords = ['education', 'certifications', 'projects', 'languages', 'skills']
     
     lines = experience_text.split('\n')
     cleaned_lines = []
     
     for line in lines:
-        # Check if a new section header is found
         if any(stop in line.lower() for stop in stop_keywords) and len(line.strip()) < 25:
             break
         if line.strip():
             cleaned_lines.append(line.strip())
 
-    # Use a flexible regex to find "Month Year" date ranges
-    date_pattern = r'(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})\s*(?:–|-|to|—)?\s*(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}|Present|Current)'
+    date_pattern = r'(?:' \
+        r'(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})' \
+        r'|(\b\d{4}))' \
+        r'\s*(?:–|-|to|—)\s*' \
+        r'(?:' \
+        r'(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})' \
+        r'|(\b\d{4}|Present|Current))'
 
     for i, line in enumerate(cleaned_lines):
         date_match = re.search(date_pattern, line, re.IGNORECASE)
         if date_match:
-            # Capture the line above or the current line for the job title
-            header_text = line
-            if i > 0 and len(cleaned_lines[i-1]) < 100:
-                header_text = cleaned_lines[i-1] + " " + line
+            start_date_str = date_match.group(1) or date_match.group(2)
+            end_date_str = date_match.group(3) or date_match.group(4)
+            
+            if not start_date_str:
+                continue
+            if not end_date_str:
+                end_date_str = "Present"
 
-            start_date_str = date_match.group(1)
-            end_date_str = date_match.group(2)
+            # If date is on same line as title (contains | separator)
+            if '|' in line or '–' in line.split(start_date_str)[0]:
+                # Title is on this line itself
+                title_raw = re.split(r'\|', line)[0].strip()
+                title_raw = re.sub(date_pattern, '', title_raw, flags=re.IGNORECASE).strip()
+            else:
+                # Date is on separate line, look back for title
+                title_raw = line
+                for back in range(1, min(i + 1, 5)):
+                    prev_line = cleaned_lines[i - back]
+                    if prev_line == '•' or len(prev_line) <= 2:
+                        continue
+                    if len(prev_line) > 100:
+                        continue
+                    title_raw = prev_line
+                    break
             
-            # Use your existing calculate_tenure function
+            # Clean up title
+            title_raw = title_raw.split('|')[0].split('–')[0].split('-')[0].strip()
+            title_raw = re.sub(r'\s+', ' ', title_raw).strip()
+            
             tenure = calculate_tenure(start_date_str, end_date_str)
-            
             jobs.append({
-                'title': header_text.split('-')[0].strip(),
+                'title': title_raw,
                 'tenure_months': tenure,
                 'start_date': start_date_str,
                 'end_date': end_date_str
@@ -112,16 +308,18 @@ def parse_date_range(date_text: str) -> tuple:
     return (date_text.strip(), "Present")
 
 def calculate_tenure(start_str: str, end_str: str) -> int:
-    """Calculate tenure in months"""
     try:
-        # Clean up the strings
         start_str = start_str.strip()
         end_str = end_str.strip()
         
-        # Parse start date
+        # If year-only, default to July (mid-year) for accuracy
+        if re.match(r'^\d{4}$', start_str):
+            start_str = f"Jul {start_str}"
+        if re.match(r'^\d{4}$', end_str) and end_str.lower() not in ['present', 'current', 'now']:
+            end_str = f"Jul {end_str}"
+        
         start = date_parser.parse(start_str, fuzzy=True)
-
-        # Parse end date
+        
         if end_str.lower() in ['present', 'current', 'now', '']:
             end = datetime.now()
         else:
@@ -267,33 +465,22 @@ def detect_career_progression(jobs: List[Dict]) -> Tuple[bool, int]:
 # SKILL MATCHING
 # ============================================================
 
+def skill_in_text(skill: str, text_lower: str) -> bool:
+    """Match skill in text, using word boundaries for short/ambiguous skills."""
+    if skill in BOUNDARY_SKILLS or len(skill) <= 3:
+        return bool(re.search(r'\b' + re.escape(skill) + r'\b', text_lower))
+    return skill in text_lower
+
 def extract_skills_from_jd(jd_text: str) -> list:
-    """Extract skills from JD"""
     if not jd_text:
         return []
-    
     jd_lower = jd_text.lower()
-    
-    common_skills = [
-        'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'go', 'rust',
-        'react', 'angular', 'vue', 'node.js', 'django', 'flask', 'spring boot',
-        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform',
-        'sql', 'mysql', 'postgresql', 'mongodb', 'redis',
-        'machine learning', 'deep learning', 'data science', 'nlp',
-        'devops', 'ci/cd', 'jenkins', 'gitlab', 'github actions',
-        'git', 'linux', 'agile', 'scrum'
-    ]
-    
-    return [skill for skill in common_skills if skill in jd_lower]
+    return [skill for skill in COMMON_SKILLS if skill_in_text(skill, jd_lower)]  
 
 
 def compute_skill_match_traditional(cv_skills: str, jd_text: str) -> float:
     """Traditional skill matching"""
-    common_skills = [
-        'python', 'java', 'javascript', 'sql', 'react', 'node',
-        'aws', 'azure', 'docker', 'kubernetes', 'terraform',
-        'machine learning', 'data analysis', 'devops', 'git', 'linux'
-    ]
+    common_skills = COMMON_SKILLS
     
     cv_lower = cv_skills.lower() if cv_skills else ""
     jd_lower = jd_text.lower() if jd_text else ""
@@ -301,19 +488,16 @@ def compute_skill_match_traditional(cv_skills: str, jd_text: str) -> float:
     if not cv_lower or not jd_lower:
         return 0.5
     
-    cv_skills_set = {skill for skill in common_skills if skill in cv_lower}
-    jd_skills_set = {skill for skill in common_skills if skill in jd_lower}
+    cv_skills_set = {skill for skill in COMMON_SKILLS if skill_in_text(skill, cv_lower)}
+    jd_skills_set = {skill for skill in COMMON_SKILLS if skill_in_text(skill, jd_lower)}
     
     if not jd_skills_set:
         return 0.5
     
     intersection = len(cv_skills_set & jd_skills_set)
-    union = len(cv_skills_set | jd_skills_set)
-    
-    if union == 0:
-        return 0.3
-    
-    return round(intersection / union, 3)
+    if not jd_skills_set:
+        return 0.5
+    return round(intersection / len(jd_skills_set), 3)
 
 
 def compute_skill_match_with_esco(cv_skills: str, jd_text: str) -> float:
@@ -329,18 +513,25 @@ def compute_skill_match_with_esco(cv_skills: str, jd_text: str) -> float:
         if esco is None:
             return compute_skill_match_traditional(cv_skills, jd_text)
         
-        cv_skills_list = [s.strip() for s in cv_skills.split(',') if s.strip()]
+        # Split by comma, newline, bullet, or multiple spaces:
+        cv_skills_list = [
+            s.strip() 
+            for s in re.split(r'[,\n•\|]+|(?:\s{2,})', cv_skills) 
+            if s.strip() and len(s.strip()) > 1
+        ]
         jd_skills_list = extract_skills_from_jd(jd_text)
         
         if not cv_skills_list or not jd_skills_list:
             return 0.5
         
         esco_score = esco.calculate_esco_skill_match(cv_skills_list, jd_skills_list, threshold=70)
-        
+        traditional_score = compute_skill_match_traditional(cv_skills, jd_text)
+
         if esco_score == 0:
-            return compute_skill_match_traditional(cv_skills, jd_text)
+            return traditional_score
         
-        return float(esco_score)
+        blended = round((float(esco_score) + traditional_score) / 2, 3)
+        return blended
         
     except Exception as e:
         return compute_skill_match_traditional(cv_skills, jd_text)
@@ -493,8 +684,8 @@ def compute_education_match(cv_edu: str, jd_text: str) -> int:
     
     jd_lower = jd_text.lower()
     
-    has_masters = 'master' in cv_edu.lower()
-    has_bachelors = 'bachelor' in cv_edu.lower()
+    has_masters = 'master' in cv_edu.lower() or 'msc' in cv_edu.lower() or 'm.sc' in cv_edu.lower()
+    has_bachelors = 'bachelor' in cv_edu.lower() or 'bsc' in cv_edu.lower() or 'b.sc' in cv_edu.lower()
     
     if 'master' in jd_lower and 'required' in jd_lower and not has_masters:
         return 0
@@ -558,7 +749,7 @@ async def compute_location_match_with_geocoding(cv_loc: str, jd_loc: str) -> flo
         return float(score)
         
     except Exception as e:
-        print(f" Geocoding failed: {e}")
+        print(f" Geocoding failed: {type(e).__name__}: {e}")
         return 0.7
 
 
@@ -569,7 +760,8 @@ async def compute_location_match_with_geocoding(cv_loc: str, jd_loc: str) -> flo
 async def create_feature_vector_from_mongo(
     cv_document: Dict, 
     jd_text: str, 
-    jd_location: str = None
+    jd_location: str = None,
+    job_title: str = None
 ) -> Dict[str, float]:
     """Enhanced feature extraction"""
     
@@ -596,17 +788,45 @@ async def create_feature_vector_from_mongo(
     
     # Education
     education_text = sections.get("education", "")
-    has_masters = 'master' in education_text.lower()
-    n_edu = len(re.findall(r'Bachelor|Master|PhD|Diploma', education_text, re.IGNORECASE))
+    # Remove lines that look like contact info (contain | and phone patterns)
+    education_lines = [
+        line for line in education_text.split('\n')
+        if not re.search(r'\+\d{2}|@|LinkedIn|GitHub|\|.*\|', line)
+    ]
+    education_text = '\n'.join(education_lines)
+    has_masters = 'master' in education_text.lower() or 'msc' in education_text.lower() or 'm.sc' in education_text.lower() or 'mba' in education_text.lower()
+    n_edu = len(re.findall(r'Bachelor|Master|PhD|Diploma|BSc|MSc|MBA|B\.Sc|M\.Sc', education_text, re.IGNORECASE))
     
     # Skills
     skills_text = sections.get("skills", "")
-    skill_list = [s.strip() for s in skills_text.split(',') if s.strip()]
-    n_skills = len(skill_list)
+    skills_text = re.sub(r'Mr\.|Ms\.|Dr\..*', '', skills_text, flags=re.DOTALL)
+    skills_text = re.sub(r'[\w\.-]+@[\w\.-]+', '', skills_text)
+    skills_text = re.sub(r'\+\d[\d\s]+', '', skills_text)
+    skills_text = re.sub(r'•|\*', ' ', skills_text)
+    skills_text = re.sub(r'\b(?:Backend|Frontend|Database|DevOps|Cloud|Methodology|Languages?|Tools?|Frameworks?)\s*[:/&]\s*', ' ', skills_text, flags=re.IGNORECASE)
+    skills_text = re.sub(r'\([^)]*\)', '', skills_text)
+    skills_text = re.sub(r'[^\w\s,\.#\+]', ' ', skills_text)
+    skills_text = ' '.join(skills_text.split())
     
-    # Matching scores
-    skill_match = compute_skill_match_with_esco(skills_text, jd_text)
-    title_match = compute_title_similarity(jobs[0].get('title', '') if jobs else '', jd_text)
+    skills_lines = [
+        part.strip() 
+        for part in re.split(r'[,\n]', skills_text) 
+        if part.strip() and not re.match(r'^[A-Za-z\s&]+:\s*$', part.strip())
+        and len(part.strip()) > 1
+        and not part.strip().endswith(':')
+    ]
+    n_skills = len(skills_lines)
+    
+    experience_text_for_skills = sections.get("experience", "")
+    summary_text = sections.get("summary", "") or sections.get("professional_summary", "")
+    combined_cv_text_for_skills = f"{skills_text} {experience_text_for_skills} {summary_text}"
+    
+    skill_match = compute_skill_match_with_esco(combined_cv_text_for_skills, jd_text)
+    
+    cv_title = jobs[0].get('title', '') if jobs else ''
+    jd_title = job_title if job_title else jd_text[:200]
+    title_match = compute_title_similarity(cv_title, jd_title)
+    
     exp_match = compute_experience_match(total_exp_years, jd_text)
     edu_match = compute_education_match(education_text, jd_text)
     
