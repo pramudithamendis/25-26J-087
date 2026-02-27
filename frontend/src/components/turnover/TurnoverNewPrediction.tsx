@@ -338,7 +338,7 @@ const TurnoverNewPrediction: React.FC = () => {
             disabled={predicting || !jobLocation.trim()}
           >
             {predicting ? (
-              <><Loader2 size={18} className="tnp-spin" />Analysing... This may take up to 10 seconds</>
+              <><Loader2 size={18} className="tnp-spin" />Analysing...</>
             ) : (
               'Assess Turnover Risk'
             )}
