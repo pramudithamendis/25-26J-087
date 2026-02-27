@@ -43,6 +43,11 @@ const TurnoverJobDetailsForm: React.FC<TurnoverJobDetailsFormProps> = ({
       return;
     }
 
+    if (!jobLocation.trim()) {
+      setError('Job location is required');
+      return;
+    }
+
     if (characterCount < MIN_JOB_DESCRIPTION_LENGTH) {
       setError(`Job description must be at least ${MIN_JOB_DESCRIPTION_LENGTH} characters`);
       return;
@@ -96,7 +101,7 @@ const TurnoverJobDetailsForm: React.FC<TurnoverJobDetailsFormProps> = ({
         {/* Job Location */}
         <div className="form-group">
           <label htmlFor="jobLocation">
-            <MapPin size={16} className="inline" /> Job Location
+            <MapPin size={16} className="inline" /> Job Location <span className="required">*</span>
           </label>
           <input
             type="text"
@@ -106,9 +111,6 @@ const TurnoverJobDetailsForm: React.FC<TurnoverJobDetailsFormProps> = ({
             placeholder="e.g., Colombo, Sri Lanka"
             disabled={loading}
           />
-          <small className="help-text">
-            Location will be extracted from job description if not provided
-          </small>
         </div>
 
         {/* Error Message */}
@@ -142,14 +144,14 @@ const TurnoverJobDetailsForm: React.FC<TurnoverJobDetailsFormProps> = ({
               Analyzing...
             </>
           ) : (
-            'Predict Turnover Risk'
+            'Assess Turnover Risk'
           )}
         </button>
 
         <div className="info-box">
           <AlertCircle size={16} />
           <p>
-            The prediction uses only pre-hire data from the CV and job description.
+            The assessment uses only pre-hire data from the CV and job description.
             No sensitive demographic information is required.
           </p>
         </div>
