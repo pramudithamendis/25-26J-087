@@ -13,6 +13,8 @@ from app.services.feature_engineering import extract_location_from_jd_enhanced
 import threading
 
 _shap_lock = threading.Lock()
+_shap_explainer = None
+_shap_model = None
 
 RISK_LABELS = {
     0: "High Risk (leaves within 6 months)",
@@ -20,7 +22,7 @@ RISK_LABELS = {
     2: "Low Risk (stays longer than 1 year)"
 }
 
-async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_location: str = None, user: dict = None) -> Dict[str, Any]:
+async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_location: str = None, user: dict = None, job_id: str = None, job_title: str = None) -> Dict[str, Any]:
     """
     Main prediction pipeline using MongoDB stored CV
     """
@@ -28,8 +30,7 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
     
     try:
         # Step 1: Retrieve CV from MongoDB
-        
-        
+               
         try:
             cv_document = cv_collection.find_one({"_id": ObjectId(cv_id)})
         except:
@@ -51,7 +52,8 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         features = await create_feature_vector_from_mongo(
             cv_document,
             job_description,
-            jd_location=jd_location 
+            jd_location=jd_location,
+            job_title=job_title 
         )
         
         # Step 3: Predict using model
@@ -189,6 +191,7 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
                 db_entry["cv_id"] = cv_id
                 db_entry["job_description"] = job_description
                 db_entry["job_location"] = job_location
+                db_entry["job_id"] = job_id
                 db_entry["calculated_at"] = datetime.utcnow()
                 db_entry["user_email"] = user.get("email") if user else None 
                 insert_result = turnover_coll.insert_one(db_entry)  
@@ -218,6 +221,16 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
             "prediction": None
         }
 
+def get_shap_explainer():
+    global _shap_explainer, _shap_model
+    if _shap_explainer is None:
+        from app.services.model_loader import get_model_for_shap
+        import shap
+        _shap_model = get_model_for_shap()  # ← cache model too
+        clf = _shap_model.named_steps.get('clf') if hasattr(_shap_model, 'named_steps') else _shap_model
+        _shap_explainer = shap.TreeExplainer(clf)
+        print("SHAP explainer cached")
+    return _shap_explainer
 
 def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: int, timeout_seconds: int = 8) -> Dict[str, Any]:
     
@@ -234,9 +247,9 @@ def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: 
         
         def generate_with_timeout():
             try:
-                from app.services.model_loader import get_model_for_shap
+                
                 import shap
-                explanation = generate_shap_explanation_internal(features, get_model_for_shap(), predicted_class)
+                explanation = generate_shap_explanation_internal(features, None, predicted_class)
                 result['explanation'] = explanation
                 result['completed'] = True
             except Exception as e:
@@ -270,7 +283,6 @@ def get_empty_shap_explanation() -> Dict[str, Any]:
         "explanation": "SHAP explanation unavailable - using rule-based analysis instead"
     }
 
-
 def generate_shap_explanation_internal(features: Dict[str, float], model, predicted_class: int) -> Dict[str, Any]:
     """Internal SHAP generation - handles CatBoost multi-dimensional output"""
     import shap
@@ -279,10 +291,15 @@ def generate_shap_explanation_internal(features: Dict[str, float], model, predic
     feature_names = list(features.keys())
     feature_values = list(features.values())
     
-    if hasattr(model, 'named_steps'):
-        preprocessor = model.named_steps.get('pre')
-        clf = model.named_steps.get('clf')
-        
+    global _shap_model
+    explainer = get_shap_explainer()
+    full_model = _shap_model
+    
+    if full_model is None:  # safety check
+        raise ValueError("SHAP model not initialized")
+
+    if hasattr(full_model, 'named_steps'):
+        preprocessor = full_model.named_steps.get('pre')
         if preprocessor:
             X_transformed = preprocessor.transform(feature_df)
             if hasattr(X_transformed, 'toarray'):
@@ -290,11 +307,9 @@ def generate_shap_explanation_internal(features: Dict[str, float], model, predic
         else:
             X_transformed = feature_df.values
     else:
-        clf = model
         X_transformed = feature_df.values
     
-    explainer = shap.TreeExplainer(clf)
-
+    explainer = get_shap_explainer()
     shap_values = explainer.shap_values(X_transformed)
     
     # Handle multi-class SHAP output
