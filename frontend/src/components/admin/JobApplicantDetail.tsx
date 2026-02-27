@@ -9,13 +9,14 @@ import { getEvaluation } from '../../services/evaluationService';
 import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import type { ApplicationDetailResponse, ApplicationTimelineEvent } from '../../types/adminTypes';
 import type { EvaluationResponse } from '../../types/evaluationTypes';
+import TurnoverRiskTabSafe from '../turnover/TurnoverRiskTab';
 
 interface JobApplicantDetailProps {
   applicationId: string;
   jobId: string;
 }
 
-type TabType = 'user-info' | 'evaluation-result' | 'overview';
+type TabType = 'user-info' | 'evaluation-result' | 'overview' | 'turnover-risk';
 
 export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailProps) => {
   const navigate = useNavigate();
@@ -36,7 +37,6 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
       const appData = await getApplicationDetails(applicationId);
       setApplication(appData);
 
-      // Load evaluation if it exists
       if (appData.evaluation_id) {
         try {
           const evalData = await getEvaluation(appData.evaluation_id);
@@ -86,21 +86,18 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
 
   const buildTimeline = (): ApplicationTimelineEvent[] => {
     if (!application) return [];
-
     const timeline: ApplicationTimelineEvent[] = [];
 
-    // Application submitted
     timeline.push({
       event_type: 'application_submitted',
       timestamp: application.created_at,
       description: 'Application submitted',
     });
 
-    // Status changes
     if (application.status === 'approved') {
       timeline.push({
         event_type: 'status_changed',
-        timestamp: application.created_at, // Approximate, actual timestamp would come from backend
+        timestamp: application.created_at,
         description: 'Application approved',
         metadata: { status: 'approved' },
       });
@@ -113,26 +110,20 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
       });
     }
 
-    // Evaluation events
     if (evaluation) {
       timeline.push({
         event_type: 'evaluation_started',
         timestamp: evaluation.created_at || application.created_at,
         description: 'Evaluation process started',
       });
-
       timeline.push({
         event_type: 'evaluation_completed',
         timestamp: evaluation.created_at || application.created_at,
         description: `Evaluation completed with score: ${evaluation.total_score}`,
-        metadata: {
-          score: evaluation.total_score,
-          decision: evaluation.decision,
-        },
+        metadata: { score: evaluation.total_score, decision: evaluation.decision },
       });
     }
 
-    // Sort by timestamp
     return timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };
 
@@ -166,6 +157,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
     { id: 'user-info' as TabType, label: 'User Info' },
     { id: 'evaluation-result' as TabType, label: 'Evaluation Result' },
     { id: 'overview' as TabType, label: 'Overview' },
+    { id: 'turnover-risk' as TabType, label: 'Turnover Risk' },
   ];
 
   return (
@@ -191,6 +183,8 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
 
       {/* Tab Content */}
       <div className="mt-6">
+
+        {/* ── User Info (unchanged) ── */}
         {activeTab === 'user-info' && (
           <div className="space-y-6">
             <div>
@@ -219,12 +213,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                 {user.github_url && (
                   <div>
                     <span className="text-sm font-medium text-gray-500">GitHub:</span>
-                    <a
-                      href={user.github_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 text-blue-600 hover:underline"
-                    >
+                    <a href={user.github_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:underline">
                       {user.github_url}
                     </a>
                   </div>
@@ -232,31 +221,21 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                 {user.linkedin_url && (
                   <div>
                     <span className="text-sm font-medium text-gray-500">LinkedIn:</span>
-                    <a
-                      href={user.linkedin_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 text-blue-600 hover:underline"
-                    >
+                    <a href={user.linkedin_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:underline">
                       {user.linkedin_url}
                     </a>
                   </div>
                 )}
               </div>
             </div>
-
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
               <div className="flex gap-4">
                 {user.cv_file_path && (
-                  <Button variant="outline" onClick={handleDownloadResume}>
-                    Download Resume
-                  </Button>
+                  <Button variant="outline" onClick={handleDownloadResume}>Download Resume</Button>
                 )}
                 {user.linkedin_file_path && (
-                  <Button variant="outline" onClick={handleDownloadLinkedInResume}>
-                    Download LinkedIn Resume
-                  </Button>
+                  <Button variant="outline" onClick={handleDownloadLinkedInResume}>Download LinkedIn Resume</Button>
                 )}
                 {!user.cv_file_path && !user.linkedin_file_path && (
                   <p className="text-sm text-gray-500">No files available</p>
@@ -266,6 +245,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
           </div>
         )}
 
+        {/* ── Evaluation Result ── */}
         {activeTab === 'evaluation-result' && (
           <div className="space-y-6">
             {evaluation ? (
@@ -274,51 +254,36 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-2">Evaluation Results</h3>
-                      <p className="text-sm text-gray-600">
-                        Evaluation ID: {evaluation._id}
-                      </p>
+                      <p className="text-sm text-gray-600">Evaluation ID: {evaluation._id}</p>
                     </div>
                     <div className="text-right">
-                      <div
-                        className={`text-4xl font-bold ${
-                          evaluation.total_score >= 75
-                            ? 'text-green-600'
-                            : evaluation.total_score >= 60
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
-                        }`}
-                      >
+                      <div className={`text-4xl font-bold ${
+                        evaluation.total_score >= 75 ? 'text-green-600'
+                        : evaluation.total_score >= 60 ? 'text-yellow-600'
+                        : 'text-red-600'
+                      }`}>
                         {evaluation.total_score}
                       </div>
-                      <div
-                        className={`mt-2 inline-flex items-center rounded-md px-3 py-1 text-sm font-medium ${
-                          evaluation.decision === 'Selected'
-                            ? 'bg-green-100 text-green-800'
-                            : evaluation.decision === 'Review'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
+                      <div className={`mt-2 inline-flex items-center rounded-md px-3 py-1 text-sm font-medium ${
+                        evaluation.decision === 'Selected' ? 'bg-green-100 text-green-800'
+                        : evaluation.decision === 'Review' ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                      }`}>
                         {getDecisionDisplayValue(evaluation.decision)}
                       </div>
                     </div>
                   </div>
                 </div>
-
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <ScoreBreakdown breakdown={evaluation.breakdown || {}} />
                 </div>
-
                 <div className="flex justify-end">
                   <Button
                     variant="outline"
                     onClick={() => {
                       const evalId = application?.evaluation_id || evaluation?._id;
-                      if (evalId) {
-                        navigate(`/dashboard/evaluations/${evalId}`);
-                      } else {
-                        setError('Evaluation ID not available');
-                      }
+                      if (evalId) navigate(`/dashboard/evaluations/${evalId}`);
+                      else setError('Evaluation ID not available');
                     }}
                   >
                     View Full Evaluation Details
@@ -328,14 +293,13 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
             ) : (
               <div className="bg-gray-50 rounded-lg p-6 text-center">
                 <p className="text-gray-600">No evaluation available for this application yet.</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  The evaluation process may still be in progress.
-                </p>
+                <p className="text-sm text-gray-500 mt-2">The evaluation process may still be in progress.</p>
               </div>
             )}
           </div>
         )}
 
+        {/* ── Overview ── */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <div>
@@ -346,19 +310,13 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                     {timeline.map((event, index) => (
                       <div key={index} className="flex items-start mb-6 last:mb-0">
                         <div className="flex-shrink-0">
-                          <div
-                            className={`w-3 h-3 rounded-full ${
-                              event.event_type === 'application_submitted'
-                                ? 'bg-blue-500'
-                                : event.event_type === 'evaluation_completed'
-                                ? 'bg-green-500'
-                                : event.event_type === 'status_changed'
-                                ? event.metadata?.status === 'approved'
-                                  ? 'bg-green-500'
-                                  : 'bg-red-500'
-                                : 'bg-yellow-500'
-                            }`}
-                          />
+                          <div className={`w-3 h-3 rounded-full ${
+                            event.event_type === 'application_submitted' ? 'bg-blue-500'
+                            : event.event_type === 'evaluation_completed' ? 'bg-green-500'
+                            : event.event_type === 'status_changed'
+                              ? event.metadata?.status === 'approved' ? 'bg-green-500' : 'bg-red-500'
+                            : 'bg-yellow-500'
+                          }`} />
                           {index < timeline.length - 1 && (
                             <div className="w-0.5 h-12 bg-gray-300 ml-1.5" />
                           )}
@@ -366,21 +324,15 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                         <div className="ml-4 flex-1">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium text-gray-900">{event.description}</p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(event.timestamp).toLocaleString()}
-                            </p>
+                            <p className="text-xs text-gray-500">{new Date(event.timestamp).toLocaleString()}</p>
                           </div>
                           {event.metadata && (
                             <div className="mt-2 space-y-1">
                               {event.metadata.score !== undefined && (
-                                <p className="text-xs text-gray-600">
-                                  Score: <span className="font-medium">{event.metadata.score}</span>
-                                </p>
+                                <p className="text-xs text-gray-600">Score: <span className="font-medium">{event.metadata.score}</span></p>
                               )}
                               {event.metadata.decision && (
-                                <p className="text-xs text-gray-600">
-                                  Decision: <span className="font-medium">{getDecisionDisplayValue(event.metadata.decision)}</span>
-                                </p>
+                                <p className="text-xs text-gray-600">Decision: <span className="font-medium">{getDecisionDisplayValue(event.metadata.decision)}</span></p>
                               )}
                             </div>
                           )}
@@ -393,31 +345,23 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                 )}
               </div>
             </div>
-
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Application Summary</h3>
               <div className="bg-gray-50 rounded-lg p-6 space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-gray-500">Status:</span>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      application.status === 'approved'
-                        ? 'bg-green-100 text-green-800'
-                        : application.status === 'rejected'
-                        ? 'bg-red-100 text-red-800'
-                        : application.status === 'evaluated'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    application.status === 'approved' ? 'bg-green-100 text-green-800'
+                    : application.status === 'rejected' ? 'bg-red-100 text-red-800'
+                    : application.status === 'evaluated' ? 'bg-blue-100 text-blue-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                  }`}>
                     {application.status}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-gray-500">Applied Date:</span>
-                  <span className="text-sm text-gray-900">
-                    {new Date(application.created_at).toLocaleString()}
-                  </span>
+                  <span className="text-sm text-gray-900">{new Date(application.created_at).toLocaleString()}</span>
                 </div>
                 {application.evaluation_id && (
                   <div className="flex justify-between">
@@ -429,8 +373,19 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
             </div>
           </div>
         )}
+
+        {/* ── Turnover Risk ── */}
+        {activeTab === 'turnover-risk' && (
+          <TurnoverRiskTabSafe
+            userEmail={user.email ?? ""}
+            jobId={application.job._id ?? ""}
+            jobDescription={application.job.jd_text ?? ""}
+            jobTitle={application.job.title ?? ""}
+            evaluationDecision={evaluation?.decision}
+          />
+        )}
+
       </div>
     </div>
   );
 };
-
