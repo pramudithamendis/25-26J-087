@@ -20,7 +20,7 @@ const CVUpload: React.FC = () => {
       // Validate file type
       const validTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (!validTypes.includes(selectedFile.type)) {
-        setError('Only PDF, TXT, and DOCX files are supported');
+        setError('Only PDF files are supported');
         return;
       }
 
@@ -148,7 +148,7 @@ const CVUpload: React.FC = () => {
                   ) : (
                     <>
                       <Upload size={18} />
-                      Upload & Parse
+                      Upload
                     </>
                   )}
                 </button>

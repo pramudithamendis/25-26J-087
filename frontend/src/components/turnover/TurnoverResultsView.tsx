@@ -41,9 +41,9 @@ const TurnoverResultsView: React.FC = () => {
       setPrediction(response.data);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
-        setError('No prediction found for this candidate. Please make a new prediction.');
+        setError('No turnover assessment found for this candidate. Please make a new assessment.');
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to load prediction');
+        setError(err instanceof Error ? err.message : 'Failed to load turnover assessment');
       }
     } finally {
       setLoading(false);
@@ -65,7 +65,7 @@ const TurnoverResultsView: React.FC = () => {
           <div className="loading-container">
             <div className="loading-card">
               <div className="loading-spinner"></div>
-              <h2>Loading Prediction...</h2>
+              <h2>Loading turnover assessment...</h2>
               <p>Retrieving stored results</p>
             </div>
           </div>

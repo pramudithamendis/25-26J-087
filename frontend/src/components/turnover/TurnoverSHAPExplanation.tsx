@@ -221,13 +221,6 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
         </div>
       )}
 
-      {/* Simple Explanation Footer */}
-      <div className="explanation-footer">
-        <p>
-          <strong>How to read this:</strong> The bars show which factors had the biggest impact on the prediction. 
-          Longer bars = stronger influence. These insights help you understand what to discuss in the interview.
-        </p>
-      </div>
     </div>
   );
 };

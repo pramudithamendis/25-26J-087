@@ -111,7 +111,7 @@ const TurnoverHistoryPage: React.FC = () => {
       {/* Statistics Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-label">Total Predictions</div>
+          <div className="stat-label">Total Assessments</div>
           <div className="stat-value">{stats.total}</div>
         </div>
         <div className="stat-card high-risk">

@@ -21,6 +21,11 @@ const TurnoverCounterfactuals: React.FC<TurnoverCounterfactualsProps> = ({
         <div>
           <h3>"What-If" Scenarios</h3>
           <p>See how changes in candidate profile could affect the prediction</p>
+          
+        <p>
+          These scenarios show how specific improvements in the candidate's profile 
+          could change the turnover risk.
+        </p>
         </div>
       </div>
 
@@ -55,21 +60,11 @@ const TurnoverCounterfactuals: React.FC<TurnoverCounterfactualsProps> = ({
               </div>
             </div>
 
-            <div className="cf-details">
-              
-            </div>
           </div>
         ))}
       </div>
 
-      <div className="counterfactuals-footer">
-        <Lightbulb size={16} />
-        <p>
-          These scenarios show how specific improvements in the candidate's profile 
-          could change the turnover risk prediction. Use these insights to identify 
-          areas for discussion or development planning.
-        </p>
-      </div>
+      
     </div>
   );
 };
