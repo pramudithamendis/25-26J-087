@@ -129,7 +129,7 @@ async def get_prediction_result(
         )
         
         if not result:
-            raise HTTPException(404, f"No prediction found for CV {cv_id}")
+            raise HTTPException(404, f"No turnover assessment found for CV {cv_id}")
         
         # Remove MongoDB _id
         result.pop("_id", None)
@@ -225,3 +225,87 @@ async def get_all_jobs(
 
     except Exception as e:
         raise HTTPException(500, f"Error fetching jobs: {str(e)}")
+
+@router.get("/cv-by-email")
+async def get_cv_by_email(
+    email: str,
+    user: dict = Depends(get_current_user)
+):
+    """Find cv_id in cv_collection by candidate email"""
+    from app.database import cv_collection
+
+    try:
+        # Try matching by emails array field
+        doc = cv_collection.find_one(
+            {"emails": {"$in": [email]}},
+            {"_id": 1, "name": 1, "uploaded_at": 1}
+        )
+
+        # Fallback: try email field directly
+        if not doc:
+            doc = cv_collection.find_one(
+                {"email": email},
+                {"_id": 1, "name": 1, "uploaded_at": 1}
+            )
+
+        if not doc:
+            return {"status": "not_found", "cv_id": None, "message": "CV not yet processed for this candidate"}
+
+        return {
+            "status": "found",
+            "cv_id": str(doc["_id"]),
+            "name": doc.get("name", "Unknown"),
+            "uploaded_at": doc.get("uploaded_at", "")
+        }
+
+    except Exception as e:
+        raise HTTPException(500, f"Error looking up CV: {str(e)}")
+
+
+@router.get("/result-by-job")
+async def get_result_by_job(
+    cv_id: str,
+    job_id: str,
+    user: dict = Depends(get_current_user)
+):
+    """Get existing turnover prediction for a specific cv+job combination"""
+    from app.database import turnover_collection
+
+    try:
+        result = turnover_collection.find_one(
+            {"cv_id": cv_id, "job_id": job_id},
+            sort=[("calculated_at", -1)]
+        )
+
+        if not result:
+            return {"status": "not_found", "result": None}
+
+        result["_id"] = str(result["_id"])
+        return {"status": "found", "result": result}
+
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching result: {str(e)}")
+
+@router.post("/predict-with-job")
+async def predict_turnover_with_job_api(
+    cv_id: str = Form(...),
+    job_description: str = Form(...),
+    job_id: str = Form(...),
+    job_location: str = Form(None),
+    job_title: str = Form(None),
+    user: dict = Depends(get_current_user)
+):
+    """Predict turnover risk - job-aware version that stores job_id"""
+
+    if not cv_id:
+        raise HTTPException(400, "cv_id is required")
+
+    if not job_description or len(job_description.strip()) < 50:
+        raise HTTPException(400, "Job description must be at least 50 characters")
+
+    result = await predict_turnover_from_cv_id(
+        cv_id, job_description, job_location,
+        user=user, job_id=job_id, job_title=job_title  # pass job_id through
+    )
+
+    return result
