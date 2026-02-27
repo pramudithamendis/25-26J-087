@@ -150,7 +150,18 @@ def health_check():
     }
 
 
-# @app.on_event("startup")
-# def startup_event():
-#     start_scheduler()
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
 
+@app.on_event("startup")
+async def startup_event():
+    from app.services.model_loader import get_model
+    from app.services.turnover_service import get_shap_explainer
+    
+    try:
+        get_model()
+        get_shap_explainer()
+        print("Models pre-loaded successfully")
+    except Exception as e:
+        print(f"Warning: Could not pre-load models: {e}")
