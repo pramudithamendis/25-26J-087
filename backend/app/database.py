@@ -15,3 +15,9 @@ except Exception as e:
     # Still create client for graceful degradation
     client = MongoClient(settings.MONGO_URI)
     db = client[settings.MONGO_DB]
+    
+cv_collection = db["cvs"]
+turnover_collection = db["turnover_results"]
+
+def get_users_collection():
+    return db["users"]
