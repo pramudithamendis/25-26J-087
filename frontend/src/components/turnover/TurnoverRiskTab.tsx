@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, MapPin, Loader2, ShieldAlert, Clock, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, MapPin, Loader2, ShieldAlert, Clock, CheckCircle2, ChevronDown } from 'lucide-react';
 import { Button } from '../Button';
 import apiClient from '../../config/api';
 import type { TurnoverPredictionResponse } from '../../types/turnover.types';
@@ -26,7 +26,6 @@ type TabState =
   | 'predicting'
   | 'error';
 
-// const TEST_CV_ID_OVERRIDE: string | null = '6956338e1f4a03f9e2fd9b9d';
 const TEST_CV_ID_OVERRIDE: string | null = null;
 
 const isRemoteJob = (title: string) => title.toLowerCase().includes('remote');
@@ -42,6 +41,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
   const [cvId, setCvId] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<TurnoverPredictionResponse | null>(null);
   const [jobLocation, setJobLocation] = useState('');
+  const [locations, setLocations] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const remote = isRemoteJob(jobTitle);
@@ -53,21 +53,29 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
   }, [jobTitle]);
 
   useEffect(() => {
+    fetchLocations();
     initTab();
   }, [userEmail, jobId]);
+
+  const fetchLocations = async () => {
+    try {
+      const res = await apiClient.get('/locations');
+      setLocations((res.data.locations || []).map((l: any) => l.name));
+    } catch {
+      // fallback - works with no dropdown options
+    }
+  };
 
   const initTab = async () => {
     try {
       setTabState('loading');
       setError(null);
 
-      // Block if not proceeded
       if (evaluationDecision === 'Not Selected') {
         setTabState('not_proceeded');
         return;
       }
 
-      // TEST BYPASS — remove when done
       if (TEST_CV_ID_OVERRIDE) {
         setCvId(TEST_CV_ID_OVERRIDE);
         const resultRes = await apiClient.get(
@@ -82,7 +90,6 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
         return;
       }
 
-      // Normal flow — look up CV by email
       const cvRes = await apiClient.get(
         `/turnover/cv-by-email?email=${encodeURIComponent(userEmail)}`
       );
@@ -94,7 +101,6 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       const foundCvId = cvRes.data.cv_id;
       setCvId(foundCvId);
 
-      // Check for existing prediction
       const resultRes = await apiClient.get(
         `/turnover/result-by-job?cv_id=${foundCvId}&job_id=${jobId}`
       );
@@ -123,7 +129,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       formData.append('job_description', jobDescription);
       formData.append('job_id', jobId);
       formData.append('job_location', jobLocation.trim());
-      formData.append('job_title', jobTitle); 
+      formData.append('job_title', jobTitle);
 
       const res = await apiClient.post('/turnover/predict-with-job', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -160,7 +166,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       <div className="trt-state-card">
         <ShieldAlert size={40} className="trt-state-icon trt-icon-gray" />
         <h3>Assessment Not Available</h3>
-        <p>This candidate did not proceed to the next stage. Turnover risk assessment is only available for candidates who have been selected or are under review.</p>
+        <p>This candidate did not proceed to the next stage. Retention risk assessment is only available for candidates who have been selected or are under review.</p>
       </div>
     );
   }
@@ -197,7 +203,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
             <p>
               {remote
                 ? 'This is a remote position.'
-                : 'Enter the job location to begin the retention risk assessment.'}
+                : 'Select the job office location to begin the retention risk assessment.'}
             </p>
           </div>
         </div>
@@ -213,15 +219,30 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
             Job Location
             {remote && <span className="trt-remote-tag">Auto-filled</span>}
           </label>
-          <input
-            className={`trt-location-input ${remote ? 'trt-input-readonly' : ''}`}
-            type="text"
-            placeholder="e.g. Colombo, Sri Lanka"
-            value={jobLocation}
-            onChange={(e) => { if (!remote) setJobLocation(e.target.value); }}
-            readOnly={remote}
-            disabled={tabState === 'predicting'}
-          />
+
+          {remote ? (
+            <input
+              className="trt-location-input trt-input-readonly"
+              type="text"
+              value="Remote"
+              readOnly
+            />
+          ) : (
+            <div className="trt-select-wrapper">
+              <select
+                className="trt-location-select"
+                value={jobLocation}
+                onChange={e => setJobLocation(e.target.value)}
+                disabled={tabState === 'predicting'}
+              >
+                <option value="">Select office location...</option>
+                {locations.filter(l => l !== 'Remote').map(loc => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="trt-select-arrow" />
+            </div>
+          )}
         </div>
 
         {error && <p className="trt-error">{error}</p>}
@@ -237,13 +258,13 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
               Analysing...
             </span>
           ) : (
-            'Assess Turnover Risk'
+            'Assess Retention Risk'
           )}
         </Button>
 
         {tabState === 'predicting' && (
           <p className="trt-predicting-note">
-            This may take up to 15 seconds on first-time setup.
+            This may take a while on first-time setup.
           </p>
         )}
       </div>

@@ -229,3 +229,44 @@
   color: #6b7280 !important;
   cursor: default;
 }
+
+.trt-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.trt-location-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 2rem 0 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #111827;
+  background: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.trt-location-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.trt-location-select:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.trt-select-arrow {
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+}
