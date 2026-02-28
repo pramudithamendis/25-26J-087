@@ -1,0 +1,22 @@
+{
+  "package.json": [
+    {
+      "question": "\"What is the purpose of the 'test' script?\",",
+      "scores": {
+        "Relevance": 1,
+        "Specificity": 1,
+        "Depth": 1,
+        "clarity": 1
+      }
+    },
+    {
+      "question": "\"How does the 'start' script work?\",",
+      "scores": {
+        "Relevance": 1,
+        "Specificity": 1,
+        "Depth": 1,
+        "clarity": 1
+      }
+    }
+  ]
+}

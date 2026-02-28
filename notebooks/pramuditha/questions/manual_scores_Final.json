@@ -1,0 +1,1013 @@
+{
+  ".gitignore": [
+    {
+      "question": "What does this file contain?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 2,
+        "Depth": 1,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What types of files are excluded from being tracked by Git?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What specific directory or file names are affected in this configuration?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the purpose of this `.gitignore` file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    }
+  ],
+  "calculator.py": [
+    {
+      "question": "\"What is the purpose of each function in this calculator?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the divide function handle division by zero?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can I use these functions with more than two numbers?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"What is the difference between addition and subtraction operations?\",",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 1,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Is there a way to add an unknown number to two existing values?\",",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 2
+      }
+    },
+    {
+      "question": "\"How do the multiplication and division functions compare in terms of performance?\",",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Are there any edge cases or special handling for certain inputs (e.g. negative numbers, zero)?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can I use this calculator as a simple math library with other functions?\"",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    }
+  ],
+  "configLoader.js": [
+    {
+      "question": "1. What is this code snippet doing?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 2,
+        "Depth": 1,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "2. How does it load configuration from a file called \"metrics.config.json\"?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "3. What type of data can be expected in the returned JSON array?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 3
+      }
+    },
+    {
+      "question": "4. Is there a specific output format expected (e.g., Node.js built-in format, CSV, etc.)?",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 1,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "5. Can this code snippet handle any errors that might occur during execution?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "6. Are there any specific requirements for the configuration file itself (e.g., required keys, structure)?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "7. What is the purpose of `process.cwd()` in this context?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    }
+  ],
+  "db.js": [
+    {
+      "question": "What does this code do?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Where does it connect to?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does it handle multiple connections at once?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What happens if I don't have a database or user?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are there special variables (host, password) for credentials?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    }
+  ],
+  "index.js": [
+    {
+      "question": "\"What is the purpose of the '/api/cards' endpoint?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the code handle authentication? (e.g., user password)\",",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you explain the use of MySQL2/promise library?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the difference between 'cumulative' and non-cumulative queries?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How are cumulative queries implemented in this code?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What are the available table names for /api/tables endpoint?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"How does the code handle table name query parameter (e.g., ?table_name)\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you provide an example of how to modify the buildQuery_cumulative function to retrieve data from a specific table?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"What is the purpose of the 'distinct_col' variable in the buildQuery_cumulative function?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the code handle errors and logging in the /api/tables endpoint?\"",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    }
+  ],
+  "package.json": [
+    {
+      "question": "\"What is the purpose of the 'test' script?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the 'start' script work?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the purpose of the 'dev' script?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can I specify a custom test environment?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How do I configure the repository URL in git?\",",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What are the available dependencies for this project?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Why is there an empty 'keywords' field?\"",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    }
+  ],
+  "App.jsx": [
+    {
+      "question": "What are the import statements for this file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 1,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are there four different imports (`reactLogo`, `viteLogo`) instead of one, and where do they come from?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 3
+      }
+    },
+    {
+      "question": "What is the purpose of the React Router components (`Routes` and `Route`) in this context?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does this App component interact with other components (e.g. Cards, Tables, Charts) that are imported elsewhere?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    }
+  ],
+  "Cards.tsx": [
+    {
+      "question": "What is the purpose of the `useEffect` hook in this example?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `formatValue` function handle null or undefined values?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the difference between using `key` as a string and an array in JSX?",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 3
+      }
+    },
+    {
+      "question": "Can you explain why the `selectedCategory` state is used to filter the cards, and how it's updated?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `categories` and `filteredMetrics` functions work together to display the data?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "What is the meaning of `metrics.map((metric, i) => {...})` in the Cards component?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are there multiple `select` options for the category filter? Is it a bug or an intentional design choice?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you provide more context about the API endpoint \"http://localhost:3000/api/cards\" and what data it returns?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the purpose of the `loading` state in the Cards component, and how does it affect the rendering of the page?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How do you handle errors or unexpected responses from the API when using this code?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    }
+  ],
+  "Charts.jsx": [
+    {
+      "question": "What is the purpose of the `useEffect` hook in this code snippet?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `fetchTables` function from the `Charts` component fetch data from an API?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the logic behind the `getNeededCols` function, especially with regards to the different types of charts (bar chart, line chart)?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "What are some potential issues or edge cases that this code might encounter when loading data from the API?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 5,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "How does the code handle errors, such as network failures or invalid responses from the API?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Are there any specific optimizations or improvements that could be made to the code to improve performance or scalability?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 2,
+        "Depth": 5,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Can you explain how the `charts-grid` and `chart-card` components are used in this context?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    }
+  ],
+  "famvitamincintake.py": [
+    {
+      "question": "\"What is the purpose of the linprog function from scipy.optimize?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the 'method' parameter affect the optimization process?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you explain the significance of the bounds argument in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What are the differences between LHS and RHS in the constraint inequalities?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Why did you choose 'highs' as the optimization method instead of another option?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the role of A_ub, b_ub, and bounds in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the coefficient matrix lhs_ineq influence the optimal solution?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Can you provide examples or explanations for other potential objective functions?\",",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 2,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Are there any limitations or edge cases in this code that I should be aware of?\"",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 5,
+        "clarity": 5
+      }
+    }
+  ],
+  "indexing.py": [
+    {
+      "question": "What is the purpose of the `load_preprocessed_documents` function? How does it load preprocessed documents from a file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the concept behind building an inverted index in this code? What are term frequencies and IDF (Inverse Document Frequency)?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 5,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "How do the `term_counts` dictionaries store information about each term in the document, and how is their value calculated?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the purpose of the `idf` dictionary? How does it calculate IDF for a given term?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain the concept behind saving the inverted index, IDF, and doc-term counts to files using `pickle.dump()`?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the code handle missing documents in the preprocessed documents list?",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Are there any potential issues with storing sensitive information (e.g., term frequencies) as plain text using `pickle`?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Can you explain why the code uses a logarithmic function (`math.log(total_documents / len(doc_list))`) to calculate IDF?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    }
+  ],
+  "machineAmachineB.py": [
+    {
+      "question": "\"What is the objective function in this linear programming problem?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How do I determine if the optimization method used in linprog is suitable for my problem?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Can you explain the purpose of the bounds attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What does the 'linprog' function from scipy.optimize actually return, and what are its possible values?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Are there any specific constraints (e.g., inequality constraints) that I should be aware of when using linprog?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"How do I interpret the output of the 'opt.x' attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the difference between the 'c' attribute and 'A_ub' attribute in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you provide an example of how to use linprog with different optimization methods (e.g., 'sweep', 'COBYLA')?\"",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 3,
+        "clarity": 4
+      }
+    }
+  ],
+  "main.jsx": [
+    {
+      "question": "What is React being used for in this JSX file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does this set up routing with React Router?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What CSS files are included in this project and how do they style the application?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 2,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Why is a StrictMode component imported from react?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    }
+  ],
+  "preprocess_documents.py": [
+    {
+      "question": "* What is the purpose of the `extract_text_from_pdfs` function?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* How does this function extract text from PDF files in the specified folder path?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* Why are punctuation removed from the extracted text?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* What steps are taken to prevent numbers from being included as tokens after tokenization?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* Can you explain the role of the `lemmatizer` and how it affects the final preprocessed text?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* How many words up to 100 are saved in a snippet for each document?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* What is the purpose of saving snippets and doc_snippets.pkl files?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* Why is this code useful, and what problems might it solve?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 5,
+        "clarity": 5
+      }
+    }
+  ],
+  "query_processing.py": [
+    {
+      "question": "What is the purpose of the script and what tasks does it perform?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How do I download the required NLTK data files if they're not already downloaded?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain why you've used certain NLTK functions (e.g. `punkt`, `stopwords`, `wordnet`) in this script?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `preprocess_query` function handle punctuation and numbers in a query string?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the difference between the original tokens, the preprocessed tokens, and the expanded tokens?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you provide an example of how to use the `query_expansion` function to expand synonyms for a given token?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are stopwords removed from the token list before lemmatization? Is there a specific reason or a predefined rule?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the script handle case sensitivity when working with queries and tokens?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain why duplicates in the expanded tokens set are being removed using `set(expanded_tokens)`?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the purpose of the final `print` statement that prints the \"Expanded Query\" value?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    }
+  ]
+}

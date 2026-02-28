@@ -1,3 +1,10 @@
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import QuestionsCVUpload from "./Questions/QuestionsCVUpload";
+import QuestionsFindBestProject from "./Questions/QuestionsFindBestProject";
+import QuestionsClone from "./Questions/QuestionsClone";
+import QuestionsAllFiles from "./Questions/QuestionsAllFiles";
+import QuestionsAsk from "./Questions/QuestionsAsk";
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -21,7 +28,6 @@ import { JobApplicantsPage } from './pages/admin/JobApplicantsPage';
 import { JobApplicantDetailPage } from './pages/admin/JobApplicantDetailPage';
 import { AdminTrendScorePage } from './pages/admin/AdminTrendScorePage'
 import './App.css';
-
 function App() {
   return (
     <BrowserRouter>
@@ -189,6 +195,11 @@ function App() {
             }
           />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/questions/upload" element={<QuestionsCVUpload />} />
+          <Route path="/questions/bestproject" element={<QuestionsFindBestProject />} />
+          <Route path="/questions/clone" element={<QuestionsClone />} />
+          <Route path="/questions/allfiles" element={<QuestionsAllFiles />} />
+          <Route path="/questions/ask" element={<QuestionsAsk />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -11,6 +11,7 @@ from app.routes.hirebase_router import router as hirebase_router
 from app.routes.trends_router import router as trends_router
 from app.scheduler import start_scheduler
 from app.routes.questions_router import router as questions_router
+
 from app.routes.admin_router import router as admin_router
 import logging
 import time
@@ -21,6 +22,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +99,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers
+
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(job_router)

@@ -1,0 +1,165 @@
+[
+  {
+    "file_name": ".gitignore",
+    "code": "# Logs\nlogs\n*.log\nnpm-debug.log*\nyarn-debug.log*\nyarn-error.log*\npnpm-debug.log*\nlerna-debug.log*\n\nnode_modules\ndist\ndist-ssr\n*.local\n\n# Editor directories and files\n.vscode/*\n!.vscode/extensions.json\n.idea\n.DS_Store\n*.suo\n*.ntvs*\n*.njsproj\n*.sln\n*.sw?",
+    "questions": ["What does this file contain?", "What types of files are excluded from being tracked by Git?", "What specific directory or file names are affected in this configuration?", "Can you explain the purpose of this `.gitignore` file?"]
+  },
+  {
+    "file_name": "calculator.py",
+    "code": "def add(a, b):\n    return a + b\n\ndef subtract(a, b):\n    return a - b\n\ndef multiply(a, b):\n    return a * b\n\ndef divide(a, b):\n    if b == 0:\n        raise ValueError(\"Cannot divide by zero.\")\n    return a / b\n\nif __name__ == \"__main__\":\n    print(add(10, 5))\n    print(subtract(10, 5))\n    print(multiply(10, 5))\n    print(divide(10, 5))\n",
+    "questions": [
+      "\"What is the purpose of each function in this calculator?\",",
+      "\"How does the divide function handle division by zero?\",",
+      "\"Can I use these functions with more than two numbers?\",",
+      "\"What is the difference between addition and subtraction operations?\",",
+      "\"Is there a way to add an unknown number to two existing values?\",",
+      "\"How do the multiplication and division functions compare in terms of performance?\",",
+      "\"Are there any edge cases or special handling for certain inputs (e.g. negative numbers, zero)?\",",
+      "\"Can I use this calculator as a simple math library with other functions?\""
+    ]
+  },
+  {
+    "file_name": "configLoader.js",
+    "code": "import fs from \"fs\";\nimport path from \"path\";\n\nexport function loadMetricConfig() {\n  const filePath = path.join(process.cwd(), \"config\", \"metrics.config.json\");\n  const raw = fs.readFileSync(filePath, \"utf-8\");\n  return JSON.parse(raw);\n}\n",
+    "questions": ["1. What is this code snippet doing?", "2. How does it load configuration from a file called \"metrics.config.json\"?", "3. What type of data can be expected in the returned JSON array?", "4. Is there a specific output format expected (e.g., Node.js built-in format, CSV, etc.)?", "5. Can this code snippet handle any errors that might occur during execution?", "6. Are there any specific requirements for the configuration file itself (e.g., required keys, structure)?", "7. What is the purpose of `process.cwd()` in this context?"]
+  },
+  {
+    "file_name": "db.js",
+    "code": "// db.js\nimport mysql from \"mysql2/promise\";\n\nexport const pool = mysql.createPool({\n  host: \"localhost\",\n  user: \"root\",\n  password: \"YOUR_PASSWORD\",\n  database: \"gameon_bi\",\n  connectionLimit: 10,\n});\n",
+    "questions": ["What does this code do?", "Where does it connect to?", "How does it handle multiple connections at once?", "What happens if I don't have a database or user?", "Why are there special variables (host, password) for credentials?"]
+  },
+  {
+    "file_name": "index.js",
+    "code": "// index.js\nimport express from \"express\";\nconst app = express();\nimport mysql from \"mysql2/promise\";\n\nconst pool = mysql.createPool({\n  host: \"127.0.0.1\",\n  user: \"root\",\n  password: \"password\", // your MySQL password\n  database: \"gaming_app_bi\",\n  port: 3306,\n  connectionLimit: 10,\n});\n\nimport { loadMetricConfig } from \"./configLoader.js\";\n\nconst config = loadMetricConfig();\n\nfunction buildQuery(block) {\n  let columns = block.columns.join(\", \");\n  let distinct_col = block.distinct_col;\n\n  return `\n    SELECT ${columns}\n    FROM ${block.table_name}\n    ORDER BY ${block.order_by_column} ${block.order_by}\n    LIMIT ${block.record_count};\n  `;\n}\n\napp.get(\"/api/cards\", async (req, res) => {\n  try {\n    const results = [];\n    const { table_name } = req.query;\n    console.log(table_name);\n\n    if (table_name == undefined) {\n      //means we need all\n      for (const card of config.Cards) {\n        const sql = buildQuery(card);\n\n        const [rows] = await pool.query(sql);\n\n        results.push({\n          metric_name: card.metric_name,\n          sql,\n          field_names: card.columns,\n          data: rows,\n        });\n      }\n    } else {\n      //means we need specific table\n      for (const card of config.Cards) {\n        if (card.table_name == table_name) {\n          const sql = buildQuery(card);\n\n          const [rows] = await pool.query(sql);\n\n          results.push({\n            metric_name: card.metric_name,\n            sql,\n            field_names: card.columns,\n            data: rows,\n          });\n        }\n      }\n    }\n\n    res.json({ status: \"success\", results });\n  } catch (err) {\n    console.error(err);\n    res.status(500).json({ error: \"Server error\" });\n  }\n});\n\nfunction buildQuery_cumulative(block) {\n  let columns = block.columns.join(\", \");\n  let distinct_col = block.distinct_col;\n\n  return `\n    WITH ranked AS (\n      SELECT \n        ${columns},\n        ROW_NUMBER() OVER (\n          PARTITION BY ${distinct_col}\n          ORDER BY ${block.order_by_column} ${block.order_by}\n        ) AS rn\n      FROM ${block.table_name}\n    )\n    SELECT ${columns}\n    FROM ranked\n    WHERE rn = 1\n    ORDER BY ${block.order_by_column} ${block.order_by}\n    LIMIT ${block.record_count};\n  `;\n}\n\napp.get(\"/api/tables\", async (req, res) => {\n  try {\n    const results = [];\n    const { table_name } = req.query;\n    console.log(table_name);\n\n    if (table_name == undefined) {\n      //means we need all\n      for (const card of config.Tables) {\n        let sql = \"\";\n        if (card.is_cumulative == 1) {\n          sql = buildQuery_cumulative(card);\n        } else {\n          sql = buildQuery(card);\n        }\n        const [rows] = await pool.query(sql);\n\n        results.push({\n          metric_name: card.metric_name,\n          sql,\n          field_names: card.columns,\n          data: rows,\n        });\n      }\n    } else {\n      //means we need specific table\n      for (const card of config.Tables) {\n        if (card.table_name == table_name) {\n          let sql = \"\";\n          if (card.is_cumulative == 1) {\n            sql = buildQuery_cumulative(card);\n          } else {\n            sql = buildQuery(card);\n          }\n          const [rows] = await pool.query(sql);\n          results.push({\n            metric_name: card.metric_name,\n            sql,\n            field_names: card.columns,\n            data: rows,\n          });\n        }\n      }\n    }\n\n    res.json({ status: \"success\", results });\n  } catch (err) {\n    console.error(err);\n    res.status(500).json({ error: \"Server error\" });\n  }\n});\n\napp.get(\"/api/charts\", async (req, res) => {\n  try {\n    const results = [];\n    const { table_name } = req.query;\n    console.log(table_name);\n\n    if (table_name == undefined) {\n      //means we need all\n      for (const card of config.Charts) {\n        let sql = \"\";\n        if (card.is_cumulative == 1) {\n          sql = buildQuery_cumulative(card);\n        } else {\n          sql = buildQuery(card);\n        }\n        const [rows] = await pool.query(sql);\n\n        results.push({\n          metric_name: card.metric_name,\n          sql,\n          field_names: card.columns,\n          data: rows,\n        });\n      }\n    } else {\n      //means we need specific table\n      for (const card of config.Charts) {\n        if (card.table_name == table_name) {\n          let sql = \"\";\n          if (card.is_cumulative == 1) {\n            sql = buildQuery_cumulative(card);\n          } else {\n            sql = buildQuery(card);\n          }\n          const [rows] = await pool.query(sql);\n\n          results.push({\n            metric_name: card.metric_name,\n            chart_type: card.chart_type,\n            sql,\n            field_names: card.columns,\n            data: rows,\n          });\n        }\n      }\n    }\n\n    res.json({ status: \"success\", results });\n  } catch (err) {\n    console.error(err);\n    res.status(500).json({ error: \"Server error\" });\n  }\n});\n\napp.listen(3000, () => console.log(\"Server running on port 3000\"));\n",
+    "questions": [
+      "\"What is the purpose of the '/api/cards' endpoint?\",",
+      "\"How does the code handle authentication? (e.g., user password)\",",
+      "\"Can you explain the use of MySQL2/promise library?\",",
+      "\"What is the difference between 'cumulative' and non-cumulative queries?\",",
+      "\"How are cumulative queries implemented in this code?\",",
+      "\"What are the available table names for /api/tables endpoint?\",",
+      "\"How does the code handle table name query parameter (e.g., ?table_name)\",",
+      "\"Can you provide an example of how to modify the buildQuery_cumulative function to retrieve data from a specific table?\",",
+      "\"What is the purpose of the 'distinct_col' variable in the buildQuery_cumulative function?\",",
+      "\"How does the code handle errors and logging in the /api/tables endpoint?\""
+    ]
+  },
+  {
+    "file_name": "package.json",
+    "code": "{\n  \"name\": \"bi-backend\",\n  \"version\": \"1.0.0\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"test\": \"echo \\\"Error: no test specified\\\" && exit 1\",\n    \"start\": \"node index.js\",\n    \"dev\": \"nodemon index.js\"\n  },\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"git+https://github.com/pramudithamendis/BI-backend.git\"\n  },\n  \"keywords\": [],\n  \"author\": \"\",\n  \"license\": \"ISC\",\n  \"bugs\": {\n    \"url\": \"https://github.com/pramudithamendis/BI-backend/issues\"\n  },\n  \"homepage\": \"https://github.com/pramudithamendis/BI-backend#readme\",\n  \"description\": \"\",\n  \"dependencies\": {\n    \"dotenv\": \"^17.2.3\",\n    \"express\": \"^5.1.0\",\n    \"mysql2\": \"^3.15.3\",\n    \"tunnel-ssh\": \"^5.2.0\"\n  },\n  \"devDependencies\": {\n    \"nodemon\": \"^3.1.11\"\n  }\n}\n",
+    "questions": ["\"What is the purpose of the 'test' script?\",", "\"How does the 'start' script work?\",", "\"What is the purpose of the 'dev' script?\",", "\"Can I specify a custom test environment?\",", "\"How do I configure the repository URL in git?\",", "\"What are the available dependencies for this project?\",", "\"Why is there an empty 'keywords' field?\""]
+  },
+
+  {
+    "file_name": "App.jsx",
+    "code": "import { useState } from \"react\";\nimport reactLogo from \"./assets/react.svg\";\nimport viteLogo from \"/vite.svg\";\n// import \"./App.css\";\nimport Cards from \"./components/Cards\";\nimport Tables from \"./components/Tables\";\nimport Charts from \"./components/Charts\";\nimport { Routes, Route } from \"react-router-dom\";\n\nfunction App() {\n  return (\n    <Routes>\n      <Route path=\"/cards\" element={<Cards />} />\n      <Route path=\"/tables\" element={<Tables />} />\n      <Route path=\"/charts\" element={<Charts />} />\n    </Routes>\n  );\n}\n\nexport default App;\n",
+    "questions": ["What are the import statements for this file?", "Why are there four different imports (`reactLogo`, `viteLogo`) instead of one, and where do they come from?", "What is the purpose of the React Router components (`Routes` and `Route`) in this context?", "How does this App component interact with other components (e.g. Cards, Tables, Charts) that are imported elsewhere?"]
+  },
+  {
+    "file_name": "Cards.tsx",
+    "code": "import { useEffect, useState, useMemo } from \"react\";\nimport \"./Cards.css\";\n\ninterface ApiResponse {\n  status: string;\n  results: MetricResult[];\n}\n\ninterface MetricResult {\n  metric_name: string[];\n  field_names: string[];\n  data: Record<string, any>[];\n  category: string[];\n}\n\nfunction formatValue(key: string, value: any) {\n  if (value == null) return \"-\";\n\n  if (typeof value === \"string\" && (value.endsWith(\"Z\") || key.toLowerCase().includes(\"date\") || key.toLowerCase().includes(\"time\"))) {\n    const d = new Date(value);\n    if (!isNaN(d.getTime())) return d.toLocaleString();\n  }\n\n  if (typeof value === \"number\") return value;\n\n  if (typeof value === \"string\" && !isNaN(Number(value))) {\n    const n = Number(value);\n    return n % 1 === 0 ? n : n.toFixed(2);\n  }\n\n  return String(value);\n}\n\nexport default function UI() {\n  const [metrics, setMetrics] = useState<MetricResult[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [selectedCategory, setSelectedCategory] = useState(\"all\");\n\n  // ---------- useEffect (runs once)\n  useEffect(() => {\n    async function load() {\n      try {\n        const res = await fetch(\"http://localhost:3000/api/cards\");\n        const json: ApiResponse = await res.json();\n        setMetrics(json.results || []);\n      } catch (err) {\n        console.error(err);\n      } finally {\n        setLoading(false);\n      }\n    }\n    load();\n  }, []);\n\n  // ---------- Always compute categories (never inside if)\n  const categories = useMemo(() => {\n    if (!metrics || metrics.length === 0) return [\"all\"];\n\n    const all = metrics.flatMap((m) => m.category || []);\n    return [\"all\", ...Array.from(new Set(all))];\n  }, [metrics]);\n\n  // ---------- Always compute filtered metrics (never inside if)\n  const filteredMetrics = useMemo(() => {\n    if (selectedCategory === \"all\") return metrics;\n    return metrics.filter((m) => (m.category || []).includes(selectedCategory));\n  }, [metrics, selectedCategory]);\n\n  // ---------- Render phase (safe)\n  if (loading) {\n    return <div className=\"loading\">Loading dashboard...</div>;\n  }\n\n  return (\n    <div>\n      <h1 className=\"dashboard-title\">Dashboard</h1>\n\n      {/* Category Filter */}\n      <div className=\"filter-bar\">\n        <label>Filter by Category: </label>\n        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>\n          {categories.map((c) => (\n            <option key={c} value={c}>\n              {c}\n            </option>\n          ))}\n        </select>\n      </div>\n\n      {/* Cards */}\n      <div className=\"cards-grid\">\n        {filteredMetrics.map((metric, i) => {\n          const title = metric.metric_name?.[0] || \"Metric\";\n          const subtitle = metric.metric_name?.slice(1).join(\" \u2022 \");\n          const row = metric.data?.[0] || {};\n\n          return (\n            <div className=\"card\" key={i}>\n              <div className=\"card-header\">\n                <p className=\"card-title\">{title}</p>\n                {subtitle && <p className=\"card-subtitle\">{subtitle}</p>}\n                <p>Category: {metric.category || []}</p>\n              </div>\n\n              <div className=\"card-body\">\n                {metric.field_names.map((field) => (\n                  <div className=\"field-row\" key={field}>\n                    <span className=\"field-label\">{field}:</span>\n                    <span className=\"field-value\">{formatValue(field, row[field])}</span>\n                  </div>\n                ))}\n              </div>\n            </div>\n          );\n        })}\n      </div>\n    </div>\n  );\n}\n",
+    "questions": [
+      "What is the purpose of the `useEffect` hook in this example?",
+      "How does the `formatValue` function handle null or undefined values?",
+      "What is the difference between using `key` as a string and an array in JSX?",
+      "Can you explain why the `selectedCategory` state is used to filter the cards, and how it's updated?",
+      "How does the `categories` and `filteredMetrics` functions work together to display the data?",
+      "What is the meaning of `metrics.map((metric, i) => {...})` in the Cards component?",
+      "Why are there multiple `select` options for the category filter? Is it a bug or an intentional design choice?",
+      "Can you provide more context about the API endpoint \"http://localhost:3000/api/cards\" and what data it returns?",
+      "What is the purpose of the `loading` state in the Cards component, and how does it affect the rendering of the page?",
+      "How do you handle errors or unexpected responses from the API when using this code?"
+    ]
+  },
+  {
+    "file_name": "Charts.jsx",
+    "code": "import { useEffect, useState } from \"react\";\nimport axios from \"axios\";\nimport WalletBalanceChart from \"./ChartminiComponents/WalletBalanceChart\";\nimport GamePlayDaysChart from \"./ChartminiComponents/GamePlayDaysChart\";\nimport CommissionChart from \"./ChartminiComponents/other/CommissionChart\";\nimport \"./Charts.css\";\n\nexport default function Charts() {\n  const [tables, setTables] = useState([]);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    async function fetchTables() {\n      try {\n        const res = await axios.get(\"http://localhost:3000/api/charts\");\n        setTables(res.data.results);\n      } catch (err) {\n        console.error(\"Failed fetching charts:\", err);\n      } finally {\n        setLoading(false);\n      }\n    }\n    fetchTables();\n  }, []);\n\n  if (loading) return <h1 className=\"loading\">Loading charts...</h1>;\n\n  function getNeededCols(data, xaxis, yaxis) {\n    if ((xaxis = \"date_\")) {\n      return data.map((row) => ({\n        _x: row[\"date_\"].split(\"T\")[0],\n        _y: Number(row[yaxis]) || 0,\n      }));\n    } else {\n      return data.map((row) => ({\n        _x: row[xaxis] || \"Unknown\",\n        _y: Number(row[yaxis]) || 0,\n      }));\n    }\n  }\n\n  return (\n    <div className=\"charts-root\">\n      <h1 className=\"charts-title\">Analytics Dashboard</h1>\n\n      <div className=\"charts-grid\">\n        {tables.map((table, index) => {\n          const type = table.chart_type;\n          const data = table.data ?? [];\n\n          return (\n            <div className=\"chart-card\" key={index}>\n              <h2 className=\"chart-card-title\">{table.metric_name || \"Chart\"}</h2>\n\n              {type === \"bar_chart\" && <WalletBalanceChart data={getNeededCols(data, \"email\", \"total_balance\")} />}\n              {type === \"bar_chart\" && <WalletBalanceChart data={getNeededCols(data, \"date_\", \"remainder_you_keep_32pct\")} />}\n              {type === \"line_chart\" && <GamePlayDaysChart data={getNeededCols(data, \"date_\", \"total_sessions\")} />}\n            </div>\n          );\n        })}\n      </div>\n    </div>\n  );\n}\n",
+    "questions": [
+      "What is the purpose of the `useEffect` hook in this code snippet?",
+      "How does the `fetchTables` function from the `Charts` component fetch data from an API?",
+      "Can you explain the logic behind the `getNeededCols` function, especially with regards to the different types of charts (bar chart, line chart)?",
+      "What are some potential issues or edge cases that this code might encounter when loading data from the API?",
+      "How does the code handle errors, such as network failures or invalid responses from the API?",
+      "Are there any specific optimizations or improvements that could be made to the code to improve performance or scalability?",
+      "Can you explain how the `charts-grid` and `chart-card` components are used in this context?"
+    ]
+  },
+  {
+    "file_name": "famvitamincintake.py",
+    "code": "from scipy.optimize import linprog\n\n\n\n# profit\n# z = 5x1 + 10x2\n    # Since this is a maximization problem and therefore let's continue without any changes\n    #Take all to LHS\n    # -5x1 - 10x2 + z = 0\n\n#banana constraint\n    # 8.8x1 + 5.2x2 >= 20\n    # since >= is there, let's turn to <=\n    # -8.8x1 - 5.2x2 <= -20\n\n\n#apple constraint\n    # 8.8x1 + 5.2x2 \u2264 60\n    \n#Usual constraint\n# x1, x2>= 0\n\nobj = [-5, -10]\n\nlhs_ineq = [[-8.8, -5.2],  \n            [8.8, 5.2]]  \n\nrhs_ineq = [ 20,  \n            60]  \n\nbounds = []\nfor i in range(len(obj)):\n    bounds.append((0, float(\"inf\")))\n\n\nopt = linprog(c=obj, A_ub=lhs_ineq, b_ub=rhs_ineq,bounds=bounds, method=\"highs\")\n\n\n\nprint(\"Whether the optimum point could be found:\\t\", opt.success)\nprint(\"Minimum cost:\\t\", opt.fun)\nprint(\"Best values for x1, x2:\\t\",opt.x)",
+    "questions": [
+      "\"What is the purpose of the linprog function from scipy.optimize?\",",
+      "\"How does the 'method' parameter affect the optimization process?\",",
+      "\"Can you explain the significance of the bounds argument in linprog?\",",
+      "\"What are the differences between LHS and RHS in the constraint inequalities?\",",
+      "\"Why did you choose 'highs' as the optimization method instead of another option?\",",
+      "\"What is the role of A_ub, b_ub, and bounds in linprog?\",",
+      "\"How does the coefficient matrix lhs_ineq influence the optimal solution?\",",
+      "\"Can you provide examples or explanations for other potential objective functions?\",",
+      "\"Are there any limitations or edge cases in this code that I should be aware of?\""
+    ]
+  },
+  {
+    "file_name": "indexing.py",
+    "code": "import pickle\nimport math\nfrom collections import defaultdict\n\ndef load_preprocessed_documents():\n    with open('preprocessed_documents.pkl', 'rb') as f:\n        preprocessed_documents = pickle.load(f)\n    return preprocessed_documents\n\ndef build_inverted_index(preprocessed_documents):\n    inverted_index = defaultdict(dict)\n    doc_term_counts = {}\n    total_documents = len(preprocessed_documents)\n\n    # Build inverted index and term frequencies\n    for doc_id, terms in preprocessed_documents.items():\n        term_counts = {}\n        for term in terms:\n            term_counts[term] = term_counts.get(term, 0) + 1\n        doc_term_counts[doc_id] = term_counts\n        for term, count in term_counts.items():\n            if doc_id not in inverted_index[term]:\n                inverted_index[term][doc_id] = count\n                \n    idf = {}\n    for term, doc_list in inverted_index.items():\n        idf[term] = math.log(total_documents / len(doc_list))\n\n    return inverted_index, idf, doc_term_counts\n\nif __name__ == '__main__':\n    preprocessed_documents = load_preprocessed_documents()\n    inverted_index, idf, doc_term_counts = build_inverted_index(preprocessed_documents)\n    \n    # Save for later use\n    with open('inverted_index.pkl', 'wb') as f:\n        pickle.dump(inverted_index, f)\n    with open('idf.pkl', 'wb') as f:\n        pickle.dump(idf, f)\n    with open('doc_term_counts.pkl', 'wb') as f:\n        pickle.dump(doc_term_counts, f)",
+    "questions": [
+      "What is the purpose of the `load_preprocessed_documents` function? How does it load preprocessed documents from a file?",
+      "Can you explain the concept behind building an inverted index in this code? What are term frequencies and IDF (Inverse Document Frequency)?",
+      "How do the `term_counts` dictionaries store information about each term in the document, and how is their value calculated?",
+      "What is the purpose of the `idf` dictionary? How does it calculate IDF for a given term?",
+      "Can you explain the concept behind saving the inverted index, IDF, and doc-term counts to files using `pickle.dump()`?",
+      "How does the code handle missing documents in the preprocessed documents list?",
+      "Are there any potential issues with storing sensitive information (e.g., term frequencies) as plain text using `pickle`?",
+      "Can you explain why the code uses a logarithmic function (`math.log(total_documents / len(doc_list))`) to calculate IDF?"
+    ]
+  },
+  {
+    "file_name": "machineAmachineB.py",
+    "code": "from scipy.optimize import linprog\n\n\n\n# profit\n# z = x1 + x2 - 50\n    # Since this is a maximization problem and therefore let's continue without any changes\n    #Take all to LHS\n    # -x1 - x2 + 50 + z = 0\n\n#machine A constraint\n    # 50x1 + 24x2 \u2264 2400\n\n\n#machine B constraint\n    # 30x1 + 33x2 \u2264 2100\n    \n#Usual constraint\n# x1, x2>= 0\n\nobj = [-1, -1]\n\nlhs_ineq = [[50, 24],  # Manpower\n            [30, 33]]  # Material B\n\nrhs_ineq = [ 2400,  # Manpower\n            2100]  # Material B\n\nbounds = []\nfor i in range(len(obj)):\n    bounds.append((0, float(\"inf\")))\n\n\nopt = linprog(c=obj, A_ub=lhs_ineq, b_ub=rhs_ineq,bounds=bounds, method=\"highs\")\n\n\n\nprint(\"Whether the optimum point could be found:\\t\", opt.success)\nprint(\"Maximum value:\\t\", opt.fun)\nprint(\"Best values for x1, x2:\\t\",opt.x)",
+    "questions": [
+      "\"What is the objective function in this linear programming problem?\",",
+      "\"How do I determine if the optimization method used in linprog is suitable for my problem?\",",
+      "\"Can you explain the purpose of the bounds attribute in linprog?\",",
+      "\"What does the 'linprog' function from scipy.optimize actually return, and what are its possible values?\",",
+      "\"Are there any specific constraints (e.g., inequality constraints) that I should be aware of when using linprog?\",",
+      "\"How do I interpret the output of the 'opt.x' attribute in linprog?\",",
+      "\"What is the difference between the 'c' attribute and 'A_ub' attribute in linprog?\",",
+      "\"Can you provide an example of how to use linprog with different optimization methods (e.g., 'sweep', 'COBYLA')?\""
+    ]
+  },
+  {
+    "file_name": "main.jsx",
+    "code": "import { StrictMode } from \"react\";\nimport { createRoot } from \"react-dom/client\";\nimport \"./index.css\";\nimport App from \"./App.jsx\";\nimport { BrowserRouter } from \"react-router-dom\";\n\n\ncreateRoot(document.getElementById(\"root\")).render(\n  <StrictMode>\n    <BrowserRouter>\n      <App />\n    </BrowserRouter>\n  </StrictMode>\n);\n",
+    "questions": ["What is React being used for in this JSX file?", "How does this set up routing with React Router?", "What CSS files are included in this project and how do they style the application?", "Why is a StrictMode component imported from react?"]
+  },
+  {
+    "file_name": "preprocess_documents.py",
+    "code": "import os\nimport nltk\nimport glob\nimport string\nimport pickle\nimport PyPDF2\nfrom nltk.corpus import stopwords\nfrom nltk.stem import WordNetLemmatizer\nfrom pdfminer.high_level import extract_text\n\n# Ensure necessary NLTK data files are downloaded\nnltk.download('punkt')\nnltk.download('stopwords')\nnltk.download('wordnet')\n\n\ndef extract_text_from_pdfs(pdf_folder_path):\n    pdf_files = glob.glob(os.path.join(pdf_folder_path, '*.pdf'))\n    documents = {}\n    for pdf_file in pdf_files:\n        text = extract_text(pdf_file)\n        doc_id = os.path.basename(pdf_file)\n        if not text.strip():\n            print(f\"Document {doc_id} is empty after text extraction.\")\n        else:\n            print(f\"Document {doc_id} has content after text extraction.\")\n        documents[doc_id] = text\n    return documents\n\ndef preprocess_text(text):\n    # Lowercase the text\n    text = text.lower()\n    # Remove punctuation (keep numbers)\n    punctuations = string.punctuation.replace('-', '')  # Keep hyphens (if needed)\n    text = text.translate(str.maketrans('', '', punctuations))\n    # Tokenize the text\n    tokens = nltk.word_tokenize(text)\n    # Remove stopwords\n    stop_words = set(stopwords.words('english'))\n    tokens = [token for token in tokens if token not in stop_words]\n    # Lemmatization\n    lemmatizer = WordNetLemmatizer()\n    tokens = [lemmatizer.lemmatize(token) for token in tokens]      #ex: Changing, Changed, Change   ->   Change\n    # Join tokens back to string\n    preprocessed_text = ' '.join(tokens)\n    return preprocessed_text\n\n# In preprocess_documents.py\ndef preprocess_documents(documents):\n    preprocessed_docs = {}\n    doc_snippets = {}\n    for doc_id, text in documents.items():\n        preprocessed_text = preprocess_text(text)\n        preprocessed_docs[doc_id] = preprocessed_text\n\n        # Save the first 100 words of the original text\n        snippet_words = text.split()[:100]\n        snippet = ' '.join(snippet_words)\n        doc_snippets[doc_id] = snippet\n\n    # Save snippets\n    with open('doc_snippets.pkl', 'wb') as f:\n        pickle.dump(doc_snippets, f)\n\n    return preprocessed_docs\n\n\nif __name__ == '__main__':\n    pdf_folder_path = './static/pdfs'  # Update this path\n    documents = extract_text_from_pdfs(pdf_folder_path)\n    preprocessed_documents = preprocess_documents(documents)\n    # Save preprocessed documents for later use\n    with open('preprocessed_documents.pkl', 'wb') as f:\n        pickle.dump(preprocessed_documents, f)",
+    "questions": [
+      "* What is the purpose of the `extract_text_from_pdfs` function?",
+      "* How does this function extract text from PDF files in the specified folder path?",
+      "* Why are punctuation removed from the extracted text?",
+      "* What steps are taken to prevent numbers from being included as tokens after tokenization?",
+      "* Can you explain the role of the `lemmatizer` and how it affects the final preprocessed text?",
+      "* How many words up to 100 are saved in a snippet for each document?",
+      "* What is the purpose of saving snippets and doc_snippets.pkl files?",
+      "* Why is this code useful, and what problems might it solve?"
+    ]
+  },
+  {
+    "file_name": "query_processing.py",
+    "code": "import nltk\nimport string\nfrom nltk.corpus import wordnet\nfrom nltk.corpus import stopwords\nfrom nltk.stem import WordNetLemmatizer\n\n# NLTK data files download\nnltk.download('punkt')\nnltk.download('stopwords')\nnltk.download('wordnet')\n\ndef preprocess_query(query):\n    # Lowercase the query\n    query = query.lower()\n    # Remove punctuation (keep numbers)\n    punctuations = string.punctuation.replace('-', '')\n    query = query.translate(str.maketrans('', '', punctuations))\n    # Tokenize the query\n    tokens = nltk.word_tokenize(query)\n    # Remove stopwords\n    stop_words = set(stopwords.words('english'))\n    tokens = [token for token in tokens if token not in stop_words]\n    # Lemmatization\n    lemmatizer = WordNetLemmatizer()\n    tokens = [lemmatizer.lemmatize(token) for token in tokens]\n    # Join tokens back to string\n    preprocessed_query = ' '.join(tokens)\n    return preprocessed_query\n\ndef query_expansion(tokens):\n    expanded_tokens = tokens.copy()\n    for token in tokens:\n        synonyms = wordnet.synsets(token)\n        for syn in synonyms:\n            for lemma in syn.lemmas():\n                expanded_tokens.append(lemma.name())\n    # Remove duplicates\n    expanded_tokens = list(set(expanded_tokens))\n    return expanded_tokens\n\nif __name__ == '__main__':\n    query = input(\"Enter your search query: \")\n    preprocessed_query = preprocess_query(query)\n    tokens = preprocessed_query.split()\n    expanded_tokens = query_expansion(tokens)\n    expanded_query = ' '.join(expanded_tokens)\n    print(\"Expanded Query:\", expanded_query)",
+    "questions": [
+      "What is the purpose of the script and what tasks does it perform?",
+      "How do I download the required NLTK data files if they're not already downloaded?",
+      "Can you explain why you've used certain NLTK functions (e.g. `punkt`, `stopwords`, `wordnet`) in this script?",
+      "How does the `preprocess_query` function handle punctuation and numbers in a query string?",
+      "What is the difference between the original tokens, the preprocessed tokens, and the expanded tokens?",
+      "Can you provide an example of how to use the `query_expansion` function to expand synonyms for a given token?",
+      "Why are stopwords removed from the token list before lemmatization? Is there a specific reason or a predefined rule?",
+      "How does the script handle case sensitivity when working with queries and tokens?",
+      "Can you explain why duplicates in the expanded tokens set are being removed using `set(expanded_tokens)`?",
+      "What is the purpose of the final `print` statement that prints the \"Expanded Query\" value?"
+    ]
+  }
+]

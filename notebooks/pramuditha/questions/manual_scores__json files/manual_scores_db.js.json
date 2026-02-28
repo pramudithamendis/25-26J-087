@@ -1,0 +1,49 @@
+{
+  "db.js": [
+    {
+      "question": "What does this code do?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Where does it connect to?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does it handle multiple connections at once?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What happens if I don't have a database or user?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are there special variables (host, password) for credentials?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    }
+  ]
+}

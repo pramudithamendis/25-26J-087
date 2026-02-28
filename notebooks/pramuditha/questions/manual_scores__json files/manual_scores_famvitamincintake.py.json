@@ -1,0 +1,85 @@
+{
+  "famvitamincintake.py": [
+    {
+      "question": "\"What is the purpose of the linprog function from scipy.optimize?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the 'method' parameter affect the optimization process?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you explain the significance of the bounds argument in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What are the differences between LHS and RHS in the constraint inequalities?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Why did you choose 'highs' as the optimization method instead of another option?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the role of A_ub, b_ub, and bounds in linprog?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the coefficient matrix lhs_ineq influence the optimal solution?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Can you provide examples or explanations for other potential objective functions?\",",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 2,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"Are there any limitations or edge cases in this code that I should be aware of?\"",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 5,
+        "clarity": 5
+      }
+    }
+  ]
+}

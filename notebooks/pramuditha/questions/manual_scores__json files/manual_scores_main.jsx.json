@@ -1,0 +1,40 @@
+{
+  "main.jsx": [
+    {
+      "question": "What is React being used for in this JSX file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does this set up routing with React Router?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What CSS files are included in this project and how do they style the application?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 2,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "Why is a StrictMode component imported from react?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    }
+  ]
+}

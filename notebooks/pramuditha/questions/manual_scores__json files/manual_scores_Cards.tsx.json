@@ -1,0 +1,94 @@
+{
+  "Cards.tsx": [
+    {
+      "question": "What is the purpose of the `useEffect` hook in this example?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `formatValue` function handle null or undefined values?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the difference between using `key` as a string and an array in JSX?",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 2,
+        "Depth": 2,
+        "clarity": 3
+      }
+    },
+    {
+      "question": "Can you explain why the `selectedCategory` state is used to filter the cards, and how it's updated?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `categories` and `filteredMetrics` functions work together to display the data?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "What is the meaning of `metrics.map((metric, i) => {...})` in the Cards component?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are there multiple `select` options for the category filter? Is it a bug or an intentional design choice?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you provide more context about the API endpoint \"http://localhost:3000/api/cards\" and what data it returns?",
+      "scores": {
+        "Relevance": 3,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the purpose of the `loading` state in the Cards component, and how does it affect the rendering of the page?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How do you handle errors or unexpected responses from the API when using this code?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 4
+      }
+    }
+  ]
+}

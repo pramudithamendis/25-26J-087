@@ -1,0 +1,40 @@
+{
+  "App.jsx": [
+    {
+      "question": "What are the import statements for this file?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 1,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are there four different imports (`reactLogo`, `viteLogo`) instead of one, and where do they come from?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 4,
+        "clarity": 3
+      }
+    },
+    {
+      "question": "What is the purpose of the React Router components (`Routes` and `Route`) in this context?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does this App component interact with other components (e.g. Cards, Tables, Charts) that are imported elsewhere?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    }
+  ]
+}

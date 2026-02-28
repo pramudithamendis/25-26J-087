@@ -1,0 +1,76 @@
+{
+  "preprocess_documents.py": [
+    {
+      "question": "* What is the purpose of the `extract_text_from_pdfs` function?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* How does this function extract text from PDF files in the specified folder path?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* Why are punctuation removed from the extracted text?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* What steps are taken to prevent numbers from being included as tokens after tokenization?",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* Can you explain the role of the `lemmatizer` and how it affects the final preprocessed text?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* How many words up to 100 are saved in a snippet for each document?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* What is the purpose of saving snippets and doc_snippets.pkl files?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "* Why is this code useful, and what problems might it solve?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 5,
+        "clarity": 5
+      }
+    }
+  ]
+}

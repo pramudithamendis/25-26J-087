@@ -1,0 +1,94 @@
+{
+  "query_processing.py": [
+    {
+      "question": "What is the purpose of the script and what tasks does it perform?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How do I download the required NLTK data files if they're not already downloaded?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain why you've used certain NLTK functions (e.g. `punkt`, `stopwords`, `wordnet`) in this script?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the `preprocess_query` function handle punctuation and numbers in a query string?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the difference between the original tokens, the preprocessed tokens, and the expanded tokens?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you provide an example of how to use the `query_expansion` function to expand synonyms for a given token?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Why are stopwords removed from the token list before lemmatization? Is there a specific reason or a predefined rule?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "How does the script handle case sensitivity when working with queries and tokens?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "Can you explain why duplicates in the expanded tokens set are being removed using `set(expanded_tokens)`?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "What is the purpose of the final `print` statement that prints the \"Expanded Query\" value?",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    }
+  ]
+}

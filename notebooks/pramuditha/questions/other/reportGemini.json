@@ -1,0 +1,118 @@
+[
+  {
+    "file": "calculator.py",
+    "average_score": 12.0,
+    "questions": [
+      {
+        "question": "What does each function (add, subtract, multiply, divide) do?",
+        "rule_score": {
+          "relevance": 3,
+          "specificity": 4,
+          "depth": 1,
+          "clarity": 4
+        },
+        "llm_score": {
+          "relevance": 3,
+          "specificity": 3,
+          "depth": 3,
+          "clarity": 3
+        },
+        "final_score": {
+          "relevance": 3.0,
+          "specificity": 3.4,
+          "depth": 2.2,
+          "clarity": 3.4,
+          "total": 12.0
+        }
+      },
+      {
+        "question": "How does the code handle division by zero?",
+        "rule_score": {
+          "relevance": 3,
+          "specificity": 4,
+          "depth": 1,
+          "clarity": 4
+        },
+        "llm_score": {
+          "relevance": 3,
+          "specificity": 3,
+          "depth": 3,
+          "clarity": 3
+        },
+        "final_score": {
+          "relevance": 3.0,
+          "specificity": 3.4,
+          "depth": 2.2,
+          "clarity": 3.4,
+          "total": 12.0
+        }
+      },
+      {
+        "question": "Can I use these functions with negative numbers?",
+        "rule_score": {
+          "relevance": 3,
+          "specificity": 4,
+          "depth": 1,
+          "clarity": 4
+        },
+        "llm_score": {
+          "relevance": 3,
+          "specificity": 3,
+          "depth": 3,
+          "clarity": 3
+        },
+        "final_score": {
+          "relevance": 3.0,
+          "specificity": 3.4,
+          "depth": 2.2,
+          "clarity": 3.4,
+          "total": 12.0
+        }
+      },
+      {
+        "question": "Are there any limits on how close two numbers can be for a given operation?",
+        "rule_score": {
+          "relevance": 3,
+          "specificity": 4,
+          "depth": 1,
+          "clarity": 4
+        },
+        "llm_score": {
+          "relevance": 3,
+          "specificity": 3,
+          "depth": 3,
+          "clarity": 3
+        },
+        "final_score": {
+          "relevance": 3.0,
+          "specificity": 3.4,
+          "depth": 2.2,
+          "clarity": 3.4,
+          "total": 12.0
+        }
+      },
+      {
+        "question": "How do the error messages work when dividing by zero?",
+        "rule_score": {
+          "relevance": 3,
+          "specificity": 4,
+          "depth": 1,
+          "clarity": 4
+        },
+        "llm_score": {
+          "relevance": 3,
+          "specificity": 3,
+          "depth": 3,
+          "clarity": 3
+        },
+        "final_score": {
+          "relevance": 3.0,
+          "specificity": 3.4,
+          "depth": 2.2,
+          "clarity": 3.4,
+          "total": 12.0
+        }
+      }
+    ]
+  }
+]

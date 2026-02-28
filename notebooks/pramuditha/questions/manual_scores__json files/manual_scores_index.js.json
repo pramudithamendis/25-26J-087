@@ -1,0 +1,94 @@
+{
+  "index.js": [
+    {
+      "question": "\"What is the purpose of the '/api/cards' endpoint?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 3,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the code handle authentication? (e.g., user password)\",",
+      "scores": {
+        "Relevance": 2,
+        "Specificity": 3,
+        "Depth": 2,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you explain the use of MySQL2/promise library?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What is the difference between 'cumulative' and non-cumulative queries?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How are cumulative queries implemented in this code?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"What are the available table names for /api/tables endpoint?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 3,
+        "Depth": 3,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"How does the code handle table name query parameter (e.g., ?table_name)\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"Can you provide an example of how to modify the buildQuery_cumulative function to retrieve data from a specific table?\",",
+      "scores": {
+        "Relevance": 4,
+        "Specificity": 4,
+        "Depth": 4,
+        "clarity": 4
+      }
+    },
+    {
+      "question": "\"What is the purpose of the 'distinct_col' variable in the buildQuery_cumulative function?\",",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 5,
+        "clarity": 5
+      }
+    },
+    {
+      "question": "\"How does the code handle errors and logging in the /api/tables endpoint?\"",
+      "scores": {
+        "Relevance": 5,
+        "Specificity": 5,
+        "Depth": 4,
+        "clarity": 5
+      }
+    }
+  ]
+}
