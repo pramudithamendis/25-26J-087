@@ -81,3 +81,42 @@ pytrends==4.9.2
 
 # schedule
 apscheduler==3.11.2
+
+# ML / AI
+catboost==1.2.8
+lightgbm==4.1.0
+scikit-learn==1.7.2
+scipy==1.16.3
+shap==0.50.0
+xgboost==3.1.2
+joblib==1.5.2
+numba==0.63.1
+llvmlite==0.46.0
+torch==2.9.1
+torchvision==0.24.1
+transformers==4.57.3
+safetensors==0.7.0
+tokenizers==0.22.1
+huggingface-hub==0.36.0
+
+# NLP
+spacy==3.8.11
+spacy-legacy==3.0.12
+spacy-loggers==1.0.5
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
+nltk==3.9.2
+rapidfuzz==3.5.2
+
+# Data/Visualization
+matplotlib==3.10.7
+plotly==6.5.0
+interpret-core==0.7.3
+graphviz==0.21
+
+# Async/HTTP
+aiohttp==3.9.1
+motor==3.3.2
+httpx==0.28.1
+
+# Geocoding/Maps
+geopy
