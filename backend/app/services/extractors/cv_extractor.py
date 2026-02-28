@@ -276,3 +276,27 @@ def extract_github_handle(full_text: str) -> str:
     
     return ""
 
+def extract_handle_from_url(github_url: str) -> str:
+    """
+    Extract GitHub handle from GitHub URL.
+    
+    Args:
+        github_url: GitHub URL (e.g., "https://github.com/username" or "github.com/username")
+    
+    Returns:
+        GitHub handle/username or empty string
+    """
+    if not github_url or not github_url.strip():
+        return ""
+    
+    github_url = github_url.strip()
+    
+    # Pattern: github.com/username or github.com/username/
+    # Handles: https://github.com/username, http://github.com/username, github.com/username, www.github.com/username
+    github_url_pattern = r'github\.com[/:]([a-zA-Z0-9]([a-zA-Z0-9]|-(?![.-])){0,38})'
+    match = re.search(github_url_pattern, github_url, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    
+    return ""
+

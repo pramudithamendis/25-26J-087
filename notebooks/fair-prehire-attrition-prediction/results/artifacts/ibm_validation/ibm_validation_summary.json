@@ -1,0 +1,27 @@
+{
+  "model_tested": "Calibrated Ensemble",
+  "dataset": {
+    "name": "IBM HR Analytics Attrition Dataset",
+    "size": 1470,
+    "test_size": 294
+  },
+  "ibm_baseline": {
+    "f1_macro": 0.3574495560936239,
+    "accuracy": 0.8231292517006803,
+    "description": "Random Forest trained directly on IBM data"
+  },
+  "your_model_transfer": {
+    "f1_macro": 0.3467138921684376,
+    "accuracy": 0.7768707482993197,
+    "description": "Calibrated Ensemble tested on IBM data (zero-shot)"
+  },
+  "performance_comparison": {
+    "f1_difference": 0.010735663925186267,
+    "f1_difference_percent": 3.0034067023360245,
+    "accuracy_difference": 0.04625850340136062
+  },
+  "generalization": {
+    "status": "excellent",
+    "threshold_met": true
+  }
+}

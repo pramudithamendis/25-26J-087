@@ -1,0 +1,13 @@
+{
+  "selection_rate": {
+    "No Gap": 0.31954887218045114,
+    "With Gap": 0.3161764705882353
+  },
+  "demographic_parity_difference": 0.0033724015922158568,
+  "equalized_odds_difference": 0.007677902621722854,
+  "interpretation": "acceptable",
+  "sample_sizes": {
+    "No Gap": 1064,
+    "With Gap": 136
+  }
+}

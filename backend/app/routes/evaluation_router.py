@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from bson import ObjectId
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 import logging
 
 from app.models.evaluation_model import evaluations_collection
-from app.models.candidate_model import candidates_collection
+from app.models.user_model import users_collection
 from app.schemas.evaluation_schema import EvaluationRequest, EvaluationResponse
 from app.auth.dependencies import get_current_user, get_admin_user
 from app.services.orchestrator import run_evaluation
@@ -15,6 +15,8 @@ from app.services.judge import judge_candidate
 from app.services.critic import critic_review
 from app.services.aggregator import aggregate_scores
 from app.services.role_classifier import classify_roles
+from app.services.agents.orchestrator_agent import AgenticOrchestrator
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +73,38 @@ def build_github_summary(github_info: Dict) -> str:
     return ", ".join(parts)
 
 
-def determine_decision(total_score: int) -> str:
-    """Determine decision based on score thresholds"""
-    if total_score >= 75:
+def determine_decision(
+    total_score: int,
+    role_predictions: Optional[List[Dict]] = None,
+    job_title: Optional[str] = None
+) -> str:
+    """
+    Determine decision based on score thresholds, with optional role match adjustments.
+    
+    Args:
+        total_score: Total evaluation score
+        role_predictions: Optional list of predicted roles
+        job_title: Optional job title for role matching
+    
+    Returns:
+        Decision string: "Selected", "Review", or "Not Selected"
+    """
+    # Default thresholds
+    selected_threshold = 70
+    review_threshold = 60
+    
+    # Adjust thresholds based on role match if available
+    if role_predictions and job_title:
+        from app.utils.role_matcher import calculate_role_match, get_adjusted_threshold
+        
+        role_match = calculate_role_match(job_title, role_predictions)
+        thresholds = get_adjusted_threshold(total_score, role_match, selected_threshold, review_threshold)
+        selected_threshold = thresholds["selected_threshold"]
+        review_threshold = thresholds["review_threshold"]
+    
+    if total_score >= selected_threshold:
         return "Selected"
-    elif total_score >= 60:
+    elif total_score >= review_threshold:
         return "Review"
     else:
         return "Not Selected"
@@ -113,6 +142,22 @@ def generate_explanations(
     if role_predictions:
         top_role = role_predictions[0]
         explanations.append(f"Best fit: {top_role['role']} ({top_role['similarity']*100:.0f}% match)")
+        
+        # Add role match bonus explanation if applicable
+        role_match_bonus = breakdown.get("role_match_bonus", 0)
+        if role_match_bonus != 0:
+            job_title = jd_info.get("title", "")
+            if job_title:
+                from app.utils.role_matcher import calculate_role_match
+                role_match = calculate_role_match(job_title, role_predictions)
+                match_type = role_match.get("match_type", "")
+                
+                if match_type == "overqualified" and role_match_bonus > 0:
+                    explanations.append(f"Strong role match: Predicted as {top_role['role']} (overqualified for {job_title}) - bonus applied")
+                elif match_type == "exact_match" and role_match_bonus > 0:
+                    explanations.append(f"Exact role match: Predicted role aligns with job title - bonus applied")
+                elif match_type == "underqualified" and role_match_bonus < 0:
+                    explanations.append(f"Role mismatch: Predicted role level below job requirements")
     
     # Check breakdown highlights
     if breakdown.get("semantic_fit", 0) > 20:
@@ -125,7 +170,7 @@ def generate_explanations(
         explanations.append("Active GitHub profile with relevant contributions")
     
     # Add score context
-    if total_score >= 75:
+    if total_score >= 70:
         explanations.append("High overall score - strong candidate")
     elif total_score >= 60:
         explanations.append("Moderate score - requires review")
@@ -138,7 +183,7 @@ def generate_explanations(
 @router.post("/evaluate", response_model=EvaluationResponse, status_code=status.HTTP_200_OK)
 async def evaluate_candidate(
     request: EvaluationRequest,
-    admin_user = Depends(get_admin_user)
+    current_user = Depends(get_current_user)
 ):
     """
     Run full evaluation pipeline for a candidate against a job (Admin-only)
@@ -156,14 +201,14 @@ async def evaluate_candidate(
     10. Return complete evaluation result
     """
     try:
-        candidate_id = request.candidate_id
+        user_id = request.user_id
         job_id = request.job_id
         
         # Validate ObjectId formats
-        if not ObjectId.is_valid(candidate_id):
+        if not ObjectId.is_valid(user_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid candidate ID format"
+                detail="Invalid user ID format"
             )
         if not ObjectId.is_valid(job_id):
             raise HTTPException(
@@ -171,17 +216,45 @@ async def evaluate_candidate(
                 detail="Invalid job ID format"
             )
         
-        # Verify candidate exists
-        candidate = candidates_collection.find_one({"_id": ObjectId(candidate_id)})
-        if not candidate:
+        # Verify user exists
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Candidate {candidate_id} not found"
+                detail=f"User {user_id} not found"
             )
         
-        # Step 1: Run orchestrator to get merged JSON
-        logger.info(f"Starting evaluation pipeline for candidate {candidate_id} and job {job_id}")
-        merged_json = run_evaluation(candidate_id, job_id)
+        # Step 1: Run orchestrator (agentic or pipeline based on config)
+        logger.info(f"Starting evaluation for user {user_id} and job {job_id}")
+        
+        if settings.USE_AGENTIC_EVALUATION:
+            logger.info("Using agentic evaluation system")
+            orchestrator = AgenticOrchestrator()
+            evaluation_result = orchestrator.run_agentic_evaluation(user_id, job_id)
+            
+            # Save to evaluations collection
+            evaluation_doc = {
+                "user_id": user_id,
+                "job_id": job_id,
+                "pipeline_output": evaluation_result.get("raw_pipeline", {}),
+                "total_score": evaluation_result.get("total_score", 0),
+                "decision": evaluation_result.get("decision", "Not Selected"),
+                "role_predictions": evaluation_result.get("role_predictions", []),
+                "status": "completed",
+                "created_at": datetime.utcnow().isoformat() + "Z",
+                "agentic": True,
+                "iterations": evaluation_result.get("iterations", 0)
+            }
+            
+            result = evaluations_collection.insert_one(evaluation_doc)
+            evaluation_result["_id"] = str(result.inserted_id)
+            evaluation_result["created_at"] = evaluation_doc["created_at"]
+            
+            return EvaluationResponse(**evaluation_result)
+        
+        # Fallback to pipeline
+        logger.info("Using pipeline evaluation system")
+        merged_json = run_evaluation(user_id, job_id)
         
         # Step 2: Normalize skills
         candidate_data = merged_json.get("candidate", {})
@@ -193,9 +266,13 @@ async def evaluate_candidate(
         # Create candidate profile text block
         candidate_block = build_candidate_profile_text(merged_json)
         jd_block = merged_json.get("job_description", {}).get("jd_text", "")
+        if not jd_block:
+            logger.warning(f"JD text is empty! Job description keys: {list(merged_json.get('job_description', {}).keys())}")
         github_summary = build_github_summary(candidate_data.get("github", {}))
         
+        logger.info(f"Building semantic features: candidate_block length={len(candidate_block)}, jd_block length={len(jd_block)}")
         semantic_features = build_semantic_features(candidate_block, jd_block, github_summary)
+        logger.info(f"Semantic features computed: {semantic_features}")
         merged_json["semantic_features"] = semantic_features
         
         # Step 4: Judge candidate
@@ -207,10 +284,16 @@ async def evaluate_candidate(
         merged_json["critic_scores"] = critic_output.get("judge_scores", [])
         
         # Step 6: Aggregate scores
+        github_info = candidate_data.get("github", {})
+        if not github_info:
+            logger.warning("GitHub info is missing from candidate data")
+        else:
+            logger.debug(f"GitHub info for aggregation: repos={len(github_info.get('repos', []))}, commits={github_info.get('commits_last_12m', 0)}, prs={github_info.get('external_prs_merged', 0)}")
+        
         aggregated = aggregate_scores(
             semantic_features,
             judge_output,
-            candidate_data.get("github", {}),
+            github_info,
             candidate_data.get("experience", []),
             merged_json
         )
@@ -227,7 +310,7 @@ async def evaluate_candidate(
         
         # Build final evaluation result
         evaluation_result = {
-            "candidate_id": candidate_id,
+            "user_id": user_id,
             "job_id": job_id,
             "total_score": total_score,
             "decision": decision,
@@ -239,12 +322,13 @@ async def evaluate_candidate(
         
         # Step 9: Save to evaluations collection
         evaluation_doc = {
-            "candidate_id": candidate_id,
+            "user_id": user_id,
             "job_id": job_id,
             "pipeline_output": merged_json,
             "total_score": total_score,
             "decision": decision,
             "role_predictions": role_predictions,
+            "breakdown": breakdown,
             "status": "completed",
             "created_at": datetime.utcnow().isoformat() + "Z"
         }
@@ -299,32 +383,41 @@ async def get_evaluation(
         # Build response from stored evaluation
         pipeline_output = evaluation.get("pipeline_output", {})
         
-        # Extract breakdown from pipeline_output if available
-        breakdown = {}
-        if pipeline_output:
-            # Try to reconstruct breakdown from stored data
-            semantic_features = pipeline_output.get("semantic_features", {})
-            candidate_data = pipeline_output.get("candidate", {})
-            github_info = candidate_data.get("github", {})
-            experience_info = candidate_data.get("experience", [])
-            judge_scores = pipeline_output.get("judge_scores", [])
-            
-            # Reconstruct breakdown by re-running aggregator logic
-            if semantic_features and judge_scores:
-                try:
-                    # Re-run aggregator to get breakdown
-                    judge_output = {"judge_scores": judge_scores}
-                    aggregated = aggregate_scores(
-                        semantic_features,
-                        judge_output,
-                        github_info,
-                        experience_info,
-                        pipeline_output
-                    )
-                    breakdown = aggregated.get("breakdown", {})
-                except Exception as e:
-                    logger.warning(f"Could not reconstruct breakdown: {str(e)}")
-                    breakdown = {}
+        # First, try to get breakdown directly from the evaluation document
+        breakdown = evaluation.get("breakdown", {})
+        
+        # If breakdown is not stored, try to reconstruct from pipeline_output
+        if not breakdown or len(breakdown) == 0:
+            if pipeline_output:
+                # Try to get breakdown from aggregated_score in pipeline_output
+                aggregated_score = pipeline_output.get("aggregated_score", {})
+                if aggregated_score and isinstance(aggregated_score, dict):
+                    breakdown = aggregated_score.get("breakdown", {})
+                
+                # If still no breakdown, try to reconstruct it
+                if not breakdown or len(breakdown) == 0:
+                    semantic_features = pipeline_output.get("semantic_features", {})
+                    candidate_data = pipeline_output.get("candidate", {})
+                    github_info = candidate_data.get("github", {})
+                    experience_info = candidate_data.get("experience", [])
+                    judge_scores = pipeline_output.get("judge_scores", [])
+                    
+                    # Reconstruct breakdown by re-running aggregator logic
+                    if semantic_features and judge_scores:
+                        try:
+                            # Re-run aggregator to get breakdown
+                            judge_output = {"judge_scores": judge_scores}
+                            aggregated = aggregate_scores(
+                                semantic_features,
+                                judge_output,
+                                github_info,
+                                experience_info,
+                                pipeline_output
+                            )
+                            breakdown = aggregated.get("breakdown", {})
+                        except Exception as e:
+                            logger.warning(f"Could not reconstruct breakdown: {str(e)}")
+                            breakdown = {}
         
         # Generate why explanations
         why = []
@@ -343,7 +436,7 @@ async def get_evaluation(
         
         evaluation_result = {
             "_id": str(evaluation["_id"]),
-            "candidate_id": evaluation.get("candidate_id", ""),
+            "user_id": evaluation.get("user_id", evaluation.get("candidate_id", "")),  # Support both for migration
             "job_id": evaluation.get("job_id", ""),
             "total_score": evaluation.get("total_score", 0),
             "decision": evaluation.get("decision", "Not Selected"),
@@ -364,4 +457,79 @@ async def get_evaluation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting evaluation: {str(e)}"
         )
+
+
+@router.post("/evaluate/agentic", response_model=EvaluationResponse, status_code=status.HTTP_200_OK)
+async def evaluate_candidate_agentic(
+    request: EvaluationRequest,
+    admin_user = Depends(get_admin_user)
+):
+    """
+    Run agentic evaluation for a candidate against a job (Admin-only)
+    
+    Uses agentic AI system with dynamic workflow instead of fixed pipeline.
+    """
+    try:
+        user_id = request.user_id
+        job_id = request.job_id
+        
+        # Validate ObjectId formats
+        if not ObjectId.is_valid(user_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user ID format"
+            )
+        if not ObjectId.is_valid(job_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid job ID format"
+            )
+        
+        # Verify user exists
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User {user_id} not found"
+            )
+        
+        logger.info(f"Starting agentic evaluation for user {user_id} and job {job_id}")
+        orchestrator = AgenticOrchestrator()
+        evaluation_result = orchestrator.run_agentic_evaluation(user_id, job_id)
+        
+        # Save to evaluations collection
+        evaluation_doc = {
+            "user_id": user_id,
+            "job_id": job_id,
+            "pipeline_output": evaluation_result.get("raw_pipeline", {}),
+            "total_score": evaluation_result.get("total_score", 0),
+            "decision": evaluation_result.get("decision", "Not Selected"),
+            "role_predictions": evaluation_result.get("role_predictions", []),
+            "status": "completed",
+            "created_at": datetime.utcnow().isoformat() + "Z",
+            "agentic": True,
+            "iterations": evaluation_result.get("iterations", 0)
+        }
+        
+        result = evaluations_collection.insert_one(evaluation_doc)
+        evaluation_result["_id"] = str(result.inserted_id)
+        evaluation_result["created_at"] = evaluation_doc["created_at"]
+        
+        return EvaluationResponse(**evaluation_result)
+    
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Value error in agentic evaluation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error running agentic evaluation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error running agentic evaluation: {str(e)}"
+        )
+
 
