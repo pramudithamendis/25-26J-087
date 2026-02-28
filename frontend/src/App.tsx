@@ -21,10 +21,10 @@ import { JobApplicantsPage } from './pages/admin/JobApplicantsPage';
 import { JobApplicantDetailPage } from './pages/admin/JobApplicantDetailPage';
 import { AdminTrendScorePage } from './pages/admin/AdminTrendScorePage'
 import CVUpload from './components/cv/CVUpload';
-import TurnoverDashboard from './components/turnover/TurnoverDashboard';
 import TurnoverHistoryPage from './components/turnover/TurnoverHistoryPage';
 import TurnoverResultsView from './components/turnover/TurnoverResultsView';
 import TurnoverNewPrediction from './components/turnover/TurnoverNewPrediction';
+import LocationSettings from './components/locations/LocationSettings';
 import './App.css';
 
 function App() {
@@ -239,6 +239,16 @@ function App() {
               <AdminRoute>
                 <DashboardLayout>
                   <TurnoverNewPrediction />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/locations"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <LocationSettings />
                 </DashboardLayout>
               </AdminRoute>
             }
