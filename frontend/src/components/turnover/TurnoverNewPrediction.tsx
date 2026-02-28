@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Briefcase, Search, MapPin, CheckCircle2, ChevronRight, ArrowLeft, Loader2, History, FileText, UserCheck } from 'lucide-react';
+import { User, Briefcase, Search, MapPin, CheckCircle2, ChevronRight, ArrowLeft, Loader2, History, FileText, UserCheck, ChevronDown } from 'lucide-react';
 import apiClient from '../../config/api';
 import './TurnoverNewPrediction.css';
 import { Button } from '../Button';
@@ -27,6 +27,7 @@ const TurnoverNewPrediction: React.FC = () => {
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [jobLocation, setJobLocation] = useState('');
@@ -41,6 +42,7 @@ const TurnoverNewPrediction: React.FC = () => {
   useEffect(() => {
     fetchCandidates();
     fetchJobs();
+    fetchLocations();
   }, []);
 
   // Auto-fill location when job is selected
@@ -53,6 +55,15 @@ const TurnoverNewPrediction: React.FC = () => {
       }
     }
   }, [selectedJob]);
+
+  const fetchLocations = async () => {
+    try {
+      const res = await apiClient.get('/locations');
+      setLocations((res.data.locations || []).map((l: any) => l.name));
+    } catch {
+      // fallback gracefully
+    }
+  };
 
   const fetchCandidates = async () => {
     try {
@@ -100,7 +111,7 @@ const TurnoverNewPrediction: React.FC = () => {
       formData.append('cv_id', selectedCandidate._id);
       formData.append('job_description', selectedJob.jd_text);
       formData.append('job_location', jobLocation.trim());
-      formData.append('job_title', selectedJob.title); 
+      formData.append('job_title', selectedJob.title);
 
       const res = await apiClient.post('/turnover/predict', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -153,7 +164,7 @@ const TurnoverNewPrediction: React.FC = () => {
           Back to History
         </Button>
         <div className="tnp-header-text">
-          <h1>New Turnover Risk Assessment</h1>
+          <h1>New Retention Risk Assessment</h1>
           <p>Select a candidate and job to assess retention risk</p>
         </div>
       </div>
@@ -290,7 +301,7 @@ const TurnoverNewPrediction: React.FC = () => {
             <CheckCircle2 size={20} className="tnp-card-icon tnp-card-icon-green" />
             <h2>Confirm & Assess</h2>
           </div>
-          <p className="tnp-subtitle">Review your selections and enter the job location</p>
+          <p className="tnp-subtitle">Review your selections and choose the job location</p>
 
           <div className="tnp-summary">
             <div className="tnp-summary-item">
@@ -322,14 +333,30 @@ const TurnoverNewPrediction: React.FC = () => {
                 <span className="tnp-remote-badge">Auto-filled: Remote</span>
               )}
             </label>
-            <input
-              className={`tnp-location-input ${remote ? 'tnp-input-disabled' : ''}`}
-              placeholder="e.g. Colombo, Sri Lanka"
-              value={jobLocation}
-              onChange={e => !remote && setJobLocation(e.target.value)}
-              readOnly={remote}
-            />
-            {!remote && <small>Enter the work location for this position</small>}
+
+            {remote ? (
+              <input
+                className="tnp-location-input tnp-input-disabled"
+                value="Remote"
+                readOnly
+              />
+            ) : (
+              <div className="tnp-select-wrapper">
+                <select
+                  className="tnp-location-select"
+                  value={jobLocation}
+                  onChange={e => setJobLocation(e.target.value)}
+                  disabled={predicting}
+                >
+                  <option value="">Select office location...</option>
+                  {locations.filter(l => l !== 'Remote').map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="tnp-select-arrow" />
+              </div>
+            )}
+            {!remote && <small>Select the office location for this position</small>}
           </div>
 
           <button
@@ -340,7 +367,7 @@ const TurnoverNewPrediction: React.FC = () => {
             {predicting ? (
               <><Loader2 size={18} className="tnp-spin" />Analysing...</>
             ) : (
-              'Assess Turnover Risk'
+              'Assess Retention Risk'
             )}
           </button>
         </div>

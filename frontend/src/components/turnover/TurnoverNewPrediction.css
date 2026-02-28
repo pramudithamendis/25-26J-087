@@ -432,6 +432,47 @@
   font-size: 0.875rem;
 }
 
+.tnp-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.tnp-location-select {
+  width: 100%;
+  height: 42px;
+  padding: 0 2rem 0 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.tnp-location-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.tnp-location-select:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.tnp-select-arrow {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .tnp-stepper {
