@@ -63,6 +63,7 @@ export interface ApplicationDetailResponse {
     _id?: string;
     title?: string;
     jd_text?: string;
+    location?: string;
     created_at?: string;
   };
 }
