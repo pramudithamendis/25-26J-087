@@ -381,6 +381,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
             jobId={application.job._id ?? ""}
             jobDescription={application.job.jd_text ?? ""}
             jobTitle={application.job.title ?? ""}
+            jobLocation={application.job.location ?? ""}
             evaluationDecision={evaluation?.decision}
           />
         )}
