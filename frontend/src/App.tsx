@@ -30,7 +30,7 @@ import TurnoverHistoryPage from './components/turnover/TurnoverHistoryPage';
 import TurnoverResultsView from './components/turnover/TurnoverResultsView';
 import TurnoverNewPrediction from './components/turnover/TurnoverNewPrediction';
 import LocationSettings from './components/locations/LocationSettings';
-import './App.css';
+
 function App() {
   return (
     <BrowserRouter>

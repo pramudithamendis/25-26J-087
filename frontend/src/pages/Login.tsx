@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Input } from '../components/Input';
@@ -8,7 +8,7 @@ import { Alert } from '../components/Alert';
 export const Login = () => {
   const navigate = useNavigate();
   const { login, error, clearError, loading } = useAuth();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formErrors, setFormErrors] = useState<{
@@ -50,18 +50,18 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md sm:max-w-lg lg:max-w-xl space-y-8">
         <div className="text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             Welcome Back
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm sm:text-base">
             Sign in to your account to continue
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-100">
           {error && (
             <Alert type="error" onClose={clearError} className="mb-6">
               {error}
@@ -116,7 +116,7 @@ export const Login = () => {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <Link
                 to="/register"
                 className="font-medium text-blue-600 hover:text-blue-700"
