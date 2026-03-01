@@ -91,7 +91,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
 
         {/* Certainty */}
         <p className="confidence">
-          Model Certainty: <strong>{getModelCertainty(pred.confidence)}</strong>
+          Assessment Confidence: <strong>{getModelCertainty(pred.confidence)}</strong>
         </p>
 
         {/* Recommendation */}
@@ -106,60 +106,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
         </div>
 
         {/* Probability Breakdown */}
-        <div className="likelihood-section">
-          <h4>How Long Will They Stay?</h4>
-          <div className="probability-grid">
-
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Leaves within 6 months</span>
-                <span className="prob-confidence-label">
-                  {getLikelihoodLabel(pred.probabilities.high_risk)}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{ width: `${(pred.probabilities.high_risk * 100).toFixed(0)}%` }}
-                />
-              </div>
-              <span className="prob-percent">{(pred.probabilities.high_risk * 100).toFixed(0)}%</span>
-            </div>
-
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Leaves within 6–12 months</span>
-                <span className="prob-confidence-label">
-                  {getLikelihoodLabel(pred.probabilities.medium_risk)}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{ width: `${(pred.probabilities.medium_risk * 100).toFixed(0)}%` }}
-                />
-              </div>
-              <span className="prob-percent">{(pred.probabilities.medium_risk * 100).toFixed(0)}%</span>
-            </div>
-
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Stays more than 1 year</span>
-                <span className="prob-confidence-label">
-                  {getLikelihoodLabel(pred.probabilities.low_risk)}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{ width: `${(pred.probabilities.low_risk * 100).toFixed(0)}%` }}
-                />
-              </div>
-              <span className="prob-percent">{(pred.probabilities.low_risk * 100).toFixed(0)}%</span>
-            </div>
-
-          </div>
-        </div>
+        
       </div>
 
       {/* Strengths & Concerns */}
