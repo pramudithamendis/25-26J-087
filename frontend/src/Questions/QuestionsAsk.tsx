@@ -42,7 +42,7 @@ const QuestionsAsk: React.FC = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       setQuestions(response.data.questions);
@@ -58,38 +58,82 @@ const QuestionsAsk: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-100">
-      <h1 className="text-2xl font-bold mb-4">Generate Questions</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-6">
+        {/* Title */}
+        <h1 className="text-3xl font-bold text-center text-gray-800">Generate Questions</h1>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-6 rounded shadow">
-        <div className="mb-4">
-          <label className="block mb-1 font-semibold">Username:</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full border px-3 py-2 rounded" required />
-        </div>
+        {/* Form Card */}
+        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg space-y-5">
+          {/* Username */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full border border-gray-300 px-4 py-2 rounded-lg 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500
+                       transition"
+              placeholder="e.g. octocat"
+              required
+            />
+          </div>
 
-        <div className="mb-4">
-          <label className="block mb-1 font-semibold">Repository Name:</label>
-          <input type="text" value={repoName} onChange={(e) => setRepoName(e.target.value)} className="w-full border px-3 py-2 rounded" required />
-        </div>
+          {/* Repository Name */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Repository Name</label>
+            <input
+              type="text"
+              value={repoName}
+              onChange={(e) => setRepoName(e.target.value)}
+              className="w-full border border-gray-300 px-4 py-2 rounded-lg 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500
+                       transition"
+              placeholder="e.g. my-project"
+              required
+            />
+          </div>
 
-        <div className="mb-4">
-          <label className="block mb-1 font-semibold">Filename:</label>
-          <input type="text" value={filename} onChange={(e) => setFilename(e.target.value)} className="w-full border px-3 py-2 rounded" required />
-        </div>
+          {/* Filename */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Filename</label>
+            <input
+              type="text"
+              value={filename}
+              onChange={(e) => setFilename(e.target.value)}
+              className="w-full border border-gray-300 px-4 py-2 rounded-lg 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500
+                       transition"
+              placeholder="e.g. README.md"
+              required
+            />
+          </div>
 
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition" disabled={loading}>
-          {loading ? "Generating..." : "Generate Questions"}
-        </button>
-      </form>
+          {/* Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 rounded-lg font-semibold text-white
+                     bg-blue-600 hover:bg-blue-700
+                     disabled:bg-gray-400 disabled:cursor-not-allowed
+                     transition duration-200"
+          >
+            {loading ? "Generating..." : "Generate Questions"}
+          </button>
+        </form>
 
-      {error && <p className="text-red-600 mt-4">{error}</p>}
+        {/* Error */}
+        {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-      {questions && (
-        <div className="mt-6 w-full max-w-md bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-2">Generated Questions:</h2>
-          <pre className="whitespace-pre-wrap">{questions}</pre>
-        </div>
-      )}
+        {/* Questions Card */}
+        {questions && (
+          <div className="bg-white p-6 rounded-2xl shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Generated Questions</h2>
+            <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">{questions}</pre>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
