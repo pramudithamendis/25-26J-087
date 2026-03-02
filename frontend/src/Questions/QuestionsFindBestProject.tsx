@@ -85,56 +85,98 @@ const QuestionsFindBestProject: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>Project Matcher</h1>
+    <div className="min-h-screen bg-gray-100 p-6 flex justify-center">
+      <div className="w-full max-w-3xl bg-white shadow-xl rounded-2xl p-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Project Matcher</h1>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: "2rem" }}>
-        <div style={{ marginBottom: "1rem" }}>
-          <label>
-            Username: <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
-          </label>
-        </div>
-
-        <div style={{ marginBottom: "1rem" }}>
-          <label>
-            Job Description: <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} rows={5} cols={50} required />
-          </label>
-        </div>
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Matching..." : "Find Best Project"}
-        </button>
-      </form>
-
-      {error && <div style={{ color: "red" }}>{error}</div>}
-
-      {result && (
-        <div>
-          <h2>Best Project</h2>
-          <div style={{ border: "1px solid #ccc", padding: "1rem", marginBottom: "2rem" }}>
-            <h3>{result.best_project.repo}</h3>
-            <p>{result.best_project.readme}</p>
-            <p>
-              Score: {result.best_project.score} |{" "}
-              <a href={result.best_project.github_url} target="_blank" rel="noopener noreferrer">
-                GitHub
-              </a>
-            </p>
+        <form onSubmit={handleSubmit} className="space-y-6 mb-10">
+          {/* Username */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full rounded-lg border border-gray-300 px-4 py-2
+                       focus:outline-none focus:ring-2 focus:ring-blue-500
+                       focus:border-transparent transition"
+            />
           </div>
 
-          <h2>Ranking</h2>
-          <ol>
-            {result.ranking.map((proj) => (
-              <li key={proj.repo} style={{ marginBottom: "1rem" }}>
-                <strong>{proj.repo}</strong> - Score: {proj.score.toFixed(4)} -{" "}
-                <a href={proj.github_url} target="_blank" rel="noopener noreferrer">
-                  GitHub
-                </a>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
+          {/* Job Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
+            <textarea
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              rows={5}
+              required
+              className="w-full rounded-lg border border-gray-300 px-4 py-2
+                       focus:outline-none focus:ring-2 focus:ring-blue-500
+                       focus:border-transparent transition resize-none"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-lg font-semibold text-white
+                     bg-gray-900 hover:bg-blue-600
+                     disabled:bg-gray-400 disabled:cursor-not-allowed
+                     transition duration-200"
+          >
+            {loading ? "Matching..." : "Find Best Project"}
+          </button>
+        </form>
+
+        {/* Error */}
+        {error && <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-700 font-medium">{error}</div>}
+
+        {/* Results */}
+        {result && (
+          <div className="space-y-8">
+            {/* Best Project */}
+            <div>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Best Project</h2>
+
+              <div className="border border-gray-200 rounded-xl p-6 shadow-sm bg-gray-50">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{result.best_project.repo}</h3>
+
+                <p className="text-gray-700 mb-4 whitespace-pre-wrap">{result.best_project.readme}</p>
+
+                <div className="text-sm text-gray-600">
+                  Score: <span className="font-semibold">{result.best_project.score}</span> |{" "}
+                  <a href={result.best_project.github_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+                    GitHub
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Ranking */}
+            <div>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Ranking</h2>
+
+              <ol className="space-y-4 list-decimal list-inside">
+                {result.ranking.map((proj) => (
+                  <li key={proj.repo} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                      <div>
+                        <span className="font-semibold text-gray-900">{proj.repo}</span> <span className="text-gray-600">— Score: {proj.score.toFixed(4)}</span>
+                      </div>
+
+                      <a href={proj.github_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm font-medium">
+                        GitHub
+                      </a>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
