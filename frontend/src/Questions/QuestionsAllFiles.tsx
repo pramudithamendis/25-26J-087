@@ -14,6 +14,16 @@ export default function QuestionsAllFiles() {
 
   const navigate = useNavigate();
 
+  function toggleSelectAll() {
+    if (selectedFiles.length === files.length) {
+      // If everything already selected → deselect all
+      setSelectedFiles([]);
+    } else {
+      // Otherwise select all
+      setSelectedFiles(files);
+    }
+  }
+
   async function loadFiles() {
     setError(null);
     setFiles([]);
@@ -111,6 +121,19 @@ export default function QuestionsAllFiles() {
         {/* Main Layout */}
         <div className="flex flex-col lg:flex-row gap-8">
           {/* File List */}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-600">{selectedFiles.length} selected</span>
+
+            <button
+              onClick={toggleSelectAll}
+              disabled={files.length === 0}
+              className="text-sm px-3 py-1 rounded-md border
+                 bg-gray-200 hover:bg-gray-300
+                 disabled:opacity-50"
+            >
+              {selectedFiles.length === files.length ? "Deselect All" : "Select All"}
+            </button>
+          </div>
           <ul className="w-full lg:w-64 bg-gray-50 rounded-xl p-4 space-y-2 border">
             {files.map((file) => (
               <li key={file}>
