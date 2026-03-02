@@ -7,7 +7,7 @@ export default function QuestionsAllFiles() {
   const [username, setUsername] = useState("pramudithamendis");
   const [reponame, setReponame] = useState("BI-backend");
   const [files, setFiles] = useState<string[]>([]);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [fileContent, setFileContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,7 @@ export default function QuestionsAllFiles() {
   async function loadFiles() {
     setError(null);
     setFiles([]);
-    setSelectedFile(null);
+    setSelectedFiles([]);
     setFileContent("");
     setLoading(true);
 
@@ -36,12 +36,12 @@ export default function QuestionsAllFiles() {
       setLoading(false);
     }
   }
-
   async function loadFile(filename: string) {
     setError(null);
-    setSelectedFile(filename);
     setFileContent("");
     setLoading(true);
+
+    toggleFile(filename); // 👈 handles selection now
 
     try {
       const res = await fetch(`${API_BASE}/files/${username}/${reponame}/${filename}`);
@@ -58,6 +58,15 @@ export default function QuestionsAllFiles() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggleFile(file: string) {
+    setSelectedFiles(
+      (prev) =>
+        prev.includes(file)
+          ? prev.filter((f) => f !== file) // remove if already selected
+          : [...prev, file], // add if not selected
+    );
   }
 
   return (
@@ -106,9 +115,9 @@ export default function QuestionsAllFiles() {
             {files.map((file) => (
               <li key={file}>
                 <button
-                  onClick={() => loadFile(file)}
+                  onClick={() => toggleFile(file)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition
-                  ${file === selectedFile ? "bg-green-100 text-green-700 font-semibold" : "hover:bg-gray-200 text-gray-700"}`}
+                  ${selectedFiles.includes(file) ? "bg-green-100 text-green-700 font-semibold" : "hover:bg-gray-200 text-gray-700"}`}
                 >
                   {file}
                 </button>
@@ -126,12 +135,12 @@ export default function QuestionsAllFiles() {
             </pre>
 
             <button
-              disabled={!selectedFile}
+              disabled={selectedFiles.length === 0}
               onClick={() => {
                 const params = new URLSearchParams({
                   username,
                   repoName: reponame,
-                  filename: selectedFile || "",
+                  filenames: JSON.stringify(selectedFiles),
                 });
                 window.open(`/questions/ask?${params.toString()}`, "_blank");
               }}

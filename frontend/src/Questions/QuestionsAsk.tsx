@@ -15,7 +15,7 @@ const QuestionsAsk: React.FC = () => {
 
   const [username, setUsername] = useState(params.get("username") || "pramudithamendis");
   const [repoName, setRepoName] = useState(params.get("repoName") || "BI-backend");
-  const [filename, setFilename] = useState(params.get("filename") || "db.js");
+  const [filenames, setFilenames] = useState<string[]>(params.get("filenames") ? JSON.parse(params.get("filenames")!) : []);
   const [folder, setFolder] = useState(`./uploads/repos/${username}/${repoName}`);
   const [questions, setQuestions] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,15 +35,20 @@ const QuestionsAsk: React.FC = () => {
     try {
       const token = localStorage.getItem("auth_token");
 
+      console.log("took token");
+      console.log("folder", folder);
+      console.log("filenames", filenames);
       const response = await axios.post<AskResponse>(
         `${API_BASE}/ask`,
-        { folder, filename },
+        { folder, filenames },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         },
       );
+
+      console.log("got response");
 
       setQuestions(response.data.questions);
     } catch (err: any) {
@@ -97,17 +102,8 @@ const QuestionsAsk: React.FC = () => {
 
           {/* Filename */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Filename</label>
-            <input
-              type="text"
-              value={filename}
-              onChange={(e) => setFilename(e.target.value)}
-              className="w-full border border-gray-300 px-4 py-2 rounded-lg 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500
-                       transition"
-              placeholder="e.g. README.md"
-              required
-            />
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Selected Files</label>
+            <div className="border border-gray-300 px-4 py-2 rounded-lg bg-gray-50 text-sm">{filenames.length > 0 ? filenames.join(", ") : "No files selected"}</div>
           </div>
 
           {/* Button */}

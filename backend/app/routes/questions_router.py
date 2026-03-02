@@ -266,39 +266,49 @@ client = ollama.Client()
 MODEL_NAME = "llama3.2:1b"
 
 @router.post("/ask")
-async def generate_questions(payload: dict,user=Depends(get_current_user)):
+async def generate_questions(payload: dict, user=Depends(get_current_user)):
     folder = payload.get("folder")
-    filename = payload.get("filename")
+    filenames = payload.get("filenames")  # <-- now expecting list
 
-    if not folder or not filename:
-        raise HTTPException(status_code=400, detail="Missing 'folder' or 'filename'.")
+    if not folder or not filenames:
+        raise HTTPException(status_code=400, detail="Missing 'folder' or 'filenames'.")
 
-    filepath = os.path.join(folder, filename)
+    if not isinstance(filenames, list) or len(filenames) == 0:
+        raise HTTPException(status_code=400, detail="'filenames' must be a non-empty list.")
 
-    if not os.path.exists(filepath):
-        raise HTTPException(status_code=404, detail="File not found.")
+    combined_content = ""
 
-    # Read file content
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            file_content = f.read()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
+    # 🔁 Loop through all selected files
+    for filename in filenames:
+        filepath = os.path.join(folder, filename)
 
-    # Build model prompt
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                file_content = f.read()
+                combined_content += f"\n\n--- FILE: {filename} ---\n"
+                combined_content += file_content
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error reading file {filename}: {str(e)}"
+            )
+
+    # 🧠 Build prompt from ALL files
     prompt = (
-        "Read the following text and generate a list of clear, helpful questions "
-        "that someone might ask to better understand it.\n\n"
-        f"--- TEXT START ---\n{file_content}\n--- TEXT END ---\n\n"
+        "Read the following code/files and generate a list of clear, helpful questions "
+        "that someone might ask to better understand them. "
+        "Note that the user has done this project 1 year ago so sometimes the user might have forgotten some details."
+        "Avoid preamble\n\n"
+        f"--- TEXT START ---\n{combined_content}\n--- TEXT END ---\n\n"
         "Questions:"
     )
 
-    # Call the model
     response = client.generate(model=MODEL_NAME, prompt=prompt)
 
     return {"questions": response.response}
-
-
 
 @router.get("/files/{username}/{reponame}")
 async def list_files(username: str,reponame: str):
