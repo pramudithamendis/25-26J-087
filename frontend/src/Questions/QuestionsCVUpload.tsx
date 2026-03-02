@@ -56,31 +56,54 @@ const QuestionsCVUpload: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "2rem auto", fontFamily: "sans-serif" }}>
-      <h1>GitHub README Extractor</h1>
-      <form onSubmit={handleSubmit}>
-        <input type="file" accept="application/pdf" onChange={handleFileChange} />
-        <button type="submit" disabled={loading} style={{ marginLeft: 10 }}>
-          {loading ? "Processing..." : "Upload PDF"}
-        </button>
-      </form>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">GitHub README Extractor</h1>
 
-      {message && <p style={{ marginTop: 20 }}>{message}</p>}
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            className="flex-1 block w-full text-sm text-gray-700 
+                     file:mr-4 file:py-2 file:px-4
+                     file:rounded-lg file:border-0
+                     file:text-sm file:font-semibold
+                     file:bg-gray-900 file:text-white
+                     hover:file:bg-blue-600
+                     cursor-pointer"
+          />
 
-      {repos.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <h3>Stored Repositories:</h3>
-          <ul>
-            {repos.map((repo) => (
-              <li key={repo}>
-                <a href={repo} target="_blank" rel="noopener noreferrer">
-                  {repo}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-5 py-2 rounded-lg font-medium text-white
+                     bg-gray-900 hover:bg-blue-600
+                     disabled:bg-gray-400 disabled:cursor-not-allowed
+                     transition duration-200"
+          >
+            {loading ? "Processing..." : "Upload PDF"}
+          </button>
+        </form>
+
+        {message && <p className="mt-6 text-sm font-medium text-gray-700">{message}</p>}
+
+        {repos.length > 0 && (
+          <div className="mt-6">
+            <h3 className="font-semibold text-gray-800 mb-2">Stored Repositories:</h3>
+
+            <ul className="space-y-2">
+              {repos.map((repo) => (
+                <li key={repo}>
+                  <a href={repo} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                    {repo}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
