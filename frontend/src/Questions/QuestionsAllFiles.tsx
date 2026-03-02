@@ -115,7 +115,7 @@ export default function QuestionsAllFiles() {
             {files.map((file) => (
               <li key={file}>
                 <button
-                  onClick={() => toggleFile(file)}
+                  onClick={() => loadFile(file)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition
                   ${selectedFiles.includes(file) ? "bg-green-100 text-green-700 font-semibold" : "hover:bg-gray-200 text-gray-700"}`}
                 >
