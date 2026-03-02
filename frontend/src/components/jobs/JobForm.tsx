@@ -1,6 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { Input } from '../Input';
 import { Button } from '../Button';
+import apiClient from '../../config/api';
 import type { JobCreate, JobUpdate, Job } from '../../types/jobTypes';
 
 interface JobFormProps {
@@ -10,25 +11,42 @@ interface JobFormProps {
   isLoading?: boolean;
 }
 
-export const JobForm = ({
-  job,
-  onSubmit,
-  onCancel,
-  isLoading = false,
+export const JobForm = ({ 
+  job, 
+  onSubmit, 
+  onCancel, 
+  isLoading = false 
 }: JobFormProps) => {
   const [title, setTitle] = useState('');
   const [jdText, setJdText] = useState('');
-  const [errors, setErrors] = useState<{
-    title?: string;
-    jdText?: string;
+  const [location, setLocation] = useState('');
+  const [locations, setLocations] = useState<string[]>([]);
+  const [errors, setErrors] = useState<{ 
+    title?: string; 
+    jdText?: string 
   }>({});
+  const isRemote = title.toLowerCase().includes('remote');
 
   useEffect(() => {
+    fetchLocations();
     if (job) {
       setTitle(job.title);
       setJdText(job.jd_text);
+      setLocation(job.location || '');
     }
   }, [job]);
+
+  useEffect(() => {
+    if (isRemote) setLocation('Remote');
+    else if (!job?.location) setLocation('');
+  }, [isRemote]);
+
+  const fetchLocations = async () => {
+    try {
+      const res = await apiClient.get('/locations');
+      setLocations((res.data.locations || []).map((l: any) => l.name));
+    } catch {}
+  };
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
@@ -54,13 +72,7 @@ export const JobForm = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-
-    const data: JobCreate | JobUpdate = {
-      title: title.trim(),
-      jd_text: jdText.trim(),
-    };
-
-    await onSubmit(data);
+    await onSubmit({ title: title.trim(), jd_text: jdText.trim(), location });
   };
 
   return (
@@ -74,9 +86,39 @@ export const JobForm = ({
         disabled={isLoading}
       />
 
+      {/* Location dropdown */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Job Description
+          Job Location
+        </label>
+        {isRemote ? (
+          <input
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-400 bg-gray-100 cursor-not-allowed"
+            value="Remote"
+            readOnly
+            disabled
+          />
+        ) : (
+          <select
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            disabled={isLoading}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            <option value="">Select location (optional)</option>
+            {locations.map(loc => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
+        )}
+        {isRemote && (
+          <p className="mt-1.5 text-sm text-gray-500">Remote position — location auto-filled</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          Job Description 
           <span className="text-red-500 ml-1">*</span>
         </label>
         <textarea
@@ -84,9 +126,9 @@ export const JobForm = ({
           onChange={(e) => setJdText(e.target.value)}
           rows={12}
           className={`w-full px-4 py-2.5 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed ${
-            errors.jdText
-              ? 'border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-blue-500'
+            errors.jdText 
+            ? 'border-red-500 focus:ring-red-500' 
+            : 'border-gray-300 focus:border-blue-500'
           }`}
           placeholder="Enter the full job description..."
           required
