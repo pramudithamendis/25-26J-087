@@ -16,55 +16,69 @@ async def submit_cv(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user)
 ):
-    
-    
-    # Validate file type
     if not file.filename.lower().endswith(('.pdf', '.txt', '.docx')):
         raise HTTPException(400, "Only PDF, TXT, and DOCX files are supported")
     
-    # Save uploaded file temporarily
+    # Save temp file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        content = await file.read()
-        tmp.write(content)
+        tmp.write(await file.read())
         pdf_path = tmp.name
     
     try:
-        # Parse CV using Mongo Client parser
+        # Parse CV
         parsed = parse_resume(pdf_path)
-        
-        # Create document for MongoDB
+
+        # Safe defaults
+        contacts = parsed.get("contacts") or {}
+        sections = parsed.get("sections") or {}
+        links = contacts.get("links") or {}
+
+        basics = {
+            "name": contacts.get("name", ""),
+            "email": contacts.get("emails")[0] if contacts.get("emails") else None,
+            "phone": contacts.get("phones")[0] if contacts.get("phones") else None,
+            "linkedin": links.get("linkedin")[0] if links.get("linkedin") else None,
+            "github": links.get("github")[0] if links.get("github") else None,
+            "website": links.get("portfolio")[0] if links.get("portfolio") else None,
+            "summary": sections.get("summary", ""),
+            "address": contacts.get("address", "")
+        }
+
+        # Store structured sections
+        structured_sections = {
+            "work": parsed.get("work", []),
+            "education": parsed.get("education", []),
+            "skills": parsed.get("skills", []),
+            "projects": parsed.get("projects", []),
+            "certificates": parsed.get("certificates", [])
+        }
+
         document = {
-            "name": parsed["contacts"].get("name"),
-            "emails": parsed["contacts"].get("emails", []),
-            "phones": parsed["contacts"].get("phones", []),
-            "links": parsed["contacts"].get("links", {}),
-            "sections": parsed.get("sections", {}),
+            "cv_id": str(ObjectId()),
+            "basics": basics,
+            **structured_sections,
+            "sections": sections,
             "raw_text": parsed.get("raw_text", ""),
             "uploaded_at": datetime.utcnow(),
             "user_email": user.get("email"),
-            "parser_version": "mongoClient"  # Track parser version
         }
-        
-        # Store in MongoDB
-        
+
+        # Insert to MongoDB
         result = cv_collection.insert_one(document)
-        
-        # Add cv_id to document
         document["_id"] = str(result.inserted_id)
         document["cv_id"] = str(result.inserted_id)
-        
+
         return CVSubmitResponse(
             status="success",
             message="CV parsed and saved successfully",
             cv_id=str(result.inserted_id),
             parsed_data=CVParsed(**document)
         )
-        
+
     except Exception as e:
         raise HTTPException(500, f"CV parsing failed: {str(e)}")
-    
+
     finally:
-        # Clean up temp file
         try:
             os.unlink(pdf_path)
         except:

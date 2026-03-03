@@ -2,16 +2,36 @@ import re
 import fitz
 from pdf2image import convert_from_path
 import pytesseract
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional
 from rapidfuzz import fuzz
 from sentence_transformers import SentenceTransformer, util
 import spacy
 
-# LOAD NER MODEL
-# Using spaCy's small English model
-nlp = spacy.load("en_core_web_sm")
 
-# PDF → TEXT + OCR FALLBACK
+_nlp = None
+_embed_model = None
+_prototype_embeddings = None
+
+def get_nlp():
+    global _nlp
+    if _nlp is None:
+        _nlp = spacy.load("en_core_web_sm")
+    return _nlp
+
+def get_embed_model():
+    global _embed_model, _prototype_embeddings
+    if _embed_model is None:
+        _embed_model = SentenceTransformer("all-mpnet-base-v2")
+        _prototype_embeddings = {
+            k: _embed_model.encode(" . ".join(v), convert_to_tensor=True)
+            for k, v in SECTION_PROTOTYPES.items()
+        }
+    return _embed_model, _prototype_embeddings
+
+# =======================================================
+# 1. PDF → TEXT + OCR FALLBACK
+# =======================================================
+
 def pdf_to_text(path: str) -> str:
     """Extract text from digital PDFs."""
     try:
@@ -45,7 +65,10 @@ def extract_text_from_pdf(path: str) -> str:
         return pdf_to_text_ocr(path)
     return text
 
-# SECTION EXTRACTION
+
+# =======================================================
+# 2. SECTION HEADINGS & PROTOTYPE KEYWORDS
+# =======================================================
 
 HEADINGS = {
     "education": ["education", "academic background", "qualifications", "education & qualifications"],
@@ -79,12 +102,6 @@ SECTION_PROTOTYPES = {
 
 FUZZY_HEADING_THRESHOLD = 70
 SEMANTIC_SIM_THRESHOLD = 0.45
-
-_embed_model = SentenceTransformer("all-mpnet-base-v2")
-_prototype_embeddings = {
-    k: _embed_model.encode(" . ".join(v), convert_to_tensor=True)
-    for k, v in SECTION_PROTOTYPES.items()
-}
 
 _heading_re = re.compile(r'^[A-Z][A-Z &/-]{2,}$')
 _colon_re = re.compile(r':\s*$')
@@ -129,7 +146,6 @@ def semantic_classify_paragraph(paragraph: str) -> Tuple[str, float]:
             sim += boost
         if sim > best_score:
             best_score, best_section = sim, sec
-
     return best_section, best_score
 
 
@@ -182,20 +198,21 @@ def improved_extract_sections(text: str) -> Dict[str, str]:
 
     return {k: v.strip() for k, v in sections.items() if v.strip()}
 
-# CONTACT EXTRACTION (NER NAME + EMAIL/PHONE/LINKS)
-# EMAIL
+
+# =======================================================
+# 3. CONTACT EXTRACTION (NER NAME + EMAIL/PHONE/LINKS)
+# =======================================================
+
 EMAIL_RE = re.compile(
     r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 )
 
-# PHONE REGEX
 PHONE_RE = re.compile(
-    r"(?:\+?\d{1,3}[\s\-\.]?)?"      # optional country code
-    r"(?:\(?\d{2,4}\)?[\s\-\.]?)?"   # optional area/initial code
-    r"(?:\d{2,4}[\s\-\.]?){2,3}\d{2,4}"  # main number: 2–3 groups
+    r"(?:\+?\d{1,3}[\s\-\.]?)?"
+    r"(?:\(?\d{2,4}\)?[\s\-\.]?)?"
+    r"(?:\d{2,4}[\s\-\.]?){2,3}\d{2,4}"
 )
 
-# LINKS
 LINKEDIN_RE = re.compile(
     r"(?:https?:\/\/)?(?:www\.)?linkedin\.com\/[A-Za-z0-9\/\-_\.]+",
     re.IGNORECASE
@@ -206,6 +223,11 @@ GITHUB_RE = re.compile(
 )
 URL_RE = re.compile(r"https?:\/\/[A-Za-z0-9\-_\.]+\.[A-Za-z]{2,}[^ \n]*")
 
+ADDRESS_RE = re.compile(
+    r"\d{1,5}\s[\w\s]{2,30}(Street|St|Road|Rd|Lane|Ave|Avenue|Drive|Dr)\,?\s*[\w\s]{2,30}\,?\s*\w{2,10}",
+    re.IGNORECASE
+)
+
 
 def extract_emails(text: str) -> List[str]:
     return list(set(re.findall(EMAIL_RE, text)))
@@ -213,14 +235,14 @@ def extract_emails(text: str) -> List[str]:
 
 def extract_phone_numbers(text: str) -> List[str]:
     matches = re.findall(PHONE_RE, text)
-    cleaned = []
-
-    for m in matches:
-        num = re.sub(r"[^\d+]", "", m)
-        if 8 <= len(num) <= 15:
-            cleaned.append(num)
-
+    cleaned = [re.sub(r"[^\d+]", "", m) for m in matches if 8 <= len(re.sub(r"[^\d+]", "", m)) <= 15]
     return list(set(cleaned))
+
+
+def normalize_url(url: str) -> str:
+    if not url.startswith(("http://", "https://")):
+        return "https://" + url
+    return url
 
 
 def extract_links(text: str) -> Dict[str, List[str]]:
@@ -228,87 +250,428 @@ def extract_links(text: str) -> Dict[str, List[str]]:
     github = list(set(re.findall(GITHUB_RE, text)))
     all_urls = list(set(re.findall(URL_RE, text)))
 
-    # Remove LinkedIn/GitHub from generic URLs
     portfolio = [
         u for u in all_urls
         if "linkedin" not in u and "github" not in u
     ]
 
+    linkedin  = [normalize_url(u) for u in linkedin]
+    github    = [normalize_url(u) for u in github]
+    portfolio = [normalize_url(u) for u in portfolio]
+
     return {
-        "linkedin": linkedin,
-        "github": github,
+        "linkedin":  linkedin,
+        "github":    github,
         "portfolio": portfolio
     }
 
+
 def extract_name(text: str) -> str:
     lines = text.splitlines()
-
-    # ---- 1. Detect ALL CAPS names ----
-    for line in lines[:10]:  # only top lines
-        l = line.strip()
-
-        if not l:
-            continue
-
-        # Must be 2–4 words
-        words = l.split()
-        if not (2 <= len(words) <= 4):
-            continue
-
-        # All alphabetic words must be UPPERCASE
-        if all(w.isalpha() and w.isupper() for w in words):
-            return l.title()  # Convert to normal title case
-
-    # ---- 2. Fallback: Proper case (First letter capital only) ----
+    # ALL CAPS detection
     for line in lines[:10]:
         l = line.strip()
-
-        if not l:
-            continue
-
         words = l.split()
-
-        if not (2 <= len(words) <= 4):
-            continue
-
-        # Skip generic words
-        bad = {"resume", "curriculum", "vitae", "profile", "streamlit"}
-        if l.lower() in bad:
-            continue
-
-        # Each word starts with capital letter
-        if all(w[0].isupper() for w in words if w[0].isalpha()):
-            return l
-
-    # ---- 3. NER fallback ----
-    doc = nlp(text)
+        if 2 <= len(words) <= 4 and all(w.isalpha() and w.isupper() for w in words):
+            return l.title()
+    # Proper case fallback
+    for line in lines[:10]:
+        l = line.strip()
+        words = l.split()
+        if 2 <= len(words) <= 4:
+            bad = {"resume", "curriculum", "vitae", "profile", "streamlit"}
+            if l.lower() not in bad and all(w[0].isupper() for w in words if w[0].isalpha()):
+                return l
+    # NER fallback
+    doc = get_nlp()(text)
     persons = [ent.text.strip() for ent in doc.ents if ent.label_ == "PERSON"]
-
     blacklist = {"streamlit", "python", "developer", "resume"}
     persons = [p for p in persons if p.lower() not in blacklist]
+    return persons[0] if persons else ""
 
-    if persons:
-        return persons[0]
 
-    return ""
+def extract_address(text: str) -> Optional[str]:
+    lines = text.splitlines()
+    for line in lines[:15]:
+        match = ADDRESS_RE.search(line)
+        if match:
+            return match.group(0).strip()
+    return None
+
 
 def extract_contact_info(text: str) -> Dict[str, any]:
+    links = extract_links(text)
     return {
-        "name": extract_name(text),
+        "name":   extract_name(text),
         "emails": extract_emails(text),
         "phones": extract_phone_numbers(text),
-        "links": extract_links(text)
+        "address": extract_address(text),
+        "links": {
+            "linkedin":  links.get("linkedin", []),
+            "github":    links.get("github", []),
+            "portfolio": links.get("portfolio", [])
+        }
     }
 
-# FULL PIPELINE
+
+# =======================================================
+# 4. STRUCTURED SECTION PARSERS
+# =======================================================
+
+DATE_RANGE_RE = re.compile(
+    r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|"
+    r"April|June|July|August|September|October|November|December)?\s*\d{4}"
+    r"\s*[–\-—]\s*"
+    r"(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|"
+    r"April|June|July|August|September|October|November|December)?\s*\d{4}"
+    r"|Present|present|Current|current)",
+    re.IGNORECASE
+)
+
+
+def extract_date_range(text: str) -> Dict[str, str]:
+    match = DATE_RANGE_RE.search(text)
+    if not match:
+        return {"start": "", "end": ""}
+    full = match.group(0)
+    parts = re.split(r"[–\-—]", full, maxsplit=1)
+    return {
+        "start": parts[0].strip() if len(parts) > 0 else "",
+        "end":   parts[1].strip() if len(parts) > 1 else ""
+    }
+
+
+def parse_experience(text: str) -> List[Dict]:
+    """
+    Parses experience section text into a list of job dicts.
+    Expects blocks like:
+        Senior Software Engineer — DataSpark Inc.
+        Jan 2022 – Present
+        • bullet one
+        • bullet two
+    """
+    if not text.strip():
+        return []
+
+    JOB_TITLE_RE = re.compile(r"^(?![•\-\*])(.+?)\s*[—\-–]\s*(.+)$")
+
+    lines = text.splitlines()
+    blocks: List[List[str]] = []
+    current: List[str] = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if (JOB_TITLE_RE.match(stripped)
+                and not stripped.startswith(("•", "-", "*"))
+                and not DATE_RANGE_RE.search(stripped)):
+            if current:
+                blocks.append(current)
+            current = [stripped]
+        else:
+            current.append(stripped)
+
+    if current:
+        blocks.append(current)
+
+    jobs = []
+    for block in blocks:
+        if not block:
+            continue
+
+        title, company, start, end = "", "", "", ""
+        bullets: List[str] = []
+
+        for i, line in enumerate(block):
+            if i == 0:
+                m = JOB_TITLE_RE.match(line)
+                if m:
+                    title   = m.group(1).strip()
+                    company = m.group(2).strip()
+                continue
+
+            if DATE_RANGE_RE.search(line) and not line.startswith(("•", "-", "*")):
+                dates = extract_date_range(line)
+                start, end = dates["start"], dates["end"]
+                continue
+
+            if line.startswith(("•", "-", "*")):
+                bullets.append(line.lstrip("•-* ").strip())
+            else:
+                bullets.append(line.strip())
+
+        if title or company:
+            jobs.append({
+                "position":  title,
+                "name":      company,
+                "startDate": start,
+                "endDate":   end,
+                "highlights": bullets
+            })
+
+    return jobs
+
+
+def parse_education(text: str) -> List[Dict]:
+    """
+    Parses education section text into a list of education dicts.
+    Expects blocks like:
+        Bachelor of Science in Computer Science
+        Aug 2014 – May 2018
+        University of California, Berkeley · GPA 3.7 / 4.0
+        Relevant coursework: Algorithms, ...
+    """
+    if not text.strip():
+        return []
+
+    DEGREE_KEYWORDS = re.compile(
+        r"\b(Bachelor|Master|PhD|Doctor|Associate|B\.S|M\.S|B\.A|M\.A|BSc|MSc|BEng|MEng)\b",
+        re.IGNORECASE
+    )
+
+    lines = text.splitlines()
+    blocks: List[List[str]] = []
+    current: List[str] = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if DEGREE_KEYWORDS.search(stripped):
+            if current:
+                blocks.append(current)
+            current = [stripped]
+        else:
+            current.append(stripped)
+
+    if current:
+        blocks.append(current)
+
+    entries = []
+    for block in blocks:
+        degree, institution, start, end, gpa, coursework = "", "", "", "", "", ""
+
+        for i, line in enumerate(block):
+            if i == 0:
+                degree = line.strip()
+                continue
+
+            if DATE_RANGE_RE.search(line):
+                dates = extract_date_range(line)
+                start, end = dates["start"], dates["end"]
+                continue
+
+            if re.search(r"GPA|gpa", line):
+                institution_part = re.split(r"[·•|]", line)[0].strip()
+                institution = institution_part
+                gpa_match = re.search(
+                    r"GPA\s*[:\s]*([\d\.]+\s*/\s*[\d\.]+|[\d\.]+)", line, re.IGNORECASE
+                )
+                if gpa_match:
+                    gpa = gpa_match.group(1).strip()
+                continue
+
+            if re.search(r"coursework|relevant|courses", line, re.IGNORECASE):
+                coursework = re.sub(r"^[Rr]elevant\s+coursework\s*:\s*", "", line).strip()
+                continue
+
+            if not institution and not DATE_RANGE_RE.search(line):
+                institution = line.strip()
+
+        if degree:
+            entries.append({
+                "studyType":   degree,
+                "institution": institution,
+                "area":        "",  # Field not explicitly parsed yet
+                "startDate":   start,
+                "endDate":     end,
+                "gpa":         gpa,
+                "courses":     [coursework] if coursework else []
+            })
+
+    return entries
+
+
+def parse_skills(text: str) -> List[Dict]:
+    """
+    Parses skills section text into a list of category/items dicts.
+    Expects lines like:
+        Programming Languages: Python, JavaScript, TypeScript
+    Or plain comma-separated lists.
+    """
+    if not text.strip():
+        return []
+
+    skills = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        if ":" in line:
+            category, _, items_str = line.partition(":")
+            items = [s.strip() for s in re.split(r"[,;]", items_str) if s.strip()]
+            skills.append({
+                "name":     category.strip(),
+                "keywords": items
+            })
+        else:
+            items = [s.strip() for s in re.split(r"[,;•\-]", line) if s.strip()]
+            if items:
+                skills.append({
+                    "name":     "General",
+                    "keywords": items
+                })
+
+    return skills
+
+
+def parse_projects(text: str) -> List[Dict]:
+    """
+    Parses projects section text into a list of project dicts.
+    Expects blocks like:
+        ProjectName (optional-url)
+        Description line(s)...
+    """
+    if not text.strip():
+        return []
+
+    BULLET_RE  = re.compile(r"^[•\-\*]")
+    URL_INLINE = re.compile(r"\(?(https?://[^\s\)]+|[\w\-]+\.[\w]{2,}[^\s\)]*)\)?")
+
+    lines = text.splitlines()
+    blocks: List[List[str]] = []
+    current: List[str] = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            if current:
+                blocks.append(current)
+                current = []
+            continue
+        if not BULLET_RE.match(stripped) and len(stripped.split()) <= 10 and not current:
+            current = [stripped]
+        elif not current:
+            current = [stripped]
+        else:
+            current.append(stripped)
+
+    if current:
+        blocks.append(current)
+
+    projects = []
+    for block in blocks:
+        if not block:
+            continue
+        name_line  = block[0]
+        url_match  = URL_INLINE.search(name_line)
+        url        = url_match.group(1) if url_match else ""
+        name       = URL_INLINE.sub("", name_line).strip().strip("()")
+        description = " ".join(
+            l.lstrip("•-* ").strip() for l in block[1:] if l.strip()
+        )
+
+        if name:
+            projects.append({
+                "name":        name,
+                "url":         url,
+                "description": description,
+                "highlights":  []  # Schema expects highlights
+            })
+
+    return projects
+
+
+def parse_certifications(text: str) -> List[Dict]:
+    """
+    Parses certifications section text into a list of cert dicts.
+    Expects lines like:
+        AWS Certified Solutions Architect – Associate — Issued by Amazon Web Services, 2023
+    """
+    if not text.strip():
+        return []
+
+    YEAR_RE   = re.compile(r"\b(20\d{2}|19\d{2})\b")
+    ISSUER_RE = re.compile(
+        r"(?:issued\s+by|certified\s+by|certificate\s+(?:issued\s+)?by"
+        r"|course\s+completed\s+on)\s+(.+?)(?:,\s*\d{4})?$",
+        re.IGNORECASE
+    )
+
+    certs = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        parts  = re.split(r"\s*[—–]\s*", line, maxsplit=1)
+        name   = parts[0].strip()
+        detail = parts[1].strip() if len(parts) > 1 else ""
+
+        year_match   = YEAR_RE.search(detail or line)
+        year         = year_match.group(0) if year_match else ""
+
+        issuer_match = ISSUER_RE.search(detail or line)
+        issuer       = issuer_match.group(1).strip() if issuer_match else ""
+        issuer       = re.sub(r",?\s*\d{4}$", "", issuer).strip()
+
+        if name:
+            certs.append({
+                "name":   name,
+                "issuer": issuer,
+                "date":   year
+            })
+
+    return certs
+
+
+def structure_sections(sections: Dict[str, str]) -> Dict[str, list]:
+    """Convert raw section strings into structured lists."""
+    return {
+        "work":         parse_experience(sections.get("experience", "")),
+        "education":    parse_education(sections.get("education", "")),
+        "skills":       parse_skills(sections.get("skills", "")),
+        "projects":     parse_projects(sections.get("projects", "")),
+        "certificates": parse_certifications(sections.get("certifications", "")),
+    }
+
+
+# =======================================================
+# 5. FULL PIPELINE
+# =======================================================
 
 def parse_resume(pdf_path: str) -> Dict[str, any]:
-    text = extract_text_from_pdf(pdf_path)
+    text     = extract_text_from_pdf(pdf_path)
     sections = improved_extract_sections(text)
     contacts = extract_contact_info(text)
 
+    # Ensure all expected keys exist with defaults
+    sections_defaults = {k: "" for k in ["education", "experience", "skills", "projects", "certifications", "summary"]}
+    sections_defaults.update(sections)
+
+    links_defaults = {k: [] for k in ["linkedin", "github", "portfolio"]}
+    links_defaults.update(contacts.get("links", {}))
+
+    contacts_defaults = {
+        "name":    contacts.get("name", ""),
+        "emails":  contacts.get("emails", []),
+        "phones":  contacts.get("phones", []),
+        "address": contacts.get("address", ""),
+        "links":   links_defaults
+    }
+
+    # Parse raw section strings into structured arrays
+    structured = structure_sections(sections_defaults)
+
     return {
-        "raw_text": text,
-        "contacts": contacts,
-        "sections": sections
+        "raw_text":     text,
+        "contacts":     contacts_defaults,
+        "sections":     sections_defaults,
+        "work":         structured["work"],
+        "education":    structured["education"],
+        "skills":       structured["skills"],
+        "projects":     structured["projects"],
+        "certificates": structured["certificates"],
     }

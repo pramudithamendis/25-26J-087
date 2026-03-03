@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { Input } from '../Input';
 import { Button } from '../Button';
 import type { JobCreate, JobUpdate, Job } from '../../types/jobTypes';
