@@ -169,7 +169,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       <div className="trt-state-card">
         <ShieldAlert size={40} className="trt-state-icon trt-icon-gray" />
         <h3>Assessment Not Available</h3>
-        <p>This candidate did not proceed to the next stage. Retention risk assessment is only available for candidates who have been selected or are under review.</p>
+        <p>This candidate did not proceed to the next stage. Early attrition risk assessment is only available for candidates who have been selected or are under review.</p>
       </div>
     );
   }
@@ -206,7 +206,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
             <p>
               {remote
                 ? 'This is a remote position.'
-                : 'Select the job office location to begin the retention risk assessment.'}
+                : 'Select the job office location to begin the early attrition risk assessment.'}
             </p>
           </div>
         </div>

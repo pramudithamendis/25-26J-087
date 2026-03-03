@@ -13,19 +13,19 @@ interface TurnoverPredictionResultsProps {
 
 const RISK_LEVEL_CONFIG = {
   0: {
-    label: 'High Risk',
+    label: 'Early Exit Risk (0-6 months)',
     badgeClass: 'risk-badge-high',
     cardClass: 'risk-card-high',
     icon: <TriangleAlert size={20} />,
   },
   1: {
-    label: 'Medium Risk',
+    label: 'First-Year Exit Risk (6-12 months)',
     badgeClass: 'risk-badge-medium',
     cardClass: 'risk-card-medium',
     icon: <Zap size={20} />,
   },
   2: {
-    label: 'Low Risk',
+    label: 'First-Year Retention Likely (>12 months)',
     badgeClass: 'risk-badge-low',
     cardClass: 'risk-card-low',
     icon: <CircleCheckBig size={20} />,
