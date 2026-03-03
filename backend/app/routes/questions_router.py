@@ -327,3 +327,43 @@ async def get_file(username: str,reponame: str,filename: str):
     if not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
     return file_path.read_text()
+
+import joblib
+from app.services.hiring_duration.stage_tracker import StageTracker   # REQUIRED
+
+import os
+import joblib
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "app",
+    "ml_models",
+    "hiring_duration",
+    "stage_tracker_model.pkl"
+)
+
+model_bundle = joblib.load(MODEL_PATH)
+
+tracker = StageTracker(model_bundle["df"])
+
+tracker.models = model_bundle["models"]
+tracker.jobtitle_encoding = model_bundle["jobtitle_encoding"]
+
+
+@router.post("/predict-hiring-timeline")
+async def predict_timeline(payload: dict, user=Depends(get_current_user)):
+
+    try:
+        prediction = tracker.predict_remaining_stages(payload)
+
+        return {
+            "timeline_predictions": prediction
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
