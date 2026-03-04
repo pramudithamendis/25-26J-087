@@ -46,16 +46,23 @@ def calculate_single_cv_trend_score(cv_id: str) -> dict:
 
     trend_docs = list(skill_trend_collection.find({"week_id": week_id}))
     trend_map = {d["skill"]: d["trend_score"] for d in trend_docs}
+    skills_list = cv.get("skills", [])
+    keywords = []
 
-    cv_text = " ".join([
-        cv.get("sections", {}).get("skills", ""),
-        cv.get("raw_text", "")
-    ])
+    for skill_item in skills_list:
+        if isinstance(skill_item, dict):
+            skill_keywords = skill_item.get("keywords", [])
+            if isinstance(skill_keywords, list):
+                keywords.extend(skill_keywords)
+
+    print(f"[DEBUG] Extracted Keywords for {cv_id}: {keywords}")
+    cv_text = " ".join(keywords)
 
     matched_skills = extract_matching_skills_from_text(
         cv_text,
         [d["skill"] for d in trend_docs]
     )
+    print(f"[DEBUG] Matched Skills for {cv_id}: {matched_skills}")
 
     matched = [{"skill": s, "score": trend_map[s]} for s in matched_skills]
 
@@ -82,7 +89,7 @@ def calculate_single_cv_trend_score(cv_id: str) -> dict:
     return serialize_doc(doc)
 
 
-def calculate_all_cv_trend_score() -> float:
+def calculate_all_cv_trend_score() -> dict:
     week_id = current_week_id()
 
     trend_docs = list(skill_trend_collection.find({"week_id": week_id}))
@@ -93,17 +100,24 @@ def calculate_all_cv_trend_score() -> float:
     results = []
 
     for cv in cvs:
-        cv_text = " ".join([
-            cv.get("sections", {}).get("skills", ""),
-            cv.get("raw_text", "")
-        ])
+        skills_list = cv.get("skills", [])
+        keywords = []
 
-        matched = []
+        for skill_item in skills_list:
+            if isinstance(skill_item, dict):
+                skill_keywords = skill_item.get("keywords", [])
+                if isinstance(skill_keywords, list):
+                    keywords.extend(skill_keywords)
+
+        print(f"[DEBUG] Extracted Keywords for CV {cv.get('_id')}: {keywords}")
+        cv_text = " ".join(keywords)
+
         # pass only skill names (strings) to the extractor
         matched_skills = extract_matching_skills_from_text(
             cv_text,
             [d["skill"] for d in trend_docs]
         )
+        print(f"[DEBUG] Matched Skills for CV {cv.get('_id')}: {matched_skills}")
 
         matched = [{"skill": s, "score": trend_map[s]} for s in matched_skills]
 
