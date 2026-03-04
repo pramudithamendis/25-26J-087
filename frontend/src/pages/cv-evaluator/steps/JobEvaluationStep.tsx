@@ -1,6 +1,19 @@
 import { useState, useEffect } from "react";
-import { AlertCircle, Briefcase, CheckCircle, FileUp, Loader2, Upload, XCircle } from "lucide-react";
-import { applyToJob} from "../../../services/applicationService";
+import {
+    AlertCircle,
+    Briefcase,
+    CheckCircle,
+    FileUp,
+    Loader2,
+    Upload,
+    XCircle,
+    User,
+    MapPin,
+    Phone,
+    Github,
+    Linkedin,
+} from "lucide-react";
+import { applyToJob } from "../../../services/applicationService";
 import type { CVSubmitResponse } from "../../../types/cv.types";
 import { useParams } from "react-router-dom";
 import type { ApplicationData } from "../../../types/applicationTypes";
@@ -21,8 +34,31 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
     const [error, setError] = useState('');
     const [result, setResult] = useState<ApplyToJobResponse | null>(null);
 
-    // If jobId exists in URL, we don't need to fetch jobs
+    // Pre-populated fields derived from cvData (mirrors JobApplicationForm behaviour)
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [city, setCity] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [githubUrl, setGithubUrl] = useState('');
+    const [linkedinUrl, setLinkedinUrl] = useState('');
+
     const hasJobIdInUrl = !!jobId;
+
+    // Populate fields from cvData the moment the component mounts or cvData changes
+    // (mirrors the loadUserProfile pre-population in JobApplicationForm)
+    useEffect(() => {
+        if (cvData?.data?.basics) {
+            const basics = cvData.data.basics;
+            const fullName = basics.name || '';
+            const nameParts = fullName.trim().split(/\s+/);
+            setFirstName(nameParts[0] || '');
+            setLastName(nameParts.slice(1).join(' ') || '');
+            setCity(basics.address || '');
+            setPhoneNumber(basics.phone || '');
+            setGithubUrl(basics.github || '');
+            setLinkedinUrl(basics.linkedin || '');
+        }
+    }, [cvData]);
 
     useEffect(() => {
         if (jobId) {
@@ -51,24 +87,22 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
         setApplying(true);
         setError('');
 
-          const applicationData: ApplicationData = {
-                first_name: cvData?.data.basics?.name?.split(' ')[0] || '',
-                last_name: cvData?.data.basics?.name?.split(' ')[1] || '',
-                city: cvData?.data.basics?.address || '',
-                phone_number: cvData?.data.basics?.phone || undefined,
-                // Always include URLs (even if empty string) so they're saved/updated in profile
-                github_url: cvData?.data.basics?.github || '',
-                linkedin_url: cvData?.data.basics?.linkedin || '',
-                resume: cvFile || undefined,
-                linkedin_resume: linkedinFile || undefined,
-              };
-
+        // Build ApplicationData from what we already know — same structure as JobApplicationForm
+        const applicationData: ApplicationData = {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            city: city.trim(),
+            phone_number: phoneNumber.trim() || undefined,
+            // Always include URLs (even if empty string) so they're saved/updated in profile
+            github_url: githubUrl.trim() || '',
+            linkedin_url: linkedinUrl.trim() || '',
+            // Pass the CV file uploaded in Step 1 — this is what gets saved to backend/uploads
+            resume: cvFile || undefined,
+            linkedin_resume: linkedinFile || undefined,
+        };
 
         try {
-            const response = await applyToJob(
-                selectedJobId,
-                applicationData
-            );
+            const response = await applyToJob(selectedJobId, applicationData);
             setResult(response);
             if (onComplete) onComplete();
         } catch (err: any) {
@@ -130,20 +164,20 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Job Match Evaluation</h2>
                 <p className="text-gray-600">
-                    {hasJobIdInUrl 
-                        ? "Your CV will be evaluated against the specified job."
-                        : "Select a job to evaluate your CV against. Your previously uploaded CV will be automatically submitted."
+                    {hasJobIdInUrl
+                        ? "Review your details below. Your CV will be evaluated against the specified job."
+                        : "Review your details below. Your previously uploaded CV will be automatically submitted."
                     }
                 </p>
             </div>
 
             {/* CV File Status */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 flex items-center gap-2">
-                <FileUp className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                <span className="text-sm text-blue-800">
+            <div className={`border rounded-lg p-3 mb-6 flex items-center gap-2 ${cvFile ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                <FileUp className={`h-5 w-5 flex-shrink-0 ${cvFile ? 'text-blue-600' : 'text-yellow-600'}`} />
+                <span className={`text-sm ${cvFile ? 'text-blue-800' : 'text-yellow-800'}`}>
                     {cvFile
-                        ? <>CV file attached: <span className="font-medium">{cvFile.name}</span></>
-                        : 'CV data will be used from your profile'
+                        ? <><span className="font-medium">CV file ready:</span> {cvFile.name}</>
+                        : 'No CV file attached — return to Step 1 and re-upload to ensure the file is saved.'
                     }
                 </span>
             </div>
@@ -155,7 +189,7 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
                         <div className="flex items-center gap-3">
                             <Briefcase className="h-5 w-5 text-gray-500" />
                             <div>
-                                <p className="text-sm text-gray-500">Job ID from URL</p>
+                                <p className="text-sm text-gray-500">Job ID</p>
                                 <p className="font-mono text-sm text-gray-800">{jobId}</p>
                             </div>
                             <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />
@@ -163,6 +197,73 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
                     </div>
                 </div>
             )}
+
+            {/* Pre-populated Applicant Summary (mirrors JobApplicationForm's Personal Information section) */}
+            <div className="mb-6">
+                <div className="pb-3 border-b border-gray-200 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Application Details</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Details auto-filled from your uploaded CV. These will be saved to your profile.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Name */}
+                    <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                        <User className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-xs text-gray-500">Full Name</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                                {[firstName, lastName].filter(Boolean).join(' ') || <span className="text-gray-400 italic">Not found in CV</span>}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* City */}
+                    <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                        <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-xs text-gray-500">City</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                                {city || <span className="text-gray-400 italic">Not found in CV</span>}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Phone */}
+                    <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                        <Phone className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-xs text-gray-500">Phone</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                                {phoneNumber || <span className="text-gray-400 italic">Not provided</span>}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* GitHub */}
+                    <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                        <Github className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-xs text-gray-500">GitHub</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                                {githubUrl || <span className="text-gray-400 italic">Not provided</span>}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* LinkedIn */}
+                    <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3 sm:col-span-2">
+                        <Linkedin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-xs text-gray-500">LinkedIn</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                                {linkedinUrl || <span className="text-gray-400 italic">Not provided</span>}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* LinkedIn Upload (Optional) */}
             <div className="mb-6">
@@ -212,7 +313,7 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
             )}
 
             {/* Apply Button */}
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-4 border-t border-gray-200">
                 <button
                     onClick={handleApply}
                     disabled={!selectedJobId || applying}

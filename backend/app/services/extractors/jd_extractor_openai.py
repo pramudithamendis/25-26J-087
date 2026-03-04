@@ -67,11 +67,21 @@ def extract_from_jd_openai(jd_text: str, job_id: Optional[str] = None) -> Dict:
         from .jd_extractor import extract_from_jd
         return extract_from_jd(jd_text)
     
+    def _regex_fallback(jd_text: str) -> Dict:
+        """Call regex-based extraction with the fallback flag set to prevent recursion."""
+        from .jd_extractor import _fallback_active
+        import app.services.extractors.jd_extractor as jd_mod
+        jd_mod._fallback_active = True
+        try:
+            from .jd_extractor import extract_from_jd
+            return extract_from_jd(jd_text)
+        finally:
+            jd_mod._fallback_active = False
+
     try:
         client = get_openai_client()
         if not client:
-            from .jd_extractor import extract_from_jd
-            return extract_from_jd(jd_text)
+            return _regex_fallback(jd_text)
         
         # Truncate if too long (keep first 12000 chars for context)
         jd_text_truncated = jd_text[:12000] if len(jd_text) > 12000 else jd_text
@@ -149,37 +159,68 @@ Important:
 - Be comprehensive but precise - distinguish between technical requirements and soft skills/work arrangements
 - Don't rely on predefined keyword lists - extract what's actually mentioned in the JD
 """
-
-        logger.info("Calling OpenAI for JD extraction...")
-        response = client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert at parsing job descriptions. Always extract accurate, structured information and return ONLY valid JSON, no markdown formatting. Extract ALL skills and requirements mentioned, don't miss any technologies or tools."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.0,  # Zero temperature for maximum determinism (with caching ensures perfect consistency)
-            response_format={"type": "json_object"},
-            max_tokens=4000
-        )
         
-        result_text = response.choices[0].message.content.strip()
+        # Retry loop with max attempts (for transient errors like 5xx)
+        max_retries = 3
+        last_error = None
         
-        # Remove markdown code blocks if present
-        if result_text.startswith("```json"):
-            result_text = result_text[7:]
-        if result_text.startswith("```"):
-            result_text = result_text[3:]
-        if result_text.endswith("```"):
-            result_text = result_text[:-3]
-        result_text = result_text.strip()
-        
-        result = json.loads(result_text)
+        for attempt in range(1, max_retries + 1):
+            try:
+                logger.info(f"Calling OpenAI for JD extraction... (attempt {attempt}/{max_retries})")
+                response = client.chat.completions.create(
+                    model=settings.OPENAI_MODEL,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an expert at parsing job descriptions. Always extract accurate, structured information and return ONLY valid JSON, no markdown formatting. Extract ALL skills and requirements mentioned, don't miss any technologies or tools."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0.0,  # Zero temperature for maximum determinism (with caching ensures perfect consistency)
+                    response_format={"type": "json_object"},
+                    max_tokens=4000
+                )
+                
+                result_text = response.choices[0].message.content.strip()
+                
+                # Remove markdown code blocks if present
+                if result_text.startswith("```json"):
+                    result_text = result_text[7:]
+                if result_text.startswith("```"):
+                    result_text = result_text[3:]
+                if result_text.endswith("```"):
+                    result_text = result_text[:-3]
+                result_text = result_text.strip()
+                
+                result = json.loads(result_text)
+                
+                # Successfully parsed — break out of retry loop
+                break
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON from OpenAI response (attempt {attempt}): {str(e)}")
+                last_error = e
+                if attempt == max_retries:
+                    logger.error(f"All {max_retries} attempts failed with JSON decode errors, falling back to regex")
+                    return _regex_fallback(jd_text)
+                continue
+                
+            except Exception as e:
+                error_str = str(e)
+                last_error = e
+                # For auth errors (401) or invalid API key, don't retry — it will never succeed
+                if "401" in error_str or "invalid_api_key" in error_str or "Unauthorized" in error_str:
+                    logger.error(f"OpenAI authentication failed (attempt {attempt}): {error_str}. Not retrying — falling back to regex.")
+                    return _regex_fallback(jd_text)
+                
+                logger.warning(f"OpenAI call failed (attempt {attempt}/{max_retries}): {error_str}")
+                if attempt == max_retries:
+                    logger.error(f"All {max_retries} OpenAI attempts failed, falling back to regex")
+                    return _regex_fallback(jd_text)
+                continue
         
         # Validate and clean the result
         title = result.get("title", "").strip()
@@ -237,14 +278,7 @@ Important:
         
         return result
     
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON from OpenAI response: {str(e)}")
-        # Fallback to regex extraction
-        from .jd_extractor import extract_from_jd
-        return extract_from_jd(jd_text)
     except Exception as e:
-        logger.error(f"OpenAI JD extraction error: {str(e)}, falling back to regex")
-        # Fallback to regex extraction
-        from .jd_extractor import extract_from_jd
-        return extract_from_jd(jd_text)
+        logger.error(f"Unexpected error in OpenAI JD extraction: {str(e)}, falling back to regex")
+        return _regex_fallback(jd_text)
 

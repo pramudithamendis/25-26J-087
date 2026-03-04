@@ -5,6 +5,9 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Flag to prevent infinite mutual recursion between jd_extractor and jd_extractor_openai
+_fallback_active = False
+
 def extract_from_jd(jd_text: str, job_id: Optional[str] = None) -> Dict:
     """
     Extract structured data from job description text
@@ -18,8 +21,11 @@ def extract_from_jd(jd_text: str, job_id: Optional[str] = None) -> Dict:
     Returns:
         Dictionary with title, must_have, nice_to_have, min_years, jd_text
     """
+    global _fallback_active
+    
     # Try LLM-based extraction first (if OpenAI is configured)
-    if settings.OPENAI_API_KEY:
+    # Skip if _fallback_active is True to prevent infinite mutual recursion
+    if settings.OPENAI_API_KEY and not _fallback_active:
         try:
             from .jd_extractor_openai import extract_from_jd_openai
             logger.info("Using LLM-based JD extraction")

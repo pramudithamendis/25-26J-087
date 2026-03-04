@@ -2,11 +2,17 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app.auth.dependencies import get_current_user
 from app.schemas.cv_schema import CVSubmitResponse, CVParsed, CVUpdateRequest
 from app.database import cv_collection
+from app.models.user_model import users_collection
+from app.utils.file_handler import save_uploaded_file
+from app.config import settings
 import tempfile
 from datetime import datetime
 from bson import ObjectId
 import os
+import logging
 from app.parsers.cv_parser import parse_resume  
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/cv", tags=["CV Management"])
 
@@ -19,10 +25,13 @@ async def submit_cv(
     if not file.filename.lower().endswith(('.pdf', '.txt', '.docx')):
         raise HTTPException(400, "Only PDF, TXT, and DOCX files are supported")
     
-    # Save temp file
+    # Save temp file for parsing
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         tmp.write(await file.read())
         pdf_path = tmp.name
+    
+    # Reset file for re-use (saving to uploads)
+    await file.seek(0)
     
     try:
         # Parse CV
@@ -67,6 +76,31 @@ async def submit_cv(
         result = cv_collection.insert_one(document)
         document["_id"] = str(result.inserted_id)
         document["cv_id"] = str(result.inserted_id)
+
+        # Also save the file to uploads/cv/ folder (same as job application flow)
+        # so it persists and can be used by the evaluation pipeline
+        try:
+            user_email = user.get("email")
+            user_doc = users_collection.find_one({"email": user_email})
+            if user_doc:
+                user_id = str(user_doc["_id"])
+                saved_path = await save_uploaded_file(
+                    file,
+                    settings.CV_UPLOAD_FOLDER,
+                    user_id,
+                    'cv'
+                )
+                if saved_path:
+                    # Update user profile with cv_file_path
+                    users_collection.update_one(
+                        {"email": user_email},
+                        {"$set": {"cv_file_path": saved_path}}
+                    )
+                    logger.info(f"CV file saved to {saved_path} for user {user_id}")
+                else:
+                    logger.warning(f"Failed to save CV file to uploads for user {user_id}")
+        except Exception as save_err:
+            logger.warning(f"Could not persist CV file to uploads: {str(save_err)}")
 
         return CVSubmitResponse(
             success=True,
