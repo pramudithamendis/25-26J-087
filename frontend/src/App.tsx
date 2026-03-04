@@ -25,6 +25,9 @@ import { AdminEvaluationsPage } from './pages/admin/AdminEvaluationsPage';
 import { JobApplicantsPage } from './pages/admin/JobApplicantsPage';
 import { JobApplicantDetailPage } from './pages/admin/JobApplicantDetailPage';
 import { AdminTrendScorePage } from './pages/admin/AdminTrendScorePage'
+
+import HiringTimelinePredictor from "./Questions/HiringTimelinePredictor";
+
 import './App.css';
 function App() {
   return (
@@ -174,7 +177,7 @@ function App() {
               </AdminRoute>
             }
           />
-           <Route
+          <Route
             path="/dashboard/admin/trendscore"
             element={
               <AdminRoute>
@@ -198,6 +201,7 @@ function App() {
           <Route path="/questions/clone" element={<QuestionsClone />} />
           <Route path="/questions/allfiles" element={<QuestionsAllFiles />} />
           <Route path="/questions/ask" element={<QuestionsAsk />} />
+          <Route path="/hiring/timeline" element={<HiringTimelinePredictor />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
