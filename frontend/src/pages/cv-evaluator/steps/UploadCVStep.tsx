@@ -5,10 +5,11 @@ import type { CVSubmitResponse } from "../../../types/cv.types";
 
 interface UploadCVStepProps {
     onUploadSuccess?: (response: CVSubmitResponse) => void;
+    onFileUploaded?: (file: File) => void;
     onNext?: () => void;
 }
 
-export const UploadCVStep = ({ onUploadSuccess, onNext }: UploadCVStepProps) => {
+export const UploadCVStep = ({ onUploadSuccess, onFileUploaded, onNext }: UploadCVStepProps) => {
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -75,6 +76,10 @@ export const UploadCVStep = ({ onUploadSuccess, onNext }: UploadCVStepProps) => 
 
             if (onUploadSuccess) {
                 onUploadSuccess(response);
+            }
+
+            if (onFileUploaded && file) {
+                onFileUploaded(file);
             }
 
             if (onNext) {

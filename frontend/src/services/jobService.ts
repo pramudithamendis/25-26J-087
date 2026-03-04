@@ -67,3 +67,44 @@ export const updateJob = async (
   }
 };
 
+export interface ApplyToJobResponse {
+  message: string;
+  application_id: string;
+  status: string;
+}
+
+/**
+ * Apply to a job with CV file and optional LinkedIn PDF
+ */
+export const applyToJob = async (
+  jobId: string,
+  resumeFile?: File,
+  linkedinFile?: File
+): Promise<ApplyToJobResponse> => {
+  try {
+    const formData = new FormData();
+    if (resumeFile) {
+      formData.append('resume', resumeFile);
+    }
+    if (linkedinFile) {
+      formData.append('linkedin_resume', linkedinFile);
+    }
+
+    const response = await apiClient.post<ApplyToJobResponse>(
+      `/api/jobs/${jobId}/apply`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    const apiError: ApiError = {
+      detail: error.response?.data?.detail || 'Failed to apply to job.',
+      statusCode: error.response?.status,
+    };
+    throw apiError;
+  }
+};

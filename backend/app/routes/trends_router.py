@@ -1,10 +1,10 @@
 # /backend/app/routes/trends_router.py
 
-from fastapi import APIRouter, Depends
-from app.auth.dependencies import get_admin_user
+from fastapi import APIRouter, Depends, HTTPException
+from app.auth.dependencies import get_admin_user, get_current_user
 from app.services.goolge_trends_service import fetch_google_trends
 from app.services.trend_calculation_service import calculate_skill_trends
-from app.services.cv_trend_score_service import calculate_all_cv_trend_score
+from app.services.cv_trend_score_service import calculate_all_cv_trend_score, calculate_single_cv_trend_score
 from app.utils.date_utils import current_week_id
 from app.models.cv_trend_score_model import cv_trend_scores_collection
 
@@ -79,4 +79,24 @@ def get_all_cv_trend_scores_endpoint(
     }
     
 
-
+@router.post("/cv/{cv_id}/calculate")
+def calculate_single_cv_trend_score_endpoint(
+    cv_id: str,
+    user=Depends(get_current_user)
+):
+    """
+    Compute trend score for a single CV
+    for the current week.
+    """
+    try:
+        result = calculate_single_cv_trend_score(cv_id)
+        return {
+            "success": True,
+            "week_id": result.get("week_id"),
+            "cv_trend_score": result.get("cv_trend_score", 0),
+            "skills_matched": result.get("skills_matched", []),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Trend calculation failed: {str(e)}")

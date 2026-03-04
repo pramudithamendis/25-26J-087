@@ -25,6 +25,7 @@ const steps: Step[] = [
 export const CVEvaluatorPage = () => {
     const [currentStep, setCurrentStep] = useState<number>(1);
     const [cvData, setCvData] = useState<CVSubmitResponse | null>(null);
+    const [cvFile, setCvFile] = useState<File | null>(null);
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
     const handleNext = () => {
@@ -59,17 +60,17 @@ export const CVEvaluatorPage = () => {
 
         switch (currentStep) {
             case 1:
-                return <UploadCVStep onUploadSuccess={handleUploadSuccess} onNext={handleNext} />;
+                return <UploadCVStep onUploadSuccess={handleUploadSuccess} onFileUploaded={(file) => setCvFile(file)} onNext={handleNext} />;
             case 2:
                 return <InfoValidationStep {...stepProps} />;
             case 3:
-                return <JobEvaluationStep {...stepProps} />;
+                return <JobEvaluationStep {...stepProps} cvFile={cvFile} />;
             case 4:
                 return <ArticleEvaluationStep {...stepProps} />;
             case 5:
                 return <TurnoverPredictionStep {...stepProps} />;
             default:
-                return <UploadCVStep onUploadSuccess={handleUploadSuccess} onNext={handleNext} />;
+                return <UploadCVStep onUploadSuccess={handleUploadSuccess} onFileUploaded={(file) => setCvFile(file)} onNext={handleNext} />;
         }
     };
 
@@ -109,10 +110,10 @@ export const CVEvaluatorPage = () => {
                                 <div className="relative flex flex-col items-center">
                                     <div
                                         className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${completedSteps.includes(step.id)
-                                                ? 'bg-green-500 border-green-500'
-                                                : currentStep === step.id
-                                                    ? 'border-blue-500 bg-white'
-                                                    : 'border-gray-300 bg-white'
+                                            ? 'bg-green-500 border-green-500'
+                                            : currentStep === step.id
+                                                ? 'border-blue-500 bg-white'
+                                                : 'border-gray-300 bg-white'
                                             }`}
                                     >
                                         {completedSteps.includes(step.id) ? (
@@ -145,8 +146,8 @@ export const CVEvaluatorPage = () => {
                         onClick={handlePrevious}
                         disabled={currentStep === 1}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${currentStep === 1
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                             }`}
                     >
                         ← Previous
@@ -160,8 +161,8 @@ export const CVEvaluatorPage = () => {
                         onClick={handleNext}
                         disabled={currentStep === steps.length || !completedSteps.includes(currentStep)}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${currentStep === steps.length || !completedSteps.includes(currentStep)
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                     >
                         Next →

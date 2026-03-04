@@ -190,7 +190,7 @@ function App() {
               </AdminRoute>
             }
           />
-           <Route
+          <Route
             path="/dashboard/admin/trendscore"
             element={
               <AdminRoute>
