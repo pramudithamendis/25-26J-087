@@ -88,11 +88,22 @@ class CVParsed(BaseModel):
     user_email: Optional[EmailStr] = None
 
 # ==========================================================
+# UPDATE REQUEST MODEL
+# ==========================================================
+
+class CVUpdateRequest(BaseModel):
+    basics: Optional[Basics] = None
+    education: List[Education] = Field(default_factory=list)
+    work: List[Work] = Field(default_factory=list)
+    skills: List[Skill] = Field(default_factory=list)
+    projects: List[Project] = Field(default_factory=list)
+    certificates: List[Certificate] = Field(default_factory=list)
+
+# ==========================================================
 # RESPONSE MODEL
 # ==========================================================
 
 class CVSubmitResponse(BaseModel):
-    status: str
+    success: bool
     message: str
-    cv_id: str
-    parsed_data: CVParsed
+    data: CVParsed

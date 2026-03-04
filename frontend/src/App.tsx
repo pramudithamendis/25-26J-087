@@ -30,6 +30,7 @@ import TurnoverHistoryPage from './components/turnover/TurnoverHistoryPage';
 import TurnoverResultsView from './components/turnover/TurnoverResultsView';
 import TurnoverNewPrediction from './components/turnover/TurnoverNewPrediction';
 import LocationSettings from './components/locations/LocationSettings';
+import { CVEvaluatorPage } from "./pages/cv-evaluator/CVEvaluatorPage";
 
 function App() {
   return (
@@ -64,6 +65,16 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <JobsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/evaluate/:jobId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <CVEvaluatorPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }

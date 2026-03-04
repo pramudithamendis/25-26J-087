@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app.auth.dependencies import get_current_user
-from app.schemas.cv_schema import CVSubmitResponse, CVParsed
+from app.schemas.cv_schema import CVSubmitResponse, CVParsed, CVUpdateRequest
 from app.database import cv_collection
 import tempfile
 from datetime import datetime
@@ -69,10 +69,9 @@ async def submit_cv(
         document["cv_id"] = str(result.inserted_id)
 
         return CVSubmitResponse(
-            status="success",
+            success=True,
             message="CV parsed and saved successfully",
-            cv_id=str(result.inserted_id),
-            parsed_data=CVParsed(**document)
+            data=CVParsed(**document)
         )
 
     except Exception as e:
@@ -83,6 +82,42 @@ async def submit_cv(
             os.unlink(pdf_path)
         except:
             pass
+
+
+@router.put("/{cv_id}", response_model=CVParsed)
+async def update_cv(
+    cv_id: str,
+    update: CVUpdateRequest,
+    user: dict = Depends(get_current_user)
+):
+    """Update an existing CV's editable fields"""
+    try:
+        # Verify ownership
+        existing = cv_collection.find_one(
+            {"_id": ObjectId(cv_id), "user_email": user.get("email")}
+        )
+        if not existing:
+            raise HTTPException(404, "CV not found")
+
+        # Build update dict from provided fields
+        update_data = update.model_dump(exclude_none=False)
+
+        cv_collection.update_one(
+            {"_id": ObjectId(cv_id)},
+            {"$set": update_data}
+        )
+
+        # Fetch updated document
+        updated = cv_collection.find_one({"_id": ObjectId(cv_id)})
+        updated["cv_id"] = str(updated["_id"])
+        del updated["_id"]
+
+        return CVParsed(**updated)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Failed to update CV: {str(e)}")
 
 
 @router.get("/list")

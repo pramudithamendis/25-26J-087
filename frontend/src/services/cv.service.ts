@@ -21,7 +21,7 @@ export const uploadCV = async (file: File): Promise<CVSubmitResponse> => {
     );
 
     // Store CV ID for easy access
-    localStorage.setItem('last_uploaded_cv_id', response.data.cv_id);
+    localStorage.setItem('last_uploaded_cv_id', response.data.data.cv_id);
 
     return response.data;
   } catch (error: any) {
@@ -50,5 +50,17 @@ export const getCVById = async (cvId: string): Promise<CVParsed> => {
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.detail || 'Failed to fetch CV');
+  }
+};
+
+/**
+ * Update CV data
+ */
+export const updateCV = async (cvId: string, data: Partial<CVParsed>): Promise<CVParsed> => {
+  try {
+    const response = await apiClient.put<CVParsed>(`/cv/${cvId}`, data);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to update CV');
   }
 };
