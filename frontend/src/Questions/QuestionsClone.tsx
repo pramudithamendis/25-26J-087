@@ -7,7 +7,7 @@ type CloneRequest = {
 
 const QuestionsClone: React.FC = () => {
   const [username, setUsername] = useState("pramudithamendis");
-  const [repoName, setRepoName] = useState("BI-backend");
+  const [repoName, setRepoName] = useState("Xpress-Hirely");
   const [destination, setDestination] = useState("./uploads/repos");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<string | null>(null);

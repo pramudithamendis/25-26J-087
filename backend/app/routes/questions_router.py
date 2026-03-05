@@ -364,11 +364,15 @@ async def generate_questions(payload: dict, user=Depends(get_current_user)):
     }
 
 @router.get("/files/{username}/{reponame}")
-async def list_files(username: str,reponame: str):
-    FILES_DIR = Path(__file__).parent.parent.parent / "uploads" / "repos" / username /reponame
-    print(FILES_DIR)
+async def list_files(username: str, reponame: str):
+    FILES_DIR = Path(__file__).parent.parent.parent / "uploads" / "repos" / username / reponame
+
     try:
-        return [f.name for f in FILES_DIR.iterdir() if f.is_file()]
+        return [
+            str(f.relative_to(FILES_DIR))   # keeps folder structure
+            for f in FILES_DIR.rglob("*") 
+            if f.is_file()
+        ]
     except Exception:
         raise HTTPException(status_code=500, detail="Cannot read files")
 

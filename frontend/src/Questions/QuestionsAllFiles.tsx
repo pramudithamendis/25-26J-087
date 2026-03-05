@@ -5,7 +5,7 @@ const API_BASE = "http://127.0.0.1:8000/api/items"; // e.g. "http://localhost:80
 
 export default function QuestionsAllFiles() {
   const [username, setUsername] = useState("pramudithamendis");
-  const [reponame, setReponame] = useState("BI-backend");
+  const [reponame, setReponame] = useState("Xpress-Hirely");
   const [files, setFiles] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [fileContent, setFileContent] = useState("");
@@ -54,7 +54,7 @@ export default function QuestionsAllFiles() {
     toggleFile(filename); // 👈 handles selection now
 
     try {
-      const res = await fetch(`${API_BASE}/files/${username}/${reponame}/${filename}`);
+      const res = await fetch(`${API_BASE}/files/${username}/${reponame}/${encodeURIComponent(filename)}`);
 
       if (!res.ok) {
         throw new Error(`Failed to load file (${res.status})`);
