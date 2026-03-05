@@ -1,12 +1,18 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app.auth.dependencies import get_current_user
-from app.schemas.cv_schema import CVSubmitResponse, CVParsed
+from app.schemas.cv_schema import CVSubmitResponse, CVParsed, CVUpdateRequest
 from app.database import cv_collection
+from app.models.user_model import users_collection
+from app.utils.file_handler import save_uploaded_file
+from app.config import settings
 import tempfile
 from datetime import datetime
 from bson import ObjectId
 import os
+import logging
 from app.parsers.cv_parser import parse_resume  
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/cv", tags=["CV Management"])
 
@@ -16,59 +22,136 @@ async def submit_cv(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user)
 ):
-    
-    
-    # Validate file type
     if not file.filename.lower().endswith(('.pdf', '.txt', '.docx')):
         raise HTTPException(400, "Only PDF, TXT, and DOCX files are supported")
     
-    # Save uploaded file temporarily
+    # Save temp file for parsing
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        content = await file.read()
-        tmp.write(content)
+        tmp.write(await file.read())
         pdf_path = tmp.name
     
+    # Reset file for re-use (saving to uploads)
+    await file.seek(0)
+    
     try:
-        # Parse CV using Mongo Client parser
+        # Parse CV
         parsed = parse_resume(pdf_path)
-        
-        # Create document for MongoDB
+
+        # Safe defaults
+        contacts = parsed.get("contacts") or {}
+        sections = parsed.get("sections") or {}
+        links = contacts.get("links") or {}
+
+        basics = {
+            "name": contacts.get("name", ""),
+            "email": contacts.get("emails")[0] if contacts.get("emails") else None,
+            "phone": contacts.get("phones")[0] if contacts.get("phones") else None,
+            "linkedin": links.get("linkedin")[0] if links.get("linkedin") else None,
+            "github": links.get("github")[0] if links.get("github") else None,
+            "website": links.get("portfolio")[0] if links.get("portfolio") else None,
+            "summary": sections.get("summary", ""),
+            "address": contacts.get("address", "")
+        }
+
+        # Store structured sections
+        structured_sections = {
+            "work": parsed.get("work", []),
+            "education": parsed.get("education", []),
+            "skills": parsed.get("skills", []),
+            "projects": parsed.get("projects", []),
+            "certificates": parsed.get("certificates", [])
+        }
+
         document = {
-            "name": parsed["contacts"].get("name"),
-            "emails": parsed["contacts"].get("emails", []),
-            "phones": parsed["contacts"].get("phones", []),
-            "links": parsed["contacts"].get("links", {}),
-            "sections": parsed.get("sections", {}),
+            "cv_id": str(ObjectId()),
+            "basics": basics,
+            **structured_sections,
+            "sections": sections,
             "raw_text": parsed.get("raw_text", ""),
             "uploaded_at": datetime.utcnow(),
             "user_email": user.get("email"),
-            "parser_version": "mongoClient"  # Track parser version
         }
-        
-        # Store in MongoDB
-        
+
+        # Insert to MongoDB
         result = cv_collection.insert_one(document)
-        
-        # Add cv_id to document
         document["_id"] = str(result.inserted_id)
         document["cv_id"] = str(result.inserted_id)
-        
+
+        # Also save the file to uploads/cv/ folder (same as job application flow)
+        # so it persists and can be used by the evaluation pipeline
+        try:
+            user_email = user.get("email")
+            user_doc = users_collection.find_one({"email": user_email})
+            if user_doc:
+                user_id = str(user_doc["_id"])
+                saved_path = await save_uploaded_file(
+                    file,
+                    settings.CV_UPLOAD_FOLDER,
+                    user_id,
+                    'cv'
+                )
+                if saved_path:
+                    # Update user profile with cv_file_path
+                    users_collection.update_one(
+                        {"email": user_email},
+                        {"$set": {"cv_file_path": saved_path}}
+                    )
+                    logger.info(f"CV file saved to {saved_path} for user {user_id}")
+                else:
+                    logger.warning(f"Failed to save CV file to uploads for user {user_id}")
+        except Exception as save_err:
+            logger.warning(f"Could not persist CV file to uploads: {str(save_err)}")
+
         return CVSubmitResponse(
-            status="success",
+            success=True,
             message="CV parsed and saved successfully",
-            cv_id=str(result.inserted_id),
-            parsed_data=CVParsed(**document)
+            data=CVParsed(**document)
         )
-        
+
     except Exception as e:
         raise HTTPException(500, f"CV parsing failed: {str(e)}")
-    
+
     finally:
-        # Clean up temp file
         try:
             os.unlink(pdf_path)
         except:
             pass
+
+
+@router.put("/{cv_id}", response_model=CVParsed)
+async def update_cv(
+    cv_id: str,
+    update: CVUpdateRequest,
+    user: dict = Depends(get_current_user)
+):
+    """Update an existing CV's editable fields"""
+    try:
+        # Verify ownership
+        existing = cv_collection.find_one(
+            {"_id": ObjectId(cv_id), "user_email": user.get("email")}
+        )
+        if not existing:
+            raise HTTPException(404, "CV not found")
+
+        # Build update dict from provided fields
+        update_data = update.model_dump(exclude_none=False)
+
+        cv_collection.update_one(
+            {"_id": ObjectId(cv_id)},
+            {"$set": update_data}
+        )
+
+        # Fetch updated document
+        updated = cv_collection.find_one({"_id": ObjectId(cv_id)})
+        updated["cv_id"] = str(updated["_id"])
+        del updated["_id"]
+
+        return CVParsed(**updated)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Failed to update CV: {str(e)}")
 
 
 @router.get("/list")

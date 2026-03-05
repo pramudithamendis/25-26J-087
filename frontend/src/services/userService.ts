@@ -55,7 +55,7 @@ export const updateProfile = async (
 /**
  * Upload CV PDF for current user
  */
-export const uploadCV = async (file: File): Promise<UploadResponse> => {
+export const uploadUserCV = async (file: File): Promise<UploadResponse> => {
   try {
     const formData = new FormData();
     formData.append('file', file);
