@@ -263,7 +263,7 @@ def clone_repo(payload: CloneRequest,user=Depends(get_current_user)):
 
 
 client = ollama.Client()
-MODEL_NAME = "llama3.2:1b"
+MODEL_NAME = "gameAssistantGeneral"
 
 @router.post("/ask")
 async def generate_questions(payload: dict, user=Depends(get_current_user)):
