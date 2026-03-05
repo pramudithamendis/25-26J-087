@@ -248,6 +248,13 @@ async def get_cv_by_email(
                 {"_id": 1, "name": 1, "uploaded_at": 1}
             )
 
+        # Fallback: try user_email field (set by cv_routes on upload)
+        if not doc:
+            doc = cv_collection.find_one(
+                {"user_email": email},
+                {"_id": 1, "name": 1, "uploaded_at": 1}
+            )
+
         if not doc:
             return {"status": "not_found", "cv_id": None, "message": "CV not yet processed for this candidate"}
 
