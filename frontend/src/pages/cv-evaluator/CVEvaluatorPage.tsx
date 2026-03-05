@@ -4,7 +4,7 @@ import { InfoValidationStep } from "./steps/InfoValidationStep";
 import { JobEvaluationStep } from "./steps/JobEvaluationStep";
 import { TurnoverPredictionStep } from "./steps/TurnoverPredictionStep";
 import { UploadCVStep } from "./steps/UploadCVStep";
-import type { CVSubmitResponse } from "../../types/cv.types";
+import type { CVSubmitResponse, CVParsed } from "../../types/cv.types";
 import { CheckCircle } from "lucide-react";
 
 
@@ -51,6 +51,13 @@ export const CVEvaluatorPage = () => {
         handleStepComplete(1);
     };
 
+    const handleInfoValidationComplete = (updatedCV: CVParsed) => {
+        // Merge the freshly saved CV data into the parent state so subsequent
+        // steps (JobEvaluationStep, etc.) always see the latest edited values.
+        setCvData(prev => prev ? { ...prev, data: updatedCV } : prev);
+        handleStepComplete(2);
+    };
+
     const renderStep = () => {
         const stepProps = {
             cvData,
@@ -62,7 +69,7 @@ export const CVEvaluatorPage = () => {
             case 1:
                 return <UploadCVStep onUploadSuccess={handleUploadSuccess} onFileUploaded={(file) => setCvFile(file)} onNext={handleNext} />;
             case 2:
-                return <InfoValidationStep {...stepProps} />;
+                return <InfoValidationStep cvData={cvData} onNext={handleNext} onComplete={handleInfoValidationComplete} />;
             case 3:
                 return <JobEvaluationStep {...stepProps} cvFile={cvFile} />;
             case 4:

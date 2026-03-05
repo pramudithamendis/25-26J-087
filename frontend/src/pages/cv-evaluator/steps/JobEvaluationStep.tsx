@@ -268,7 +268,7 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
             {/* LinkedIn Upload (Optional) */}
             <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    LinkedIn PDF <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                    LinkedIn PDF <span className="text-gray-400 text-sm font-normal"></span>
                 </h3>
                 <p className="text-gray-500 text-sm mb-3">
                     Upload your LinkedIn profile PDF for a more comprehensive evaluation.

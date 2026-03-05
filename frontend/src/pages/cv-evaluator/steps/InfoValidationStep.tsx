@@ -6,7 +6,7 @@ import { updateCV } from "../../../services/cv.service";
 interface InfoValidationStepProps {
     cvData?: CVSubmitResponse | null;
     onNext?: () => void;
-    onComplete?: () => void;
+    onComplete?: (updatedCV: CVParsed) => void;
 }
 
 // Editable Field Component
@@ -232,7 +232,7 @@ export const InfoValidationStep = ({ cvData, onNext, onComplete }: InfoValidatio
         setIsSaving(true);
         setSaveError('');
         try {
-            await updateCV(editedData.cv_id, {
+            const updatedCV = await updateCV(editedData.cv_id, {
                 basics: editedData.basics,
                 education: editedData.education,
                 work: editedData.work,
@@ -245,7 +245,7 @@ export const InfoValidationStep = ({ cvData, onNext, onComplete }: InfoValidatio
             setTimeout(() => setSaveSuccess(false), 3000);
 
             if (onComplete) {
-                onComplete();
+                onComplete(updatedCV);
             }
         } catch (error: any) {
             console.error('Error saving CV data:', error);
