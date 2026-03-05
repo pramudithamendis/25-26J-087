@@ -59,7 +59,12 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         # Step 3: Predict using model
         predicted_class, probabilities = predict_with_model(features)
         model = get_model()
-        
+
+        # Soft-clamp probabilities so UI never shows exactly 0% or 100%
+        # This reflects real-world uncertainty even when the model is very confident
+        probabilities = np.clip(probabilities, 0.02, 0.96)
+        probabilities = probabilities / probabilities.sum()  # renormalize to sum to 1.0
+
         print(f" Prediction complete: {RISK_LABELS[predicted_class]} (confidence: {probabilities[predicted_class]:.2%})")
         
         # Step 3.5: Override prediction for severe overqualification
