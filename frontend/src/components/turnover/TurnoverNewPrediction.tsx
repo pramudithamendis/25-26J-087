@@ -164,7 +164,7 @@ const TurnoverNewPrediction: React.FC = () => {
           Back to History
         </Button>
         <div className="tnp-header-text">
-          <h1>New Retention Risk Assessment</h1>
+          <h1>New Early Attrition Risk Assessment</h1>
           <p>Select a candidate and job to assess retention risk</p>
         </div>
       </div>

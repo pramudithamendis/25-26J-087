@@ -4,6 +4,7 @@ from typing import Optional
 class JobCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=200)
     jd_text: str = Field(..., min_length=50, max_length=50000)
+    location: Optional[str] = None
 
 class JobResponse(BaseModel):
     _id: str
@@ -18,4 +19,4 @@ class JobResponse(BaseModel):
 class JobUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=200)
     jd_text: Optional[str] = Field(None, min_length=50, max_length=50000)
-
+    location: Optional[str] = None

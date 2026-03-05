@@ -80,7 +80,7 @@ const LocationSettings: React.FC = () => {
         </div>
         <div>
           <h2>Branch Locations</h2>
-          <p>Manage the office locations available when running retention risk assessments</p>
+          <p>Manage the office locations available when running early attrition risk assessments</p>
         </div>
       </div>
 
@@ -168,7 +168,7 @@ const LocationSettings: React.FC = () => {
 
       <div className="ls-info">
         <AlertCircle size={13} />
-        <p>These locations appear as options when running retention risk assessments. 
+        <p>These locations appear as options when running early attrition risk assessments. 
           Accurate location names improve commute distance calculations.</p>
       </div>
     </div>
