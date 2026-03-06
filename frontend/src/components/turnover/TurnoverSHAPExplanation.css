@@ -123,13 +123,13 @@
 .factor-label {
   font-weight: 600;
   color: #111827;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .factor-value {
   font-weight: 600;
   color: #2563eb;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   background: #eff6ff;
   padding: 0.2rem 0.6rem;
   border-radius: 6px;
@@ -138,7 +138,7 @@
 .factor-explanation {
   margin: 0 0 0.75rem 0;
   color: #6b7280;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 

@@ -34,7 +34,7 @@ const RISK_LEVEL_CONFIG = {
 
 const getRecommendation = (riskLevel: number) => {
   if (riskLevel === 2) return {
-    title: "Strong Candidate — Recommend to Hire",
+    title: "Strong Candidate - Recommend to Hire",
     description: "This candidate shows excellent stability indicators and strong fit for the role. They are likely to stay long-term and contribute effectively.",
   };
   if (riskLevel === 1) return {
@@ -42,7 +42,7 @@ const getRecommendation = (riskLevel: number) => {
     description: "This candidate has some concerns but could be a good fit. Consider discussing career goals, work environment expectations, and long-term plans during interview.",
   };
   return {
-    title: "High Risk — Careful Evaluation Needed",
+    title: "High Risk - Careful Evaluation Needed",
     description: "This candidate shows warning signs for early departure. If proceeding, have frank discussions about expectations, provide strong onboarding support, and ensure competitive compensation.",
   };
 };
@@ -75,7 +75,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
       <div className="results-header">
         <div className="candidate-info">
           <div className="user-icon"><User size={22} /></div>
-          <div className="candidate-details">  {/* ← add this wrapper */}
+          <div className="candidate-details"> 
             <h3>Assessment for {cv_name}</h3>
             <p className="candidate-name">Turnover Risk Analysis</p>
           </div>

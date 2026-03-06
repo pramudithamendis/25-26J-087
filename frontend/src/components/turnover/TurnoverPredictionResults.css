@@ -33,7 +33,7 @@
 
 .candidate-info h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   color: #111827;
   font-weight: 600;
   /* flex: 1; */
@@ -42,7 +42,7 @@
 .candidate-name {
   margin: 0.2rem 0 0 0;
   color: #6b7280;
-  font-size: 0.8rem;
+  font-size: 1rem;
 }
 
 .candidate-details {
@@ -97,7 +97,7 @@
 .confidence {
   margin: 0 0 1rem 0;
   color: #6b7280;
-  font-size: 0.8rem;
+  font-size: 1rem;
 }
 
 .confidence strong {
@@ -129,7 +129,7 @@
 
 .recommendation-content h3 {
   margin: 0 0 0.2rem 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #111827;
   font-weight: 600;
 }
@@ -138,7 +138,7 @@
   margin: 0;
   color: #6b7280;
   line-height: 1.5;
-  font-size: 0.8rem;
+  font-size: 0.925rem;
 }
 
 /* ── Likelihood / Probability Bars ── */
@@ -241,7 +241,7 @@
 
 .card-header h3 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #111827;
   font-weight: 600;
 }
@@ -259,7 +259,7 @@
   display: flex;
   gap: 0.625rem;
   align-items: flex-start;
-  font-size: 0.8rem;
+  font-size: 0.925rem;
   line-height: 1.5;
   color: #374151;
 }
@@ -285,7 +285,7 @@
 
 .profile-summary-card h3 {
   margin: 0 0 1rem 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #111827;
   font-weight: 600;
 }
@@ -345,7 +345,7 @@
 
 .interview-tips-card h3 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #111827;
   font-weight: 600;
 }
@@ -364,7 +364,7 @@
   gap: 0.625rem;
   align-items: flex-start;
   color: #374151;
-  font-size: 0.8rem;
+  font-size: 1rem;
   line-height: 1.6;
 }
 
@@ -388,7 +388,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   color: #6b7280;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   line-height: 1.6;
 }
 
