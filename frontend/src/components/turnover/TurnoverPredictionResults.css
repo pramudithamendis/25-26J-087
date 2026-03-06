@@ -314,9 +314,16 @@
   font-weight: 500;
 }
 
-.stat-value {
+.stat-value1 {
   display: block;
-  font-size: 1.375rem;
+  font-size: 2rem;
+  color: #111827;
+  font-weight: 700;
+}
+
+.stat-value-label {
+  display: block;
+  font-size: 1.5rem;
   color: #111827;
   font-weight: 700;
 }
