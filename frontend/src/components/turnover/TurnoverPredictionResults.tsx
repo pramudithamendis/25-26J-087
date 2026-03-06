@@ -121,7 +121,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             {features.skill_match >= 0.7 && (
               <li className="point-item success">
                 <CheckCircle2 size={15} className="point-icon" />
-                <span>Strong skill alignment with job requirements ({(features.skill_match * 100).toFixed(0)}% match)</span>
+                <span>Strong skill alignment with job requirements</span>
               </li>
             )}
             {features.exp_match >= 0.7 && (
@@ -209,19 +209,25 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
         <div className="profile-stats">
           <div className="stat-box">
             <span className="stat-label">Total Experience</span>
-            <span className="stat-value">{features.total_experience.toFixed(1)} years</span>
+            <span className="stat-value1">{features.total_experience.toFixed(1)} years</span>
           </div>
           <div className="stat-box">
             <span className="stat-label">Number of Jobs</span>
-            <span className="stat-value">{features.total_jobs}</span>
+            <span className="stat-value1">{features.total_jobs}</span>
           </div>
           <div className="stat-box">
             <span className="stat-label">Average Time per Job</span>
-            <span className="stat-value">{(features.avg_tenure_months / 12).toFixed(1)} years</span>
+            <span className="stat-value1">{(features.avg_tenure_months / 12).toFixed(1)} years</span>
           </div>
           <div className="stat-box">
-            <span className="stat-label">Skill Match</span>
-            <span className="stat-value">{(features.skill_match * 100).toFixed(0)}%</span>
+            <span className="stat-label">Skill Overlap</span>
+            <span className="stat-value-label">
+              {features.skill_match >= 0.6
+                ? 'Good Overlap'
+                : features.skill_match >= 0.35
+                ? 'Partial Overlap'
+                : 'Limited Overlap'}
+            </span>
           </div>
         </div>
       </div>
@@ -269,10 +275,12 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             </>
           ) : (
             <>
-              <li>
-                <AlertTriangle size={14} />
-                <span><strong>Critical:</strong> Understand their reasons for frequent job changes</span>
-              </li>
+              {pred.risk_level === 0 && features.total_jobs > 1 && (
+                <li>
+                  <AlertTriangle size={14} />
+                  <span><strong>Critical:</strong> Understand their reasons for frequent job changes</span>
+                </li>
+              )}
               <li>
                 <AlertTriangle size={14} />
                 <span><strong>Critical:</strong> Ask what would make them stay long-term at a company</span>
