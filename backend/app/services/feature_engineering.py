@@ -756,6 +756,25 @@ def extract_location_from_jd(jd_text: str) -> str:
     
     return "Colombo, Sri Lanka"
 
+def extract_city_from_address(address: str) -> str:
+    """Extract city from a full street address by taking the last meaningful part"""
+    if not address:
+        return "Colombo, Sri Lanka"
+    
+    parts = [p.strip() for p in address.split(',') if p.strip()]
+    
+    for part in reversed(parts):
+        # Skip street numbers
+        if re.match(r'^[\d/\-]+$', part):
+            continue
+        if len(part) < 3:
+            continue
+        # Skip if contains number and is short (e.g. "99/A")
+        if re.search(r'\d', part) and len(part) < 10:
+            continue
+        return f"{part}, Sri Lanka"
+    
+    return "Colombo, Sri Lanka"
 
 async def compute_location_match_with_geocoding(cv_loc: str, jd_loc: str) -> float:
     """Compute location match with geocoding"""
@@ -1004,17 +1023,21 @@ async def create_feature_vector_from_mongo(
     if is_new_format:
         basics = cv_document.get('basics', {}) or {}
         cv_location = (basics.get('address') or '').strip()
-        # If address has a full street, extract just the city portion for geocoding
         if cv_location and (len(cv_location) > 20 or any(c.isdigit() for c in cv_location)):
             sl_cities = [
                 'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Moratuwa',
                 'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia', 'Kelaniya',
                 'Gampaha', 'Kalutara', 'Panadura', 'Kaduwela', 'Battaramulla'
             ]
+            matched = False
             for city in sl_cities:
                 if city.lower() in cv_location.lower():
                     cv_location = f"{city}, Sri Lanka"
+                    matched = True
                     break
+            if not matched:
+                # Fall back to last meaningful part of address
+                cv_location = extract_city_from_address(cv_location)
         if not cv_location:
             cv_location = extract_location_from_cv(raw_text, {})
     else:
