@@ -43,8 +43,8 @@ const TurnoverRiskFactors: React.FC<TurnoverRiskFactorsProps> = ({ riskFactors }
       <div className="factors-header">
         <AlertTriangle className="header-icon" />
         <div>
-          <h3>Top Risk Factors</h3>
-          <p>Key indicators that may influence turnover likelihood</p>
+          <h3>Key Influencing Factors</h3>
+          <p>Top indicators that may influence turnover likelihood</p>
         </div>
       </div>
 

@@ -75,12 +75,9 @@ const LocationSettings: React.FC = () => {
   return (
     <div className="ls-container">
       <div className="ls-header">
-        <div className="ls-header-icon">
-          <Building2 size={22} />
-        </div>
         <div>
           <h2>Branch Locations</h2>
-          <p>Manage the office locations available when running retention risk assessments</p>
+          <p>Manage the office locations.</p>
         </div>
       </div>
 
@@ -168,7 +165,7 @@ const LocationSettings: React.FC = () => {
 
       <div className="ls-info">
         <AlertCircle size={13} />
-        <p>These locations appear as options when running retention risk assessments. 
+        <p>These locations appear as options when running early attrition risk assessments. 
           Accurate location names improve commute distance calculations.</p>
       </div>
     </div>

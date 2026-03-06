@@ -157,7 +157,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
     { id: 'user-info' as TabType, label: 'User Info' },
     { id: 'evaluation-result' as TabType, label: 'Evaluation Result' },
     { id: 'overview' as TabType, label: 'Overview' },
-    { id: 'turnover-risk' as TabType, label: 'Turnover Risk' },
+    { id: 'turnover-risk' as TabType, label: 'Early Attrition Risk' },
   ];
 
   return (
@@ -381,6 +381,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
             jobId={application.job._id ?? ""}
             jobDescription={application.job.jd_text ?? ""}
             jobTitle={application.job.title ?? ""}
+            jobLocation={application.job.location ?? ""}
             evaluationDecision={evaluation?.decision}
           />
         )}

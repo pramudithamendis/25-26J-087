@@ -143,7 +143,7 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         result = {
             "status": "success",
             "cv_id": cv_id,
-            "cv_name": cv_document.get("name", "Unknown"),
+            "cv_name": cv_document.get("name") or cv_document.get("basics", {}).get("name", "Unknown"),
             "prediction": {
                 "risk_level": predicted_class,
                 "risk_label": RISK_LABELS[predicted_class],
@@ -241,7 +241,7 @@ def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: 
     
     print("   Waiting for SHAP lock...")
     # Wait up to 60 seconds for previous SHAP to finish
-    lock_acquired = _shap_lock.acquire(blocking=True, timeout=60)
+    lock_acquired = _shap_lock.acquire(blocking=True, timeout=30)
     
     if not lock_acquired:
         print("   Could not acquire SHAP lock after 60s - using rule-based")

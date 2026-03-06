@@ -91,6 +91,7 @@ export const CVEvaluatorPage = () => {
                         jobId={jobIdFromUrl || jobData?._id}
                         jobTitle={jobData?.title}
                         jobDescription={jobData?.jd_text}
+                        jobLocation={jobData?.location}
                         userEmail={user?.email}
                     />
                 );
