@@ -82,7 +82,7 @@ const TurnoverResultsView: React.FC = () => {
             <ArrowLeft size={16} />
             Back to History
           </Button>
-          <h1>Turnover Risk Assessment</h1>
+          <h1>Early Attrition Risk Assessment</h1>
         </div>
         <div className="dashboard-content">
           <div className="error-banner">
@@ -103,13 +103,13 @@ const TurnoverResultsView: React.FC = () => {
       </Button>
       
       <Button variant="primary" onClick={handleNewPrediction}>
-        New Turnover Risk Assessment
+        New Early Attrition Risk Assessment
       </Button>
       
     </div>
 
       <div className="dashboard-content">
-      <h1>Turnover Risk Assessment</h1>
+      <h1>Early Attrition Risk Assessment</h1>
         {/* Job Details Section */}
         {(prediction.job_description || prediction.job_location) && (
           <div className="shap-explanation-card" style={{ marginBottom: '1rem' }}>

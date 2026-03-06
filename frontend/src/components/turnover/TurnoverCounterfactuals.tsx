@@ -20,7 +20,7 @@ const TurnoverCounterfactuals: React.FC<TurnoverCounterfactualsProps> = ({
         <Lightbulb className="header-icon" />
         <div>
           <h3>"What-If" Scenarios</h3>
-          <p>See how changes in candidate profile could affect the prediction</p>
+          <p>See how changes in candidate profile could affect the assessment</p>
           
         <p>
           These scenarios show how specific improvements in the candidate's profile 

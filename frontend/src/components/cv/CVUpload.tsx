@@ -173,7 +173,7 @@ const CVUpload: React.FC = () => {
                     onClick={() => handleModuleNavigation('/dashboard/admin/turnover')}
                     className="module-button turnover"
                   >
-                    <span>Turnover Risk Assessment</span>
+                    <span>Early Attrition Risk Assessment</span>
                     <ArrowRight size={18} />
                   </button>
                 </div>

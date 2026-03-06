@@ -100,11 +100,11 @@ const TurnoverHistoryPage: React.FC = () => {
         <div className="header-content">
           <History className="header-icon" style={{ color: '#2563eb' }}/>
           <div>
-            <h1>Turnover Risk Assessment History</h1>
+            <h1>Early Attrition Risk Assessment History</h1>
           </div>
         </div>
         <Button variant="primary" onClick={() => navigate('/dashboard/admin/turnover/new')}>
-          New Turnover Risk Assessment
+          New Early Attrition Risk Assessment
       </Button>
       </div>
 
@@ -188,7 +188,7 @@ const TurnoverHistoryPage: React.FC = () => {
       {!loading && filteredPredictions.length === 0 && (
         <div className="empty-state">
           <History size={64} />
-          <h3>No predictions found</h3>
+          <h3>No turnover assessments found</h3>
           <p>
             {searchQuery || filterRisk !== null
               ? 'Try adjusting your filters'

@@ -677,7 +677,7 @@ def compute_experience_match(cv_exp: float, jd_text: str) -> float:
         return 1.0
 
 
-def compute_education_match(cv_edu: str, jd_text: str) -> int:
+def compute_education_match(cv_edu: str, jd_text: str, gpa: float = None) -> int:
     """Calculate education match"""
     if not cv_edu or not jd_text:
         return 1
@@ -692,23 +692,42 @@ def compute_education_match(cv_edu: str, jd_text: str) -> int:
     
     if 'bachelor' in jd_lower and 'required' in jd_lower and not has_bachelors:
         return 0
+
+    # GPA boost: if JD mentions GPA/grade requirement and candidate has a strong GPA, treat as matched
+    if gpa and gpa >= 3.5 and ('gpa' in jd_lower or 'grade' in jd_lower):
+        return 1
     
     return 1
 
 
-def extract_location_from_cv(raw_text: str, sections: Dict) -> str:
+def extract_location_from_cv(raw_text: str, sections: Dict, basics: Dict = None) -> str:
     """Extract location from CV"""
+    
+    # Check basics.address first (5-step format)
+    if basics:
+        address = basics.get("address", "")
+        if address:
+            sl_cities = [
+                'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Moratuwa',
+                'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia', 'Kelaniya',
+                'Gampaha', 'Kalutara', 'Panadura', 'Kaduwela', 'Battaramulla'
+            ]
+            for city in sl_cities:
+                if city.lower() in address.lower():
+                    return f"{city}, Sri Lanka"
+            if len(address) > 3:
+                return address
+    
+    # raw_text scan
     if not raw_text:
         return "Colombo, Sri Lanka"
     
     lines = raw_text.split('\n')[:15]
-    
     sl_cities = [
         'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Moratuwa',
         'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia', 'Kelaniya',
         'Gampaha', 'Kalutara', 'Panadura', 'Kaduwela', 'Battaramulla'
     ]
-    
     for line in lines:
         line_clean = line.strip()
         for city in sl_cities:
@@ -716,6 +735,7 @@ def extract_location_from_cv(raw_text: str, sections: Dict) -> str:
                 return f"{city}, Sri Lanka"
     
     return "Colombo, Sri Lanka"
+    
 
 
 def extract_location_from_jd(jd_text: str) -> str:
@@ -736,6 +756,25 @@ def extract_location_from_jd(jd_text: str) -> str:
     
     return "Colombo, Sri Lanka"
 
+def extract_city_from_address(address: str) -> str:
+    """Extract city from a full street address by taking the last meaningful part"""
+    if not address:
+        return "Colombo, Sri Lanka"
+    
+    parts = [p.strip() for p in address.split(',') if p.strip()]
+    
+    for part in reversed(parts):
+        # Skip street numbers
+        if re.match(r'^[\d/\-]+$', part):
+            continue
+        if len(part) < 3:
+            continue
+        # Skip if contains number and is short (e.g. "99/A")
+        if re.search(r'\d', part) and len(part) < 10:
+            continue
+        return f"{part}, Sri Lanka"
+    
+    return "Colombo, Sri Lanka"
 
 async def compute_location_match_with_geocoding(cv_loc: str, jd_loc: str) -> float:
     """Compute location match with geocoding"""
@@ -757,101 +796,276 @@ async def compute_location_match_with_geocoding(cv_loc: str, jd_loc: str) -> flo
 # MAIN FEATURE EXTRACTION
 # ============================================================
 
+def _parse_jobs_from_new_format(work_list: List[Dict]) -> List[Dict]:
+    """Parse jobs from CVParsed work[] format"""
+    jobs = []
+    for w in work_list:
+        start_date = w.get('startDate', '')
+        end_date = w.get('endDate', '') or 'Present'
+        title = w.get('position', '') or ''
+
+        if not start_date:
+            continue
+
+        tenure = calculate_tenure(str(start_date), str(end_date))
+        jobs.append({
+            'title': title,
+            'tenure_months': tenure,
+            'start_date': str(start_date),
+            'end_date': str(end_date),
+            'company': w.get('name', '')
+        })
+    return jobs
+
+
+def _extract_skills_text_from_new_format(skills_list: List[Dict], work_list: List[Dict], basics: Dict) -> str:
+    """Extract skills as flat text from CVParsed skills[] format"""
+    keywords = []
+
+    # From skills[].keywords and skills[].name
+    for skill in skills_list:
+        keywords.extend(skill.get('keywords', []))
+        if skill.get('name'):
+            keywords.append(skill['name'])
+
+    # Include highlights AND summary from work[] entries
+    for w in work_list:
+        keywords.extend(w.get('highlights', []))
+        if w.get('summary'):
+            keywords.append(w['summary'])
+
+    # Include summary from basics
+    if basics.get('summary'):
+        keywords.append(basics['summary'])
+
+    return ' '.join(keywords)
+
+
+def _extract_education_text_from_new_format(education_list: List[Dict]) -> str:
+    """Extract education as flat text from CVParsed education[] format"""
+    parts = []
+    for edu in education_list:
+        parts.append(edu.get('institution', ''))
+        parts.append(edu.get('area', ''))
+        parts.append(edu.get('studyType', ''))
+        parts.extend(edu.get('courses', []))
+    return ' '.join(filter(None, parts))
+
+
 async def create_feature_vector_from_mongo(
-    cv_document: Dict, 
-    jd_text: str, 
+    cv_document: Dict,
+    jd_text: str,
     jd_location: str = None,
     job_title: str = None
 ) -> Dict[str, float]:
-    """Enhanced feature extraction"""
-    
-    sections = cv_document.get("sections", {})
-    raw_text = cv_document.get("raw_text", "")
-    
-    # Parse experience
-    jobs = parse_experience_from_sections(sections)
-    
+    """
+    Enhanced feature extraction.
+    Supports both:
+    - Old format: cv_document has 'sections' dict with raw text
+    - New format: cv_document has 'work', 'skills', 'education' lists (CVParsed schema)
+    """
+
+    raw_text = cv_document.get("raw_text") or ""
+
+    # ── Detect format ──────────────────────────────────────────
+    is_new_format = 'work' in cv_document or 'basics' in cv_document
+    print(f" CV format detected: {'NEW (CVParsed)' if is_new_format else 'OLD (sections)'}")
+
+    # ── Parse jobs ─────────────────────────────────────────────
+    if is_new_format:
+        work_list = cv_document.get('work', [])
+        jobs = _parse_jobs_from_new_format(work_list)
+    else:
+        sections = cv_document.get("sections", {})
+        jobs = parse_experience_from_sections(sections)
+
     # Basic stats
     n_jobs = len(jobs)
     total_exp_months = sum(job.get('tenure_months', 0) for job in jobs)
     total_exp_years = round(total_exp_months / 12, 1)
-    
     avg_tenure_months = total_exp_months / max(n_jobs, 1)
     current_job_tenure = jobs[0].get('tenure_months', 0) if jobs else 0
-    
+
     # Advanced features
     short_stints = count_short_stints(jobs, threshold_months=12)
     job_hopping_rate = calculate_job_hopping_rate(jobs)
     tenure_slope = calculate_tenure_slope(jobs)
     industry_switches = calculate_industry_switches(jobs)
     has_progression, progression_jumps = detect_career_progression(jobs)
-    
-    # Education
-    education_text = sections.get("education", "")
-    # Remove lines that look like contact info (contain | and phone patterns)
-    education_lines = [
-        line for line in education_text.split('\n')
-        if not re.search(r'\+\d{2}|@|LinkedIn|GitHub|\|.*\|', line)
-    ]
-    education_text = '\n'.join(education_lines)
-    has_masters = 'master' in education_text.lower() or 'msc' in education_text.lower() or 'm.sc' in education_text.lower() or 'mba' in education_text.lower()
-    n_edu = len(re.findall(r'Bachelor|Master|PhD|Diploma|BSc|MSc|MBA|B\.Sc|M\.Sc', education_text, re.IGNORECASE))
-    
-    # Skills
-    skills_text = sections.get("skills", "")
-    skills_text = re.sub(r'Mr\.|Ms\.|Dr\..*', '', skills_text, flags=re.DOTALL)
-    skills_text = re.sub(r'[\w\.-]+@[\w\.-]+', '', skills_text)
-    skills_text = re.sub(r'\+\d[\d\s]+', '', skills_text)
-    skills_text = re.sub(r'•|\*', ' ', skills_text)
-    skills_text = re.sub(r'\b(?:Backend|Frontend|Database|DevOps|Cloud|Methodology|Languages?|Tools?|Frameworks?)\s*[:/&]\s*', ' ', skills_text, flags=re.IGNORECASE)
-    skills_text = re.sub(r'\([^)]*\)', '', skills_text)
-    skills_text = re.sub(r'[^\w\s,\.#\+]', ' ', skills_text)
-    skills_text = ' '.join(skills_text.split())
-    
-    skills_lines = [
-        part.strip() 
-        for part in re.split(r'[,\n]', skills_text) 
-        if part.strip() and not re.match(r'^[A-Za-z\s&]+:\s*$', part.strip())
-        and len(part.strip()) > 1
-        and not part.strip().endswith(':')
-    ]
-    n_skills = len(skills_lines)
-    
-    experience_text_for_skills = sections.get("experience", "")
-    summary_text = sections.get("summary", "") or sections.get("professional_summary", "")
-    combined_cv_text_for_skills = f"{skills_text} {experience_text_for_skills} {summary_text}"
-    
+
+    # ── Education ──────────────────────────────────────────────
+    if is_new_format:
+        education_list = cv_document.get('education', [])
+        education_text = _extract_education_text_from_new_format(education_list)
+        # Extract best GPA across all education entries
+        gpa_values = []
+        for edu in education_list:
+            gpa_raw = edu.get('gpa', '')
+            if gpa_raw:
+                try:
+                    gpa_values.append(float(str(gpa_raw).replace(',', '.').strip()))
+                except ValueError:
+                    pass
+        best_gpa = max(gpa_values) if gpa_values else None
+    else:
+        sections = cv_document.get("sections") or {}
+        education_text = sections.get("education") or ""
+        education_lines = [
+            line for line in education_text.split('\n')
+            if not re.search(r'\+\d{2}|@|LinkedIn|GitHub|\|.*\|', line)
+        ]
+        education_text = '\n'.join(education_lines)
+        best_gpa = None
+
+    has_masters = (
+        'master' in education_text.lower() or
+        'msc' in education_text.lower() or
+        'm.sc' in education_text.lower() or
+        'mba' in education_text.lower()
+    )
+    n_edu = len(re.findall(
+        r'Bachelor|Master|PhD|Diploma|BSc|MSc|MBA|B\.Sc|M\.Sc',
+        education_text, re.IGNORECASE
+    ))
+
+    # ── Skills ─────────────────────────────────────────────────
+    if is_new_format:
+        basics = cv_document.get('basics', {}) or {}
+        work_list = cv_document.get('work', [])
+        skills_list = cv_document.get('skills', [])
+        skills_text = _extract_skills_text_from_new_format(skills_list, work_list, basics)
+
+        # n_skills = total unique keywords + standalone skill names with no keywords
+        all_keywords = [
+            kw for skill in skills_list
+            for kw in skill.get('keywords', [])
+        ]
+        standalone_names = [
+            skill['name'] for skill in skills_list
+            if skill.get('name') and not skill.get('keywords')
+        ]
+        n_skills = len(set(all_keywords + standalone_names))
+
+        # For skill matching, also include experience highlights, summaries, and projects
+        projects_list = cv_document.get('projects', [])
+        project_text = ' '.join([
+            ' '.join(filter(None, [p.get('description', ''), ' '.join(p.get('highlights', []))]))
+            for p in projects_list
+        ])
+        combined_cv_text_for_skills = f"{skills_text} {project_text}"
+
+    else:
+        sections = cv_document.get("sections") or {}
+        skills_text = sections.get("skills") or ""
+        skills_text = re.sub(r'Mr\.|Ms\.|Dr\..*', '', skills_text, flags=re.DOTALL)
+        skills_text = re.sub(r'[\w\.-]+@[\w\.-]+', '', skills_text)
+        skills_text = re.sub(r'\+\d[\d\s]+', '', skills_text)
+        skills_text = re.sub(r'•|\*', ' ', skills_text)
+        skills_text = re.sub(r'\b(?:Backend|Frontend|Database|DevOps|Cloud|Methodology|Languages?|Tools?|Frameworks?)\s*[:/&]\s*', ' ', skills_text, flags=re.IGNORECASE)
+        skills_text = re.sub(r'\([^)]*\)', '', skills_text)
+        skills_text = re.sub(r'[^\w\s,\.#\+]', ' ', skills_text)
+        skills_text = ' '.join(skills_text.split())
+
+        skills_lines = [
+            part.strip()
+            for part in re.split(r'[,\n]', skills_text)
+            if part.strip() and not re.match(r'^[A-Za-z\s&]+:\s*$', part.strip())
+            and len(part.strip()) > 1
+            and not part.strip().endswith(':')
+        ]
+        n_skills = len(skills_lines)
+
+        experience_text_for_skills = sections.get("experience", "")
+        summary_text = sections.get("summary", "") or sections.get("professional_summary", "")
+        combined_cv_text_for_skills = f"{skills_text} {experience_text_for_skills} {summary_text}"
+
+    # ── Certifications ─────────────────────────────────────────
+    if is_new_format:
+        certificates_list = cv_document.get('certificates', [])
+        n_certifications = float(len(certificates_list))
+    else:
+        n_certifications = 0.0
+
+    # ── Skill match ────────────────────────────────────────────
     skill_match = compute_skill_match_with_esco(combined_cv_text_for_skills, jd_text)
-    
+
+    # ── Title match ────────────────────────────────────────────
     cv_title = jobs[0].get('title', '') if jobs else ''
     jd_title = job_title if job_title else jd_text[:200]
     title_match = compute_title_similarity(cv_title, jd_title)
-    
-    exp_match = compute_experience_match(total_exp_years, jd_text)
-    edu_match = compute_education_match(education_text, jd_text)
-    
-    exp_match = compute_semantic_experience_boost(sections, jd_text, exp_match)
-    edu_match = compute_education_match(education_text, jd_text)
 
-    # Location
-    cv_location = extract_location_from_cv(raw_text, sections)
+    # ── Experience & education match ───────────────────────────
+    exp_match = compute_experience_match(total_exp_years, jd_text)
+    edu_match = compute_education_match(education_text, jd_text, best_gpa)
+
+    if is_new_format:
+        # Build sections-like dict for semantic boost compatibility
+        work_list = cv_document.get('work', [])
+        projects_list = cv_document.get('projects', [])
+        sections_for_boost = {
+            'experience': ' '.join([
+                ' '.join(filter(None, [w.get('summary', ''), ' '.join(w.get('highlights', []))]))
+                for w in work_list
+            ]),
+            'skills': skills_text,
+            'projects': ' '.join([
+                ' '.join(filter(None, [p.get('description', ''), ' '.join(p.get('highlights', []))]))
+                for p in projects_list
+            ])
+        }
+    else:
+        sections_for_boost = cv_document.get("sections") or {}
+
+    exp_match = compute_semantic_experience_boost(sections_for_boost, jd_text, exp_match)
+    edu_match = compute_education_match(education_text, jd_text, best_gpa)
+
+    # ── Location ───────────────────────────────────────────────
+    if is_new_format:
+        basics = cv_document.get('basics', {}) or {}
+        cv_location = (basics.get('address') or '').strip()
+        if cv_location and (len(cv_location) > 20 or any(c.isdigit() for c in cv_location)):
+            sl_cities = [
+                'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Moratuwa',
+                'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia', 'Kelaniya',
+                'Gampaha', 'Kalutara', 'Panadura', 'Kaduwela', 'Battaramulla'
+            ]
+            matched = False
+            for city in sl_cities:
+                if city.lower() in cv_location.lower():
+                    cv_location = f"{city}, Sri Lanka"
+                    matched = True
+                    break
+            if not matched:
+                # Fall back to last meaningful part of address
+                cv_location = extract_city_from_address(cv_location)
+        if not cv_location:
+            cv_location = extract_location_from_cv(raw_text, {})
+    else:
+        sections = cv_document.get("sections", {})
+        basics_doc = cv_document.get("basics", {})
+        cv_location = extract_location_from_cv(raw_text, sections, basics=basics_doc)
+
     jd_location_extracted = extract_location_from_jd_enhanced(jd_text) if not jd_location else jd_location
+    print(f"CV location detected: '{cv_location}'")
+    print(f"JD location detected: '{jd_location_extracted}'")
+    
     loc_match = await compute_location_match_with_geocoding(cv_location, jd_location_extracted)
-    
+    print(f"Location match score: {loc_match}")
+
     overall_match = (skill_match + title_match + exp_match + edu_match + loc_match) / 5
-    
-    # Qualification flags
+
+    # ── Qualification flags ────────────────────────────────────
     exp_matches = re.findall(r'(\d+)\+?\s*(?:to|-)\s*(\d+)?\s*years?', jd_text.lower())
     if exp_matches:
         jd_min = int(exp_matches[0][0])
         jd_max = int(exp_matches[0][1]) if exp_matches[0][1] else jd_min + 2
     else:
         jd_min, jd_max = 2, 5
-    
+
     is_overqualified = 1 if total_exp_years > jd_max + 2 else 0
     is_underqualified = 1 if total_exp_years < jd_min - 0.5 else 0
-    
-    # Complete feature dictionary
+
+    # ── Complete feature dictionary ────────────────────────────
     features = {
         'skill_match_score': skill_match,
         'title_match_score': title_match,
@@ -859,37 +1073,37 @@ async def create_feature_vector_from_mongo(
         'edu_match_score': float(edu_match),
         'location_match_score': loc_match,
         'overall_match_score': overall_match,
-        
+
         'is_overqualified': is_overqualified,
         'is_underqualified': is_underqualified,
-        
+
         'total_jobs': float(n_jobs),
         'total_exp_years': float(total_exp_years),
         'avg_tenure_months': float(avg_tenure_months),
         'current_job_tenure': float(current_job_tenure),
-        
+
         'short_stints_count': float(short_stints),
         'job_hopping_rate': float(job_hopping_rate),
         'tenure_slope': float(tenure_slope),
         'industry_switches': float(industry_switches),
-        
+
         'has_progression': 1.0 if has_progression else 0.0,
         'progression_jumps': float(progression_jumps),
-        
+
         'has_masters': 1.0 if has_masters else 0.0,
         'n_education': float(n_edu),
         'n_skills': float(n_skills),
-        'n_certifications': 0.0,
-        
+        'n_certifications': n_certifications,
+
         'is_remote_cv': 0.0,
         'is_remote_jd': 1.0 if 'remote' in jd_text.lower() else 0.0,
         'work_mode_mismatch': 0.0,
-        
+
         'region': 'colombo_metro',
         'university_tier': 'other_state_university',
         'has_career_gap': 0.0,
         'career_gap_months': 0.0,
         'is_remote_preference': 0.0
     }
-    
+
     return features

@@ -38,6 +38,7 @@ async def create_job(
         job_doc = {
             "title": job.title,
             "jd_text": job.jd_text,
+            "location": job.location or "",
             "created_at": datetime.utcnow().isoformat() + "Z"
         }
         
@@ -49,6 +50,7 @@ async def create_job(
             "_id": str(result.inserted_id),
             "title": job_doc["title"],
             "jd_text": job_doc["jd_text"],
+            "location": job_doc["location"],
             "created_at": job_doc["created_at"]
         }
     
@@ -92,6 +94,7 @@ async def list_jobs(
                 "_id": job_id_str,
                 "title": job.get("title", ""),
                 "jd_text": job.get("jd_text", ""),
+                "location": job.get("location", ""),
                 "created_at": job.get("created_at", datetime.utcnow().isoformat() + "Z"),
                 "application_count": application_count
             }
@@ -143,6 +146,7 @@ async def get_job(
             "_id": str(job["_id"]),
             "title": job.get("title", ""),
             "jd_text": job.get("jd_text", ""),
+            "location": job.get("location", ""),
             "created_at": job.get("created_at", datetime.utcnow().isoformat() + "Z"),
             "application_count": application_count
         }
@@ -186,6 +190,8 @@ async def update_job(
             update_data["title"] = job_update.title
         if job_update.jd_text is not None:
             update_data["jd_text"] = job_update.jd_text
+        if job_update.location is not None:
+            update_data["location"] = job_update.location
         
         # Update job
         jobs_collection.update_one(
@@ -199,6 +205,7 @@ async def update_job(
             "_id": str(updated_job["_id"]),
             "title": updated_job.get("title", ""),
             "jd_text": updated_job.get("jd_text", ""),
+            "location": updated_job.get("location", ""),
             "created_at": updated_job.get("created_at", datetime.utcnow().isoformat() + "Z")
         }
     
