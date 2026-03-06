@@ -700,19 +700,34 @@ def compute_education_match(cv_edu: str, jd_text: str, gpa: float = None) -> int
     return 1
 
 
-def extract_location_from_cv(raw_text: str, sections: Dict) -> str:
+def extract_location_from_cv(raw_text: str, sections: Dict, basics: Dict = None) -> str:
     """Extract location from CV"""
+    
+    # Check basics.address first (5-step format)
+    if basics:
+        address = basics.get("address", "")
+        if address:
+            sl_cities = [
+                'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Moratuwa',
+                'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia', 'Kelaniya',
+                'Gampaha', 'Kalutara', 'Panadura', 'Kaduwela', 'Battaramulla'
+            ]
+            for city in sl_cities:
+                if city.lower() in address.lower():
+                    return f"{city}, Sri Lanka"
+            if len(address) > 3:
+                return address
+    
+    # raw_text scan
     if not raw_text:
         return "Colombo, Sri Lanka"
     
     lines = raw_text.split('\n')[:15]
-    
     sl_cities = [
         'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Moratuwa',
         'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia', 'Kelaniya',
         'Gampaha', 'Kalutara', 'Panadura', 'Kaduwela', 'Battaramulla'
     ]
-    
     for line in lines:
         line_clean = line.strip()
         for city in sl_cities:
@@ -720,6 +735,7 @@ def extract_location_from_cv(raw_text: str, sections: Dict) -> str:
                 return f"{city}, Sri Lanka"
     
     return "Colombo, Sri Lanka"
+    
 
 
 def extract_location_from_jd(jd_text: str) -> str:
@@ -830,7 +846,7 @@ async def create_feature_vector_from_mongo(
     - New format: cv_document has 'work', 'skills', 'education' lists (CVParsed schema)
     """
 
-    raw_text = cv_document.get("raw_text", "")
+    raw_text = cv_document.get("raw_text") or ""
 
     # ── Detect format ──────────────────────────────────────────
     is_new_format = 'work' in cv_document or 'basics' in cv_document
@@ -873,8 +889,8 @@ async def create_feature_vector_from_mongo(
                     pass
         best_gpa = max(gpa_values) if gpa_values else None
     else:
-        sections = cv_document.get("sections", {})
-        education_text = sections.get("education", "")
+        sections = cv_document.get("sections") or {}
+        education_text = sections.get("education") or ""
         education_lines = [
             line for line in education_text.split('\n')
             if not re.search(r'\+\d{2}|@|LinkedIn|GitHub|\|.*\|', line)
@@ -920,8 +936,8 @@ async def create_feature_vector_from_mongo(
         combined_cv_text_for_skills = f"{skills_text} {project_text}"
 
     else:
-        sections = cv_document.get("sections", {})
-        skills_text = sections.get("skills", "")
+        sections = cv_document.get("sections") or {}
+        skills_text = sections.get("skills") or ""
         skills_text = re.sub(r'Mr\.|Ms\.|Dr\..*', '', skills_text, flags=re.DOTALL)
         skills_text = re.sub(r'[\w\.-]+@[\w\.-]+', '', skills_text)
         skills_text = re.sub(r'\+\d[\d\s]+', '', skills_text)
@@ -979,7 +995,7 @@ async def create_feature_vector_from_mongo(
             ])
         }
     else:
-        sections_for_boost = cv_document.get("sections", {})
+        sections_for_boost = cv_document.get("sections") or {}
 
     exp_match = compute_semantic_experience_boost(sections_for_boost, jd_text, exp_match)
     edu_match = compute_education_match(education_text, jd_text, best_gpa)
@@ -990,17 +1006,28 @@ async def create_feature_vector_from_mongo(
         cv_location = basics.get('address', '').strip()
         # If address has a full street, extract just the city portion for geocoding
         if cv_location and len(cv_location) > 40:
-            # Take the last meaningful comma-separated part as the city
-            parts = [p.strip() for p in cv_location.split(',') if p.strip()]
-            cv_location = parts[-1] if parts else cv_location
+            sl_cities = [
+                'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Moratuwa',
+                'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia', 'Kelaniya',
+                'Gampaha', 'Kalutara', 'Panadura', 'Kaduwela', 'Battaramulla'
+            ]
+            for city in sl_cities:
+                if city.lower() in cv_location.lower():
+                    cv_location = f"{city}, Sri Lanka"
+                    break
         if not cv_location:
             cv_location = extract_location_from_cv(raw_text, {})
     else:
         sections = cv_document.get("sections", {})
-        cv_location = extract_location_from_cv(raw_text, sections)
+        basics_doc = cv_document.get("basics", {})
+        cv_location = extract_location_from_cv(raw_text, sections, basics=basics_doc)
 
     jd_location_extracted = extract_location_from_jd_enhanced(jd_text) if not jd_location else jd_location
+    print(f"CV location detected: '{cv_location}'")
+    print(f"JD location detected: '{jd_location_extracted}'")
+    
     loc_match = await compute_location_match_with_geocoding(cv_location, jd_location_extracted)
+    print(f"Location match score: {loc_match}")
 
     overall_match = (skill_match + title_match + exp_match + edu_match + loc_match) / 5
 
