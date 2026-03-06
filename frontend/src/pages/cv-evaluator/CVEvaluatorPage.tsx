@@ -23,7 +23,7 @@ const steps: Step[] = [
     { id: 2, name: 'Validate Info', description: 'Review and correct parsed information' },
     { id: 3, name: 'Job Match', description: 'Compare with job description' },
     { id: 4, name: 'Article Match', description: 'Check against articles/skills' },
-    { id: 5, name: 'Prediction', description: 'Turnover risk prediction' },
+    { id: 5, name: 'Attrition Risk', description: 'Attrition risk prediction' },
 ];
 
 export const CVEvaluatorPage = () => {
