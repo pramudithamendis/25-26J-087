@@ -188,7 +188,7 @@ const TurnoverHistoryPage: React.FC = () => {
       {!loading && filteredPredictions.length === 0 && (
         <div className="empty-state">
           <History size={64} />
-          <h3>No predictions found</h3>
+          <h3>No turnover assessments found</h3>
           <p>
             {searchQuery || filterRisk !== null
               ? 'Try adjusting your filters'
