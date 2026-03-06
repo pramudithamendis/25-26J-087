@@ -61,9 +61,8 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         model = get_model()
 
         # Soft-clamp probabilities so UI never shows exactly 0% or 100%
-        # This reflects real-world uncertainty even when the model is very confident
         probabilities = np.clip(probabilities, 0.02, 0.96)
-        probabilities = probabilities / probabilities.sum()  # renormalize to sum to 1.0
+        probabilities = probabilities / probabilities.sum()
 
         print(f" Prediction complete: {RISK_LABELS[predicted_class]} (confidence: {probabilities[predicted_class]:.2%})")
         
@@ -74,11 +73,10 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         if features['is_overqualified'] == 1 and features['exp_match_score'] < 0.6:
             print(f"  OVERQUALIFICATION DETECTED: {features['total_exp_years']:.1f} years, exp_match={features['exp_match_score']:.2f}")
             
-            # Only override if prediction was Low Risk (class 2)
             if predicted_class == 2:
                 print(f"   OVERRIDING prediction from Low Risk → High Risk")
-                predicted_class = 0  # Force HIGH RISK
-                probabilities = np.array([0.80, 0.15, 0.05])  # Recalibrate
+                predicted_class = 0
+                probabilities = np.array([0.80, 0.15, 0.05])
                 overqualification_override = True
         
         # Step 4: Generate SHAP explanations (with hard timeout)
@@ -93,7 +91,7 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         # Step 5: Identify risk factors
         if shap_explanation and shap_explanation.get('top_features'):
             print("Using SHAP-based risk factors")
-            risk_factors = identify_risk_factors_shap(features, shap_explanation)
+            risk_factors = identify_risk_factors_shap(features, shap_explanation, predicted_class)
         else:
             print("Using rule-based risk factors")
             risk_factors = identify_risk_factors(features)
@@ -179,7 +177,6 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         if counterfactuals_note:
             result["counterfactuals_note"] = counterfactuals_note
         
-        # Add override metadata if applicable
         if overqualification_override:
             result["override_metadata"] = {
                 "override_type": "severe_overqualification",
@@ -231,7 +228,7 @@ def get_shap_explainer():
     if _shap_explainer is None:
         from app.services.model_loader import get_model_for_shap
         import shap
-        _shap_model = get_model_for_shap()  # ← cache model too
+        _shap_model = get_model_for_shap()
         clf = _shap_model.named_steps.get('clf') if hasattr(_shap_model, 'named_steps') else _shap_model
         _shap_explainer = shap.TreeExplainer(clf)
         print("SHAP explainer cached")
@@ -240,11 +237,10 @@ def get_shap_explainer():
 def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: int, timeout_seconds: int = 8) -> Dict[str, Any]:
     
     print("   Waiting for SHAP lock...")
-    # Wait up to 60 seconds for previous SHAP to finish
-    lock_acquired = _shap_lock.acquire(blocking=True, timeout=30)
+    lock_acquired = _shap_lock.acquire(blocking=True, timeout=25)
     
     if not lock_acquired:
-        print("   Could not acquire SHAP lock after 60s - using rule-based")
+        print("   Could not acquire SHAP lock after 25s - using rule-based")
         return get_empty_shap_explanation()
     
     try:
@@ -252,7 +248,6 @@ def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: 
         
         def generate_with_timeout():
             try:
-                
                 import shap
                 explanation = generate_shap_explanation_internal(features, None, predicted_class)
                 result['explanation'] = explanation
@@ -279,7 +274,6 @@ def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: 
 
 
 def get_empty_shap_explanation() -> Dict[str, Any]:
-    """Return empty SHAP explanation structure"""
     return {
         "base_value": 0.0,
         "prediction_value": 0.0,
@@ -289,7 +283,6 @@ def get_empty_shap_explanation() -> Dict[str, Any]:
     }
 
 def generate_shap_explanation_internal(features: Dict[str, float], model, predicted_class: int) -> Dict[str, Any]:
-    """Internal SHAP generation - handles CatBoost multi-dimensional output"""
     import shap
     
     feature_df = pd.DataFrame([features])
@@ -300,7 +293,7 @@ def generate_shap_explanation_internal(features: Dict[str, float], model, predic
     explainer = get_shap_explainer()
     full_model = _shap_model
     
-    if full_model is None:  # safety check
+    if full_model is None:
         raise ValueError("SHAP model not initialized")
 
     if hasattr(full_model, 'named_steps'):
@@ -317,7 +310,6 @@ def generate_shap_explanation_internal(features: Dict[str, float], model, predic
     explainer = get_shap_explainer()
     shap_values = explainer.shap_values(X_transformed)
     
-    # Handle multi-class SHAP output
     if isinstance(shap_values, np.ndarray):
         if len(shap_values.shape) == 3:
             shap_vals = shap_values[0, :, predicted_class]
@@ -403,7 +395,6 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
             "impact": "medium"
         })
     
-    # Simple overqualification detection 
     if features['is_overqualified'] == 1:
         risk_factors.append({
             "factor": "Overqualification",
@@ -442,59 +433,193 @@ def identify_risk_factors(features: Dict[str, float]) -> list:
     return risk_factors[:5]
 
 
-def identify_risk_factors_shap(features: Dict[str, float], shap_explanation: Dict) -> List[Dict]:
-    """SHAP-based risk factor identification"""
+def _get_feature_description(feature_name: str, value: float, predicted_class: int) -> tuple:
+    """
+    Return (label, description, impact) based on feature name, actual value,
+    and predicted risk class. Descriptions reflect whether the feature is
+    positive or negative for this candidate.
+    is_low_risk = predicted_class == 2
+    """
+    is_low_risk = predicted_class == 2
+
+    if feature_name == 'skill_match_score':
+        if value >= 0.6:
+            return ("Skills Alignment", "Good skill overlap with job requirements supports retention", "low")
+        elif value >= 0.4:
+            return ("Skills Alignment", "Moderate skill match. Some gaps may lead to frustration", "medium")
+        else:
+            return ("Skills Alignment", "Weak skill match may lead to frustration and early job searching", "high")
+
+    if feature_name == 'title_match_score':
+        if value >= 0.7:
+            return ("Role Similarity", "Strong alignment between candidate's background and this role", "low")
+        elif value >= 0.4:
+            return ("Role Similarity", "Partial role alignment. Candidate may need adjustment period", "medium")
+        else:
+            return ("Role Similarity", "Significant role mismatch may cause dissatisfaction", "high")
+
+    if feature_name == 'overall_match_score':
+        if value >= 0.7:
+            return ("Overall Job Fit", "Strong overall fit. Candidate is well-suited for this role", "low")
+        elif value >= 0.5:
+            return ("Overall Job Fit", "Moderate overall fit. Some areas need attention", "medium")
+        else:
+            return ("Overall Job Fit", "Poor overall fit increases likelihood of early departure", "high")
+
+    if feature_name == 'exp_match_score':
+        if value >= 0.8:
+            return ("Experience Match", "Experience level fits well with position requirements", "low")
+        elif value >= 0.5:
+            return ("Experience Match", "Experience partially matches. Minor gaps present", "medium")
+        else:
+            return ("Experience Match", "Significant mismatch between experience and job requirements", "high")
+
+    if feature_name == 'avg_tenure_months':
+        if value >= 24:
+            return ("Average Job Tenure", f"Stays an average of {value/12:.1f} years per job. Shows strong commitment", "low")
+        elif value >= 12:
+            return ("Average Job Tenure", f"Average tenure of {value:.0f} months. Moderate stability", "medium")
+        else:
+            return ("Average Job Tenure", f"Short average tenure of {value:.0f} months suggests commitment issues", "high")
+
+    if feature_name == 'current_job_tenure':
+        if value >= 24:
+            return ("Current Role Stability", f"Has been in current role for {value:.0f} months. Strong stability indicator", "low")
+        elif value >= 12:
+            return ("Current Role Stability", f"Moderate time in current role ({value:.0f} months)", "medium")
+        else:
+            return ("Current Role Stability", f"Short time in current role ({value:.0f} months) may indicate instability", "high")
+
+    if feature_name == 'job_hopping_rate':
+        if value <= 0.2:
+            return ("Job Stability", "Minimal job hopping. Very stable work history", "low")
+        elif value <= 0.4:
+            return ("Job Stability", "Some job changes. Moderate stability", "medium")
+        else:
+            return ("Job Stability", "High job hopping rate suggests difficulty committing", "high")
+
+    if feature_name == 'location_match_score':
+        if value >= 0.8:
+            return ("Location Compatibility", "Convenient commute distance. Less likely to leave due to travel", "low")
+        elif value >= 0.5:
+            return ("Location Compatibility", "Moderate commute distance. May be a minor concern", "medium")
+        else:
+            return ("Location Compatibility", "Long commute distance increases risk of early departure", "high")
+
+    if feature_name == 'n_skills':
+        if value >= 15:
+            return ("Skill Breadth", f"Strong skill portfolio with {value:.0f} skills. Well-rounded candidate", "low")
+        else:
+            return ("Skill Breadth", f"Limited skill variety ({value:.0f} skills identified)", "medium")
+
+    if feature_name == 'has_progression':
+        if value == 1:
+            return ("Career Progression", "Shows upward career progression. Ambitious and growth-oriented", "low")
+        else:
+            return ("Career Progression", "Limited career progression detected", "medium")
+
+    if feature_name == 'is_overqualified':
+        if value == 1:
+            return ("Overqualification", "Candidate may be overqualified. Risk of leaving for better opportunities", "high")
+        else:
+            return ("Qualification Fit", "Qualification level appropriate for this role", "low")
+
+    if feature_name == 'is_underqualified':
+        if value == 1:
+            return ("Underqualification", "Candidate may lack required experience. Risk of struggling and leaving early", "high")
+        else:
+            return ("Qualification Fit", "Meets minimum qualification requirements", "low")
+
+    if feature_name == 'n_certifications':
+        if value >= 3:
+            return ("Certifications", f"{value:.0f} professional certifications. Demonstrates continuous learning", "low")
+        else:
+            return ("Certifications", f"{value:.0f} certifications noted", "low")
+
+    if feature_name == 'has_masters':
+        if value == 1:
+            return ("Advanced Education", "Holds a postgraduate degree. Strong academic background", "low")
+        else:
+            return ("Education Level", "No postgraduate degree. Undergraduate level qualification", "low")
+
+    if feature_name == 'short_stints_count':
+        if value == 0:
+            return ("Job Stability", "No short-tenure jobs. Consistent employment history", "low")
+        else:
+            return ("Short Stints", f"{value:.0f} job(s) held for less than a year", "high" if value >= 2 else "medium")
+
+    if feature_name == 'industry_switches':
+        if value == 0:
+            return ("Industry Focus", "Stayed within same industry. Domain expertise builds over time", "low")
+        else:
+            return ("Industry Switches", f"Switched industries {value:.0f} time(s). May indicate varied interests", "medium")
+
+    if feature_name == 'tenure_slope':
+        if value > 0:
+            return ("Tenure Trend", "Job tenures are increasing over time. Growing commitment", "low")
+        else:
+            return ("Tenure Trend", "Job tenures decreasing over time. May indicate restlessness", "medium")
+
+    if feature_name == 'total_exp_years':
+        return ("Total Experience", f"{value:.1f} years of total work experience", "low")
+
+    if feature_name == 'total_jobs':
+        return ("Number of Jobs", f"Has held {value:.0f} position(s) in their career", "low")
+
+    if feature_name == 'progression_jumps':
+        if value >= 2:
+            return ("Promotion History", f"{value:.0f} upward career moves. Strong progression", "low")
+        elif value == 1:
+            return ("Promotion History", "One upward career move noted", "low")
+        else:
+            return ("Promotion History", "No clear upward progression detected", "medium")
+
+    if feature_name == 'work_mode_mismatch':
+        if value == 1:
+            return ("Work Mode Mismatch", "Candidate work preference may not align with role type", "medium")
+        else:
+            return ("Work Mode Compatibility", "Work mode preference aligns with role requirements", "low")
+
+    if feature_name == 'has_career_gap':
+        if value == 1:
+            return ("Career Gap", "Employment gap detected. Worth discussing in interview", "medium")
+        else:
+            return ("Employment Continuity", "No significant career gaps. Consistent employment", "low")
+
+    # Default fallback
+    return (
+        feature_name.replace('_', ' ').title(),
+        f"Feature value: {value:.2f}",
+        "medium"
+    )
+
+
+def identify_risk_factors_shap(features: Dict[str, float], shap_explanation: Dict, predicted_class: int = 2) -> List[Dict]:
+    """SHAP-based key influencing factors — descriptions reflect actual feature values"""
     risk_factors = []
-    
-    top_risk_features = [
-        f for f in shap_explanation.get('top_features', [])
-        if f['impact'] == 'increases_risk'
-    ][:5]
-    
-    feature_descriptions = {
-        'job_hopping_rate': ("Frequent Job Changes", "High proportion of short-tenure jobs", "high"),
-        'skill_match_score': ("Skills Alignment", "Weak skill match may lead to frustration and job searching", "high"),
-        'title_match_score': ("Role Similarity", "Different role may cause dissatisfaction or mismatch", "medium"),
-        'avg_tenure_months': ("Average Job Tenure", "Average duration per previous job", "high"),
-        'location_match_score': ("Location Compatibility", "Distance between candidate location and job location", "medium"),
-        'n_skills': ("Skill Breadth", "Candidate has a strong variety of skills", "low"),
-        'has_progression': ("Career Progression", "Career progression across jobs shows ambition", "low"),
-        'overall_match_score': ("Overall Job Fit", "Poor overall fit increases likelihood of early departure", "high"),
-        'exp_match_score': ("Experience Match", "Mismatch between candidate experience and job requirements", "medium"),
-        'edu_match_score': ("Education Match", "Education level doesn't align well with job requirements", "medium"),
-        'is_overqualified': ("Overqualification", "Overqualified candidates often leave for better opportunities", "medium"),
-        'is_underqualified': ("Underqualification", "Underqualified candidates may struggle and leave early", "high"),
-        'current_job_tenure': ("Current Role Stability", "Time spent in current job indicates commitment level", "medium"),
-        'total_exp_years': ("Total Experience", "Overall years of work experience", "medium"),
-        'total_jobs': ("Number of Jobs", "Total number of positions held", "medium"),
-        'short_stints_count': ("Short Stints", "Number of jobs held for less than a year", "high"),
-        'tenure_slope': ("Tenure Trend", "Whether job tenures are increasing or decreasing over time", "medium"),
-        'industry_switches': ("Industry Switches", "Number of times candidate changed industry", "medium"),
-        'progression_jumps': ("Promotion History", "Number of upward career moves", "low"),
-        'has_masters': ("Advanced Education", "Holds a postgraduate degree", "low"),
-        'n_education': ("Education Count", "Number of educational qualifications", "low"),
-        'n_certifications': ("Certifications", "Number of professional certifications held", "low"),
-        'is_remote_cv': ("Remote Work History", "Candidate has remote work experience", "low"),
-        'is_remote_jd': ("Remote Role", "This position is remote", "low"),
-        'work_mode_mismatch': ("Work Mode Mismatch", "Mismatch between candidate work preference and role type", "medium"),
-        'has_career_gap': ("Career Gap", "Candidate has a gap in employment history", "medium"),
-        'career_gap_months': ("Career Gap Duration", "Length of employment gap in months", "medium"),
-        'is_remote_preference': ("Remote Preference", "Candidate prefers remote work", "low"),
-    }
-    
-    for feat_data in top_risk_features:
+
+    # Take top 5 features by absolute SHAP value regardless of direction
+    top_features = sorted(
+        shap_explanation.get('top_features', []),
+        key=lambda x: x['abs_shap_value'],
+        reverse=True
+    )[:5]
+
+    for feat_data in top_features:
         feature_name = feat_data['feature']
-        desc = feature_descriptions.get(feature_name, (feature_name.replace('_', ' ').title(), f"Feature value: {feat_data['value']:.2f}", "medium"))
-        
+        value = feat_data['value']
+
+        label, description, impact = _get_feature_description(feature_name, value, predicted_class)
+
         risk_factors.append({
-            "factor": desc[0],
-            "value": round(feat_data['value'], 2),
-            "description": desc[1],
-            "impact": desc[2],
+            "factor": label,
+            "value": round(value, 2) if isinstance(value, float) else value,
+            "description": description,
+            "impact": impact,
             "shap_importance": round(feat_data['shap_value'], 4),
-            "shap_explanation": f"Contributes +{abs(feat_data['shap_value']):.3f} to risk"
+            "shap_explanation": f"Contributes {'+' if feat_data['shap_value'] > 0 else ''}{feat_data['shap_value']:.3f} to prediction"
         })
-    
+
     return risk_factors
 
 
@@ -505,7 +630,6 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
     if not shap_explanation or not shap_explanation.get('top_features'):
         return generate_counterfactuals(features, prediction, probabilities, model)
     
-    # Get top 3 features that increase risk
     risk_features = [f for f in shap_explanation['top_features'][:5] 
                      if f['impact'] == 'increases_risk'][:3]
     
@@ -513,11 +637,9 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
         feature_name = feat_data['feature']
         current_value = feat_data['value']
         
-        # Skip categorical features
         if not isinstance(current_value, (int, float)):
             continue
         
-        # Determine improvement direction
         if 'match' in feature_name or 'score' in feature_name:
             new_value = min(current_value + 0.3, 1.0)
             description = f"had 30% better {feature_name.replace('_', ' ')}"
@@ -535,7 +657,6 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
         else:
             continue
         
-        # Test counterfactual
         modified_features = features.copy()
         modified_features[feature_name] = new_value
         
