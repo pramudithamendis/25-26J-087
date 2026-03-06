@@ -7,6 +7,7 @@ interface TurnoverPredictionStepProps {
     jobId?: string | null;
     jobTitle?: string;
     jobDescription?: string;
+    jobLocation?: string;
     userEmail?: string;
     onNext?: () => void;
     onComplete?: () => void;
@@ -17,6 +18,7 @@ export const TurnoverPredictionStep = ({
     jobId,
     jobTitle,
     jobDescription,
+    jobLocation,
     userEmail,
     onNext,
     onComplete,
@@ -73,6 +75,7 @@ export const TurnoverPredictionStep = ({
                 jobId={jobId}
                 jobTitle={jobTitle}
                 jobDescription={jobDescription}
+                jobLocation={jobLocation}  
             />
         </div>
     );
