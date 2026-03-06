@@ -13,19 +13,19 @@ interface TurnoverPredictionResultsProps {
 
 const RISK_LEVEL_CONFIG = {
   0: {
-    label: 'High Risk',
+    label: 'Early Exit Risk (0-6 months)',
     badgeClass: 'risk-badge-high',
     cardClass: 'risk-card-high',
     icon: <TriangleAlert size={20} />,
   },
   1: {
-    label: 'Medium Risk',
+    label: 'First-Year Exit Risk (6-12 months)',
     badgeClass: 'risk-badge-medium',
     cardClass: 'risk-card-medium',
     icon: <Zap size={20} />,
   },
   2: {
-    label: 'Low Risk',
+    label: 'First-Year Retention Likely (>12 months)',
     badgeClass: 'risk-badge-low',
     cardClass: 'risk-card-low',
     icon: <CircleCheckBig size={20} />,
@@ -34,7 +34,7 @@ const RISK_LEVEL_CONFIG = {
 
 const getRecommendation = (riskLevel: number) => {
   if (riskLevel === 2) return {
-    title: "Strong Candidate — Recommend to Hire",
+    title: "Strong Candidate - Recommend to Hire",
     description: "This candidate shows excellent stability indicators and strong fit for the role. They are likely to stay long-term and contribute effectively.",
   };
   if (riskLevel === 1) return {
@@ -42,7 +42,7 @@ const getRecommendation = (riskLevel: number) => {
     description: "This candidate has some concerns but could be a good fit. Consider discussing career goals, work environment expectations, and long-term plans during interview.",
   };
   return {
-    title: "High Risk — Careful Evaluation Needed",
+    title: "High Risk - Careful Evaluation Needed",
     description: "This candidate shows warning signs for early departure. If proceeding, have frank discussions about expectations, provide strong onboarding support, and ensure competitive compensation.",
   };
 };
@@ -75,7 +75,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
       <div className="results-header">
         <div className="candidate-info">
           <div className="user-icon"><User size={22} /></div>
-          <div className="candidate-details">  {/* ← add this wrapper */}
+          <div className="candidate-details"> 
             <h3>Assessment for {cv_name}</h3>
             <p className="candidate-name">Turnover Risk Analysis</p>
           </div>
@@ -91,7 +91,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
 
         {/* Certainty */}
         <p className="confidence">
-          Model Certainty: <strong>{getModelCertainty(pred.confidence)}</strong>
+          Assessment Confidence: <strong>{getModelCertainty(pred.confidence)}</strong>
         </p>
 
         {/* Recommendation */}
@@ -106,60 +106,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
         </div>
 
         {/* Probability Breakdown */}
-        <div className="likelihood-section">
-          <h4>How Long Will They Stay?</h4>
-          <div className="probability-grid">
-
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Leaves within 6 months</span>
-                <span className="prob-confidence-label">
-                  {getLikelihoodLabel(pred.probabilities.high_risk)}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{ width: `${(pred.probabilities.high_risk * 100).toFixed(0)}%` }}
-                />
-              </div>
-              <span className="prob-percent">{(pred.probabilities.high_risk * 100).toFixed(0)}%</span>
-            </div>
-
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Leaves within 6–12 months</span>
-                <span className="prob-confidence-label">
-                  {getLikelihoodLabel(pred.probabilities.medium_risk)}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{ width: `${(pred.probabilities.medium_risk * 100).toFixed(0)}%` }}
-                />
-              </div>
-              <span className="prob-percent">{(pred.probabilities.medium_risk * 100).toFixed(0)}%</span>
-            </div>
-
-            <div className="prob-item">
-              <div className="prob-header">
-                <span className="prob-label">Stays more than 1 year</span>
-                <span className="prob-confidence-label">
-                  {getLikelihoodLabel(pred.probabilities.low_risk)}
-                </span>
-              </div>
-              <div className="prob-bar-container">
-                <div
-                  className="prob-bar"
-                  style={{ width: `${(pred.probabilities.low_risk * 100).toFixed(0)}%` }}
-                />
-              </div>
-              <span className="prob-percent">{(pred.probabilities.low_risk * 100).toFixed(0)}%</span>
-            </div>
-
-          </div>
-        </div>
+        
       </div>
 
       {/* Strengths & Concerns */}
@@ -174,7 +121,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             {features.skill_match >= 0.7 && (
               <li className="point-item success">
                 <CheckCircle2 size={15} className="point-icon" />
-                <span>Strong skill alignment with job requirements ({(features.skill_match * 100).toFixed(0)}% match)</span>
+                <span>Strong skill alignment with job requirements</span>
               </li>
             )}
             {features.exp_match >= 0.7 && (
@@ -186,13 +133,13 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             {features.location_match >= 0.7 && (
               <li className="point-item success">
                 <CheckCircle2 size={15} className="point-icon" />
-                <span>Convenient commute distance — less likely to leave due to travel</span>
+                <span>Convenient commute distance. Less likely to leave due to travel</span>
               </li>
             )}
             {features.avg_tenure_months >= 24 && (
               <li className="point-item success">
                 <CheckCircle2 size={15} className="point-icon" />
-                <span>Stays an average of {(features.avg_tenure_months / 12).toFixed(1)} years per job — shows commitment</span>
+                <span>Stays an average of {(features.avg_tenure_months / 12).toFixed(1)} years per job. Shows commitment</span>
               </li>
             )}
             {features.job_hopping_rate < 0.3 && (
@@ -225,7 +172,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             {features.job_hopping_rate >= 0.5 && (
               <li className="point-item warning">
                 <AlertTriangle size={15} className="point-icon" />
-                <span>Frequent job changes — {(features.job_hopping_rate * 100).toFixed(0)}% of jobs were short-term</span>
+                <span>Frequent job changes.  {(features.job_hopping_rate * 100).toFixed(0)}% of jobs were short-term</span>
               </li>
             )}
             {features.avg_tenure_months < 12 && (
@@ -262,19 +209,25 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
         <div className="profile-stats">
           <div className="stat-box">
             <span className="stat-label">Total Experience</span>
-            <span className="stat-value">{features.total_experience.toFixed(1)} years</span>
+            <span className="stat-value1">{features.total_experience.toFixed(1)} years</span>
           </div>
           <div className="stat-box">
             <span className="stat-label">Number of Jobs</span>
-            <span className="stat-value">{features.total_jobs}</span>
+            <span className="stat-value1">{features.total_jobs}</span>
           </div>
           <div className="stat-box">
             <span className="stat-label">Average Time per Job</span>
-            <span className="stat-value">{(features.avg_tenure_months / 12).toFixed(1)} years</span>
+            <span className="stat-value1">{(features.avg_tenure_months / 12).toFixed(1)} years</span>
           </div>
           <div className="stat-box">
-            <span className="stat-label">Skill Match</span>
-            <span className="stat-value">{(features.skill_match * 100).toFixed(0)}%</span>
+            <span className="stat-label">Skill Overlap</span>
+            <span className="stat-value-label">
+              {features.skill_match >= 0.6
+                ? 'Good Overlap'
+                : features.skill_match >= 0.35
+                ? 'Partial Overlap'
+                : 'Limited Overlap'}
+            </span>
           </div>
         </div>
       </div>
@@ -322,10 +275,12 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             </>
           ) : (
             <>
-              <li>
-                <AlertTriangle size={14} />
-                <span><strong>Critical:</strong> Understand their reasons for frequent job changes</span>
-              </li>
+              {pred.risk_level === 0 && features.total_jobs > 1 && (
+                <li>
+                  <AlertTriangle size={14} />
+                  <span><strong>Critical:</strong> Understand their reasons for frequent job changes</span>
+                </li>
+              )}
               <li>
                 <AlertTriangle size={14} />
                 <span><strong>Critical:</strong> Ask what would make them stay long-term at a company</span>

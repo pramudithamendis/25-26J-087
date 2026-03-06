@@ -27,7 +27,6 @@ async def predict_turnover_api(
     if not job_description or len(job_description.strip()) < 50:
         raise HTTPException(400, "Job description must be at least 50 characters")
     
-    # Call prediction service
     result = await predict_turnover_from_cv_id(cv_id, job_description, job_location, user=user)
     
     return result
@@ -58,12 +57,10 @@ async def explain_prediction(
 ):
     """
     Get detailed SHAP explanation for a specific predictions
-
     """
     
     result = await predict_turnover_from_cv_id(cv_id, job_description, job_location)
     
-    # Add additional metadata for explanation-focused use
     if result.get("status") == "success":
         result["explanation_metadata"] = {
             "generated_for": "detailed_analysis",
@@ -87,12 +84,11 @@ async def get_prediction_history(
     
     try:
         turnover_coll = turnover_collection
-        
-        # Find predictions for this user
+            
         cursor = turnover_coll.find(
-            {"user_email": user.get("email")},
-            {"cv_id": 1, "cv_name": 1, "prediction": 1, "calculated_at": 1, "result_id": 1}  # ← remove "_id": 0, add result_id
-            ).sort("calculated_at", -1).limit(limit)
+            {},
+            {"cv_id": 1, "cv_name": 1, "prediction": 1, "calculated_at": 1, "result_id": 1}
+        ).sort("calculated_at", -1).limit(limit)
         
         history = []
         for doc in cursor:
@@ -122,7 +118,6 @@ async def get_prediction_result(
     try:
         turnover_coll = turnover_collection
         
-        # Find most recent prediction for this CV by this user
         result = turnover_coll.find_one(
             {"cv_id": cv_id, "user_email": user.get("email")},
             sort=[("calculated_at", -1)]
@@ -131,7 +126,6 @@ async def get_prediction_result(
         if not result:
             raise HTTPException(404, f"No turnover assessment found for CV {cv_id}")
         
-        # Remove MongoDB _id
         result.pop("_id", None)
         
         return result
@@ -153,7 +147,7 @@ async def get_prediction_by_result_id(
     
     try:
         result = turnover_collection.find_one(
-            {"_id": ObjectId(result_id), "user_email": user.get("email")}
+            {"_id": ObjectId(result_id)}
         )
         
         if not result:
@@ -178,15 +172,16 @@ async def get_all_candidates(
     try:
         cursor = cv_collection.find(
             {},
-            {"name": 1, "emails": 1, "uploaded_at": 1}
+            {"name": 1, "basics": 1, "emails": 1, "uploaded_at": 1}
         ).sort("uploaded_at", -1)
 
         candidates = []
         for doc in cursor:
             candidates.append({
                 "_id": str(doc["_id"]),
-                "name": doc.get("name", "Unknown"),
-                "email": doc.get("emails", [""])[0] if doc.get("emails") else "",
+                "name": doc.get("name") or doc.get("basics", {}).get("name", "Unknown"),
+                "email": (doc.get("emails", [""])[0] if doc.get("emails")
+                          else doc.get("basics", {}).get("email", "")),
                 "uploaded_at": doc.get("uploaded_at", "")
             })
 
@@ -235,17 +230,31 @@ async def get_cv_by_email(
     from app.database import cv_collection
 
     try:
-        # Try matching by emails array field
+        # Try matching by emails array field (old format)
         doc = cv_collection.find_one(
             {"emails": {"$in": [email]}},
-            {"_id": 1, "name": 1, "uploaded_at": 1}
+            {"_id": 1, "name": 1, "basics": 1, "uploaded_at": 1}
         )
 
         # Fallback: try email field directly
         if not doc:
             doc = cv_collection.find_one(
                 {"email": email},
-                {"_id": 1, "name": 1, "uploaded_at": 1}
+                {"_id": 1, "name": 1, "basics": 1, "uploaded_at": 1}
+            )
+
+        # Fallback: try basics.email (new 5-step format)
+        if not doc:
+            doc = cv_collection.find_one(
+                {"basics.email": email},
+                {"_id": 1, "name": 1, "basics": 1, "uploaded_at": 1}
+            )
+
+        # Fallback: try user_email field
+        if not doc:
+            doc = cv_collection.find_one(
+                {"user_email": email},
+                {"_id": 1, "name": 1, "basics": 1, "uploaded_at": 1}
             )
 
         if not doc:
@@ -254,7 +263,7 @@ async def get_cv_by_email(
         return {
             "status": "found",
             "cv_id": str(doc["_id"]),
-            "name": doc.get("name", "Unknown"),
+            "name": doc.get("name") or doc.get("basics", {}).get("name", "Unknown"),
             "uploaded_at": doc.get("uploaded_at", "")
         }
 
@@ -305,7 +314,7 @@ async def predict_turnover_with_job_api(
 
     result = await predict_turnover_from_cv_id(
         cv_id, job_description, job_location,
-        user=user, job_id=job_id, job_title=job_title  # pass job_id through
+        user=user, job_id=job_id, job_title=job_title
     )
 
     return result

@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { ArticleEvaluationStep } from "./steps/ArticleEvaluationStep";
 import { InfoValidationStep } from "./steps/InfoValidationStep";
 import { JobEvaluationStep } from "./steps/JobEvaluationStep";
 import { TurnoverPredictionStep } from "./steps/TurnoverPredictionStep";
 import { UploadCVStep } from "./steps/UploadCVStep";
-import type { CVSubmitResponse, CVParsed } from "../../types/cv.types";
+import type { CVSubmitResponse } from "../../types/cv.types";
 import { CheckCircle } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { getJob } from "../../services/jobService";
+import type { JobResponse } from "../../types/jobTypes";
 
 
 interface Step {
@@ -23,10 +27,23 @@ const steps: Step[] = [
 ];
 
 export const CVEvaluatorPage = () => {
+    const { jobId: jobIdFromUrl } = useParams<{ jobId: string }>();
+    const { user } = useAuth();
+
     const [currentStep, setCurrentStep] = useState<number>(1);
     const [cvData, setCvData] = useState<CVSubmitResponse | null>(null);
     const [cvFile, setCvFile] = useState<File | null>(null);
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+    const [jobData, setJobData] = useState<JobResponse | null>(null);
+
+    // Fetch job details when jobId is available (from URL or after step 3 completes)
+    useEffect(() => {
+        if (jobIdFromUrl) {
+            getJob(jobIdFromUrl)
+                .then(setJobData)
+                .catch(() => { /* non-fatal – step 5 will show a warning */ });
+        }
+    }, [jobIdFromUrl]);
 
     const handleNext = () => {
         if (currentStep < steps.length) {
@@ -51,13 +68,6 @@ export const CVEvaluatorPage = () => {
         handleStepComplete(1);
     };
 
-    const handleInfoValidationComplete = (updatedCV: CVParsed) => {
-        // Merge the freshly saved CV data into the parent state so subsequent
-        // steps (JobEvaluationStep, etc.) always see the latest edited values.
-        setCvData(prev => prev ? { ...prev, data: updatedCV } : prev);
-        handleStepComplete(2);
-    };
-
     const renderStep = () => {
         const stepProps = {
             cvData,
@@ -69,13 +79,22 @@ export const CVEvaluatorPage = () => {
             case 1:
                 return <UploadCVStep onUploadSuccess={handleUploadSuccess} onFileUploaded={(file) => setCvFile(file)} onNext={handleNext} />;
             case 2:
-                return <InfoValidationStep cvData={cvData} onNext={handleNext} onComplete={handleInfoValidationComplete} />;
+                return <InfoValidationStep {...stepProps} />;
             case 3:
                 return <JobEvaluationStep {...stepProps} cvFile={cvFile} />;
             case 4:
                 return <ArticleEvaluationStep {...stepProps} />;
             case 5:
-                return <TurnoverPredictionStep {...stepProps} />;
+                return (
+                    <TurnoverPredictionStep
+                        {...stepProps}
+                        jobId={jobIdFromUrl || jobData?._id}
+                        jobTitle={jobData?.title}
+                        jobDescription={jobData?.jd_text}
+                        jobLocation={jobData?.location}
+                        userEmail={user?.email}
+                    />
+                );
             default:
                 return <UploadCVStep onUploadSuccess={handleUploadSuccess} onFileUploaded={(file) => setCvFile(file)} onNext={handleNext} />;
         }

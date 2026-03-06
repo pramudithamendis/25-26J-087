@@ -6,6 +6,7 @@ export interface Job {
   _id: string;
   title: string;
   jd_text: string;
+  location?: string;
   created_at: string;
   application_count?: number;
   has_applied?: boolean;
@@ -14,17 +15,20 @@ export interface Job {
 export interface JobCreate {
   title: string;
   jd_text: string;
+  location?: string;
 }
 
 export interface JobUpdate {
   title?: string;
   jd_text?: string;
+  location?: string;
 }
 
 export interface JobResponse {
   _id: string;
   title: string;
   jd_text: string;
+  location?: string;
   created_at: string;
 }
 

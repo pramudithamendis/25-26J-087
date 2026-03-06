@@ -14,6 +14,7 @@ interface TurnoverRiskTabProps {
   jobId: string;
   jobDescription: string;
   jobTitle: string;
+  jobLocation?: string;
   evaluationDecision?: string;
 }
 
@@ -35,12 +36,13 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
   jobId,
   jobDescription,
   jobTitle,
+  jobLocation, 
   evaluationDecision,
 }) => {
   const [tabState, setTabState] = useState<TabState>('loading');
   const [cvId, setCvId] = useState<string | null>(null);
   const [prediction, setPrediction] = useState<TurnoverPredictionResponse | null>(null);
-  const [jobLocation, setJobLocation] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState(jobLocation || '');
   const [locations, setLocations] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,9 +50,10 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
 
   // Auto-fill location if remote
   useEffect(() => {
-    if (remote) setJobLocation('Remote');
-    else setJobLocation('');
-  }, [jobTitle]);
+    if (remote) setSelectedLocation('Remote');
+    else if (jobLocation) setSelectedLocation(jobLocation);
+    else setSelectedLocation('');
+  }, [jobTitle, jobLocation]);
 
   useEffect(() => {
     fetchLocations();
@@ -71,7 +74,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       setTabState('loading');
       setError(null);
 
-      if (evaluationDecision === 'Not Selected') {
+      if (evaluationDecision === 'Not Selected' || evaluationDecision === 'Do Not Proceed') {
         setTabState('not_proceeded');
         return;
       }
@@ -118,7 +121,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
   };
 
   const handlePredict = async () => {
-    if (!cvId || !jobLocation.trim()) return;
+    if (!cvId || !selectedLocation.trim()) return;
 
     try {
       setTabState('predicting');
@@ -128,7 +131,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       formData.append('cv_id', cvId);
       formData.append('job_description', jobDescription);
       formData.append('job_id', jobId);
-      formData.append('job_location', jobLocation.trim());
+      formData.append('job_location', selectedLocation.trim());
       formData.append('job_title', jobTitle);
 
       const res = await apiClient.post('/turnover/predict-with-job', formData, {
@@ -166,7 +169,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       <div className="trt-state-card">
         <ShieldAlert size={40} className="trt-state-icon trt-icon-gray" />
         <h3>Assessment Not Available</h3>
-        <p>This candidate did not proceed to the next stage. Retention risk assessment is only available for candidates who have been selected or are under review.</p>
+        <p>This candidate did not proceed to the next stage. Early attrition risk assessment is only available for candidates who have been selected or are under review.</p>
       </div>
     );
   }
@@ -203,7 +206,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
             <p>
               {remote
                 ? 'This is a remote position.'
-                : 'Select the job office location to begin the retention risk assessment.'}
+                : 'Select the job office location to begin the early attrition risk assessment.'}
             </p>
           </div>
         </div>
@@ -218,6 +221,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
             <MapPin size={14} />
             Job Location
             {remote && <span className="trt-remote-tag">Auto-filled</span>}
+            {!remote && jobLocation && <span className="trt-remote-tag">From job</span>}
           </label>
 
           {remote ? (
@@ -231,8 +235,8 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
             <div className="trt-select-wrapper">
               <select
                 className="trt-location-select"
-                value={jobLocation}
-                onChange={e => setJobLocation(e.target.value)}
+                value={selectedLocation}
+                onChange={e => setSelectedLocation(e.target.value)}
                 disabled={tabState === 'predicting'}
               >
                 <option value="">Select office location...</option>
@@ -250,7 +254,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
         <Button
           variant="primary"
           onClick={handlePredict}
-          disabled={tabState === 'predicting' || !jobLocation.trim()}
+          disabled={tabState === 'predicting'}
         >
           {tabState === 'predicting' ? (
             <span className="trt-btn-loading">
