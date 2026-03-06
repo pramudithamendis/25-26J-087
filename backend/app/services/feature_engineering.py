@@ -1003,9 +1003,9 @@ async def create_feature_vector_from_mongo(
     # ── Location ───────────────────────────────────────────────
     if is_new_format:
         basics = cv_document.get('basics', {}) or {}
-        cv_location = basics.get('address', '').strip()
+        cv_location = (basics.get('address') or '').strip()
         # If address has a full street, extract just the city portion for geocoding
-        if cv_location and len(cv_location) > 40:
+        if cv_location and (len(cv_location) > 20 or any(c.isdigit() for c in cv_location)):
             sl_cities = [
                 'Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Moratuwa',
                 'Maharagama', 'Nugegoda', 'Dehiwala', 'Mount Lavinia', 'Kelaniya',
