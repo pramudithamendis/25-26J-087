@@ -75,12 +75,9 @@ const LocationSettings: React.FC = () => {
   return (
     <div className="ls-container">
       <div className="ls-header">
-        <div className="ls-header-icon">
-          <Building2 size={22} />
-        </div>
         <div>
           <h2>Branch Locations</h2>
-          <p>Manage the office locations available when running early attrition risk assessments</p>
+          <p>Manage the office locations.</p>
         </div>
       </div>
 
