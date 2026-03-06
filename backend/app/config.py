@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-3.5-turbo"
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-ada-002"
 
+    # OpenAI CV extraction (structured CVParsed schema)
+    OPENAI_CV_MODEL: str = "gpt-3.5-turbo"
+    OPENAI_CV_TEMPERATURE: float = 0.1
+
     # GNews API
     GNEWS_API_KEY: str = ""
     

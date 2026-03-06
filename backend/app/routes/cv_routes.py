@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
 from app.auth.dependencies import get_current_user
 from app.schemas.cv_schema import CVSubmitResponse, CVParsed, CVUpdateRequest
 from app.database import cv_collection
@@ -11,6 +11,7 @@ from bson import ObjectId
 import os
 import logging
 from app.parsers.cv_parser import parse_resume  
+from app.services.cv_extraction_openai import extract_cv_to_schema_fields, CVOpenAIExtractionError
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,9 @@ async def submit_cv(
             "github": links.get("github")[0] if links.get("github") else None,
             "website": links.get("portfolio")[0] if links.get("portfolio") else None,
             "summary": sections.get("summary", ""),
-            "address": contacts.get("address", "")
+            "address": contacts.get("address", ""),
+            "linkedin": linkedin_url,
+            "github": github_url
         }
 
         # Store structured sections
@@ -115,6 +118,129 @@ async def submit_cv(
         try:
             os.unlink(pdf_path)
         except:
+            pass
+
+
+@router.post("/submit-ai", response_model=CVSubmitResponse)
+async def submit_cv_ai(
+    file: UploadFile = File(...),
+    linkedin_file: UploadFile = File(None),
+    linkedin_url: str = Form(""),
+    github_url: str = Form(""),
+    user: dict = Depends(get_current_user)
+):
+    """
+    Upload and parse CV using OpenAI extraction (no fallback).
+    Returns data aligned to CVParsed schema.
+    """
+    if not file.filename or not file.filename.lower().endswith(('.pdf', '.txt', '.docx')):
+        raise HTTPException(400, "Only PDF, TXT, and DOCX files are supported")
+
+    # Save temp file for parsing (use real suffix for downstream parsers)
+    _, ext = os.path.splitext(file.filename)
+    suffix = ext if ext else ".pdf"
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(await file.read())
+        tmp_path = tmp.name
+
+    # Reset file for re-use (saving to uploads)
+    await file.seek(0)
+
+    try:
+        cv_fields, raw_text = extract_cv_to_schema_fields(tmp_path, file.filename)
+
+        # Update basics with provided URLs if they're not already set or if provided URLs are more complete
+        if cv_fields.get("basics"):
+            if linkedin_url and linkedin_url.strip():
+                cv_fields["basics"]["linkedin"] = linkedin_url.strip()
+            if github_url and github_url.strip():
+                cv_fields["basics"]["github"] = github_url.strip()
+
+        document = {
+            "cv_id": str(ObjectId()),
+            **cv_fields,
+            "raw_text": raw_text,
+            "uploaded_at": datetime.utcnow(),
+            "user_email": user.get("email"),
+            "parser_version": "openai_v1",
+            "extraction_method": "openai",
+        }
+
+        # Insert to MongoDB
+        result = cv_collection.insert_one(document)
+        document["_id"] = str(result.inserted_id)
+        document["cv_id"] = str(result.inserted_id)
+
+        # Persist file to uploads/cv for downstream evaluation (best-effort)
+        try:
+            user_email = user.get("email")
+            user_doc = users_collection.find_one({"email": user_email})
+            if user_doc:
+                user_id = str(user_doc["_id"])
+                saved_path = await save_uploaded_file(
+                    file,
+                    settings.CV_UPLOAD_FOLDER,
+                    user_id,
+                    'cv'
+                )
+                if saved_path:
+                    users_collection.update_one(
+                        {"email": user_email},
+                        {"$set": {"cv_file_path": saved_path}}
+                    )
+                    logger.info(f"CV file saved to {saved_path} for user {user_id}")
+                else:
+                    logger.warning(
+                        "Could not persist CV to uploads (only PDFs are allowed by file handler)"
+                    )
+        except Exception as save_err:
+            logger.warning(f"Could not persist CV file to uploads: {str(save_err)}")
+
+        # Persist LinkedIn file if provided (best-effort)
+        if linkedin_file and linkedin_file.filename:
+            try:
+                user_email = user.get("email")
+                user_doc = users_collection.find_one({"email": user_email})
+                if user_doc:
+                    user_id = str(user_doc["_id"])
+                    linkedin_saved_path = await save_uploaded_file(
+                        linkedin_file,
+                        settings.LINKEDIN_UPLOAD_FOLDER,
+                        user_id,
+                        'linkedin'
+                    )
+                    if linkedin_saved_path:
+                        users_collection.update_one(
+                            {"email": user_email},
+                            {"$set": {"linkedin_file_path": linkedin_saved_path}}
+                        )
+                        logger.info(f"LinkedIn file saved to {linkedin_saved_path} for user {user_id}")
+                    else:
+                        logger.warning(
+                            "Could not persist LinkedIn PDF to uploads (only PDFs are allowed by file handler)"
+                        )
+            except Exception as save_err:
+                logger.warning(f"Could not persist LinkedIn file to uploads: {str(save_err)}")
+
+        return CVSubmitResponse(
+            success=True,
+            message="CV parsed and saved successfully (OpenAI)",
+            data=CVParsed(**document)
+        )
+
+    except CVOpenAIExtractionError as e:
+        msg = str(e)
+        # If the user uploaded something we can't parse on this server, treat as 400.
+        if msg.startswith("Unsupported file type") or "DOCX parsing requires" in msg:
+            raise HTTPException(status_code=400, detail=msg)
+        raise HTTPException(status_code=500, detail=f"CV parsing failed (OpenAI): {msg}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"CV parsing failed: {str(e)}")
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except Exception:
             pass
 
 

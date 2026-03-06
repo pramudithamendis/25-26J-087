@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { uploadCV } from "../../../services/cv.service";
+import { uploadCVWithAI } from "../../../services/cv.service";
 import { FileIcon, UploadCloudIcon, XIcon } from "lucide-react";
 import type { CVSubmitResponse } from "../../../types/cv.types";
 
@@ -11,6 +11,9 @@ interface UploadCVStepProps {
 
 export const UploadCVStep = ({ onUploadSuccess, onFileUploaded, onNext }: UploadCVStepProps) => {
     const [file, setFile] = useState<File | null>(null);
+    const [linkedinFile, setLinkedinFile] = useState<File | null>(null);
+    const [linkedinUrl, setLinkedinUrl] = useState('');
+    const [githubUrl, setGithubUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [dragActive, setDragActive] = useState(false);
@@ -22,11 +25,13 @@ export const UploadCVStep = ({ onUploadSuccess, onFileUploaded, onNext }: Upload
         }
     };
 
-    const validateAndSetFile = (selectedFile: File) => {
+    const validateAndSetFile = (selectedFile: File, isLinkedin: boolean = false) => {
         // Check file type
-        const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        const validTypes = isLinkedin 
+            ? ['application/pdf'] 
+            : ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         if (!validTypes.includes(selectedFile.type)) {
-            setError('Please upload a PDF or DOC file');
+            setError(isLinkedin ? 'Please upload a PDF file for LinkedIn' : 'Please upload a PDF or DOC file');
             return;
         }
 
@@ -36,8 +41,19 @@ export const UploadCVStep = ({ onUploadSuccess, onFileUploaded, onNext }: Upload
             return;
         }
 
-        setFile(selectedFile);
+        if (isLinkedin) {
+            setLinkedinFile(selectedFile);
+        } else {
+            setFile(selectedFile);
+        }
         setError('');
+    };
+
+    const handleLinkedinFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            validateAndSetFile(selectedFile, true);
+        }
     };
 
     const handleDrag = (e: React.DragEvent) => {
@@ -71,7 +87,7 @@ export const UploadCVStep = ({ onUploadSuccess, onFileUploaded, onNext }: Upload
         setError('');
 
         try {
-            const response = await uploadCV(file);
+            const response = await uploadCVWithAI(file, linkedinFile, linkedinUrl, githubUrl);
             console.log('CV uploaded successfully:', response);
 
             if (onUploadSuccess) {
@@ -94,6 +110,10 @@ export const UploadCVStep = ({ onUploadSuccess, onFileUploaded, onNext }: Upload
 
     const removeFile = () => {
         setFile(null);
+    };
+
+    const removeLinkedinFile = () => {
+        setLinkedinFile(null);
     };
 
     const formatFileSize = (bytes: number) => {
@@ -166,6 +186,96 @@ export const UploadCVStep = ({ onUploadSuccess, onFileUploaded, onNext }: Upload
                     )}
                 </div>
 
+                {/* LinkedIn PDF Upload Area */}
+                <div className="mt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">LinkedIn PDF</h3>
+                    <p className="text-gray-500 text-sm mb-3">
+                        Upload your LinkedIn profile PDF for a more comprehensive evaluation.
+                    </p>
+                    <div
+                        className={`relative border-2 border-dashed rounded-lg p-8 transition-colors ${linkedinFile
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-300 hover:border-gray-400'
+                            }`}
+                    >
+                        <input
+                            type="file"
+                            id="linkedin-upload"
+                            className="hidden"
+                            accept=".pdf"
+                            onChange={handleLinkedinFileChange}
+                        />
+                        {!linkedinFile ? (
+                            <div className="text-center">
+                                <UploadCloudIcon className="mx-auto h-12 w-12 text-gray-400" />
+                                <label
+                                    htmlFor="linkedin-upload"
+                                    className="mt-4 cursor-pointer inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                >
+                                    Select LinkedIn PDF
+                                </label>
+                                <p className="mt-2 text-sm text-gray-500">
+                                    or drag and drop your file here
+                                </p>
+                                <p className="mt-1 text-xs text-gray-400">
+                                    Supported formats: PDF (Max 5MB)
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                    <FileIcon className="h-8 w-8 text-green-600" />
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">{linkedinFile.name}</p>
+                                        <p className="text-xs text-gray-500">{formatFileSize(linkedinFile.size)}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={removeLinkedinFile}
+                                    className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                                >
+                                    <XIcon className="h-5 w-5 text-gray-500" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Additional URL Inputs */}
+                <div className="mt-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="linkedin-url" className="block text-sm font-medium text-gray-700 mb-1">
+                                LinkedIn URL <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="url"
+                                id="linkedin-url"
+                                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
+                                placeholder="https://linkedin.com/in/yourprofile"
+                                value={linkedinUrl}
+                                onChange={(e) => setLinkedinUrl(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="github-url" className="block text-sm font-medium text-gray-700 mb-1">
+                                GitHub URL <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="url"
+                                id="github-url"
+                                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
+                                placeholder="https://github.com/yourprofile"
+                                value={githubUrl}
+                                onChange={(e) => setGithubUrl(e.target.value)}
+                                required
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 {/* Error Message */}
                 {error && (
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -177,8 +287,8 @@ export const UploadCVStep = ({ onUploadSuccess, onFileUploaded, onNext }: Upload
                 <div className="mt-6">
                     <button
                         onClick={handleSubmit}
-                        disabled={!file || loading}
-                        className={`w-full py-3 px-4 rounded-md text-white font-medium transition-colors ${!file || loading
+                        disabled={!file || !linkedinUrl || !githubUrl || loading}
+                        className={`w-full py-3 px-4 rounded-md text-white font-medium transition-colors ${!file || !linkedinUrl || !githubUrl || loading
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-blue-600 hover:bg-blue-700'
                             }`}

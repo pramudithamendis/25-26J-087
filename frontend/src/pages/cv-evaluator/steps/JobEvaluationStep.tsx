@@ -29,7 +29,6 @@ interface JobEvaluationStepProps {
 export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEvaluationStepProps) => {
     const { jobId } = useParams<{ jobId: string }>();
     const [selectedJobId, setSelectedJobId] = useState<string | null>(jobId || null);
-    const [linkedinFile, setLinkedinFile] = useState<File | null>(null);
     const [applying, setApplying] = useState(false);
     const [error, setError] = useState('');
     const [result, setResult] = useState<ApplyToJobResponse | null>(null);
@@ -66,18 +65,6 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
         }
     }, [jobId]);
 
-    const handleLinkedinUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                setError('LinkedIn PDF must be less than 5MB');
-                return;
-            }
-            setLinkedinFile(file);
-            setError('');
-        }
-    };
-
     const handleApply = async () => {
         if (!selectedJobId) {
             setError('No job selected');
@@ -98,7 +85,6 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
             linkedin_url: linkedinUrl.trim() || '',
             // Pass the CV file uploaded in Step 1 — this is what gets saved to backend/uploads
             resume: cvFile || undefined,
-            linkedin_resume: linkedinFile || undefined,
         };
 
         try {
@@ -241,67 +227,7 @@ export const JobEvaluationStep = ({ cvData, cvFile, onNext, onComplete }: JobEva
                         </div>
                     </div>
 
-                    {/* GitHub */}
-                    <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
-                        <Github className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                            <p className="text-xs text-gray-500">GitHub</p>
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                                {githubUrl || <span className="text-gray-400 italic">Not provided</span>}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* LinkedIn */}
-                    <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3 sm:col-span-2">
-                        <Linkedin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <div className="min-w-0">
-                            <p className="text-xs text-gray-500">LinkedIn</p>
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                                {linkedinUrl || <span className="text-gray-400 italic">Not provided</span>}
-                            </p>
-                        </div>
-                    </div>
                 </div>
-            </div>
-
-            {/* LinkedIn Upload (Optional) */}
-            <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    LinkedIn PDF <span className="text-gray-400 text-sm font-normal"></span>
-                </h3>
-                <p className="text-gray-500 text-sm mb-3">
-                    Upload your LinkedIn profile PDF for a more comprehensive evaluation.
-                </p>
-
-                {linkedinFile ? (
-                    <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
-                        <div className="flex items-center gap-2">
-                            <FileUp className="h-5 w-5 text-green-600" />
-                            <span className="text-sm font-medium text-green-800">{linkedinFile.name}</span>
-                            <span className="text-xs text-green-600">
-                                ({(linkedinFile.size / 1024).toFixed(1)} KB)
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => setLinkedinFile(null)}
-                            className="p-1 hover:bg-green-100 rounded-full transition-colors"
-                        >
-                            <XCircle className="h-4 w-4 text-green-600" />
-                        </button>
-                    </div>
-                ) : (
-                    <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
-                        <Upload className="h-5 w-5 text-gray-400" />
-                        <span className="text-gray-500 text-sm">Click to upload LinkedIn PDF</span>
-                        <input
-                            type="file"
-                            accept=".pdf"
-                            onChange={handleLinkedinUpload}
-                            className="hidden"
-                        />
-                    </label>
-                )}
             </div>
 
             {/* Error */}

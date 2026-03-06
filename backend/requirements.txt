@@ -86,8 +86,8 @@ apscheduler==3.11.2
 catboost==1.2.8
 lightgbm==4.1.0
 scikit-learn==1.7.2
-scipy==1.16.3
-shap==0.50.0
+scipy==1.15.3
+shap==0.49.1
 xgboost==3.1.2
 joblib==1.5.2
 numba==0.63.1
@@ -119,6 +119,8 @@ graphviz==0.21
 aiohttp==3.9.1
 motor==3.3.2
 httpx==0.28.1
+
+pytesseract
 
 # Geocoding/Maps
 geopy
