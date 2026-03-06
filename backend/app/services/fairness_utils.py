@@ -36,6 +36,8 @@ FAIRNESS_VALIDATION_RESULTS = {
 
 def map_location_to_region(location: str) -> str:
     """Map CV location to fairness region category"""
+    if not location:
+        return "colombo_metro"  # default region
     location_lower = location.lower()
     
     # Colombo Metro
@@ -111,8 +113,8 @@ def extract_fairness_metadata(cv_document: Dict) -> Dict[str, str]:
     Returns:
         dict with: region, university_tier, has_career_gap
     """
-    raw_text = cv_document.get("raw_text", "")
-    sections = cv_document.get("sections", {})
+    raw_text = cv_document.get("raw_text", "") or ""
+    sections = cv_document.get("sections", {}) or {}
     
     # Extract location from CV
     from app.services.feature_engineering import extract_location_from_cv
@@ -120,7 +122,7 @@ def extract_fairness_metadata(cv_document: Dict) -> Dict[str, str]:
     region = map_location_to_region(cv_location)
     
     # Extract university from education section
-    education_text = sections.get("education", "")
+    education_text = sections.get("education", "") or ""
     university_tier = map_university_to_tier(education_text)
     
     # Career gap detection (simple heuristic)
