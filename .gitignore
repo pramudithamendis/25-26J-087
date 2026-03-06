@@ -57,6 +57,7 @@ backend/app/data/articles/
 
 #models
 backend/app/ml_models/
+*.joblib
 
 .idea/
 
