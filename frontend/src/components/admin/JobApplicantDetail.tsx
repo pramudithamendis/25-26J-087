@@ -157,7 +157,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
     { id: 'user-info' as TabType, label: 'User Info' },
     { id: 'evaluation-result' as TabType, label: 'Evaluation Result' },
     { id: 'overview' as TabType, label: 'Overview' },
-    { id: 'turnover-risk' as TabType, label: 'Early Attrition Risk' },
+    // { id: 'turnover-risk' as TabType, label: 'Early Attrition Risk' },
   ];
 
   return (
@@ -375,7 +375,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
         )}
 
         {/* ── Turnover Risk ── */}
-        {activeTab === 'turnover-risk' && (
+        {/* {activeTab === 'turnover-risk' && (
           <TurnoverRiskTabSafe
             userEmail={user.email ?? ""}
             jobId={application.job._id ?? ""}
@@ -384,7 +384,7 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
             jobLocation={application.job.location ?? ""}
             evaluationDecision={evaluation?.decision}
           />
-        )}
+        )} */}
 
       </div>
     </div>
