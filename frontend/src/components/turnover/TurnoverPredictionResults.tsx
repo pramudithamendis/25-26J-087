@@ -133,13 +133,13 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             {features.location_match >= 0.7 && (
               <li className="point-item success">
                 <CheckCircle2 size={15} className="point-icon" />
-                <span>Convenient commute distance — less likely to leave due to travel</span>
+                <span>Convenient commute distance. Less likely to leave due to travel</span>
               </li>
             )}
             {features.avg_tenure_months >= 24 && (
               <li className="point-item success">
                 <CheckCircle2 size={15} className="point-icon" />
-                <span>Stays an average of {(features.avg_tenure_months / 12).toFixed(1)} years per job — shows commitment</span>
+                <span>Stays an average of {(features.avg_tenure_months / 12).toFixed(1)} years per job. Shows commitment</span>
               </li>
             )}
             {features.job_hopping_rate < 0.3 && (
@@ -172,7 +172,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             {features.job_hopping_rate >= 0.5 && (
               <li className="point-item warning">
                 <AlertTriangle size={15} className="point-icon" />
-                <span>Frequent job changes — {(features.job_hopping_rate * 100).toFixed(0)}% of jobs were short-term</span>
+                <span>Frequent job changes.  {(features.job_hopping_rate * 100).toFixed(0)}% of jobs were short-term</span>
               </li>
             )}
             {features.avg_tenure_months < 12 && (
