@@ -103,7 +103,7 @@ const TurnoverResultsView: React.FC = () => {
       </Button>
       
       <Button variant="primary" onClick={handleNewPrediction}>
-        New Early Attrition Risk Assessment
+        New Assessment
       </Button>
       
     </div>
