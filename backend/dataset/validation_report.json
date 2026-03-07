@@ -26,8 +26,8 @@
       },
       "decision_distribution": {
         "Review": 326,
-        "Selected": 262,
-        "Not Selected": 4
+        "Proceed": 262,
+        "Do Not Proceed": 4
       },
       "score_distribution": {
         "0-20": 0,

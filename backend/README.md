@@ -83,12 +83,13 @@ Create a `.env` file in the `backend/` folder with variables your app expects. E
 
 ```env
 # --- Database ---
-MONGO_URI
-MONGO_DB
+MONGO_URI=mongodb://localhost:27017/mydb
+MONGO_DB=mydatabase
 
 # --- Auth ---
-JWT_SECRET
-JWT_ALGORITHM
+JWT_SECRET=your-secret-key-here
+JWT_ALGORITHM=HS256
+ENV=development
 
 # --- GitHub ---
 GITHUB_TOKEN=YOUR_GITHUB_TOKEN_HERE
@@ -107,7 +108,14 @@ CV_EXTRACTION_METHOD=openai
 UPLOAD_FOLDER=uploads
 
 # --- Gnews API Key ---
-GNEWS_API_KEY
+GNEWS_API_KEY=
+
+# --- Redis Queue settings (for background job processing) ---
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=  # Optional, leave empty if no password
+EVALUATION_QUEUE_NAME=evaluations
 ```
 
 The app uses `python-dotenv` to load `.env` automatically when the app starts.
@@ -139,6 +147,8 @@ The app uses `python-dotenv` to load `.env` automatically when the app starts.
 
 5. **(Optional) Create `.env` file** in `backend/` folder with your configuration (see [Environment variables](#environment-variables) section).
 
+6. **(Optional) Start Redis via Docker:** From project root run `docker-compose up -d redis` (see [Running Redis with Docker](#running-redis-with-docker) below).
+
 ### Running the app (everyday)
 
 After first-time setup, to start the app:
@@ -153,7 +163,11 @@ After first-time setup, to start the app:
    .\venv\Scripts\Activate
    ```
 
-3. **Run the FastAPI app with Uvicorn:**
+3. **Start Redis server** (required for background job processing):
+   - **Preferred (Docker):** From project root run `docker-compose up -d redis` to start Redis in the background. Keep `REDIS_HOST=localhost` in `backend/.env` when running the backend and worker on the host.
+   - **Alternative (native):** Windows: Download from [Redis for Windows](https://github.com/microsoftarchive/redis/releases) or use WSL. Linux/Mac: `sudo apt-get install redis-server` or `brew install redis`. Start Redis: `redis-server` (default port 6379).
+
+4. **Run the FastAPI app with Uvicorn:**
    ```powershell
    cd backend
    uvicorn app.main:app --reload
@@ -161,10 +175,28 @@ After first-time setup, to start the app:
    - `--reload` enables auto-restart on file changes (development only)
    - For production, remove `--reload` and optionally add `--workers` for multiple processes
 
-4. **Access the app:**
+5. **Start the RQ worker** (in a separate terminal, required for background job processing):
+   ```powershell
+   cd backend
+   python worker.py
+   ```
+   Or using RQ command:
+   ```powershell
+   python -m rq worker evaluations --with-scheduler
+   ```
+
+6. **Access the app:**
    - **Interactive API docs (Swagger UI):** `http://127.0.0.1:8000/docs`
    - **Alternative API docs (ReDoc):** `http://127.0.0.1:8000/redoc`
    - **API root:** `http://127.0.0.1:8000`
+
+### Running Redis with Docker
+
+A `docker-compose.yml` at the project root runs only Redis. The FastAPI app and RQ worker run on the host and connect to Redis at `localhost:6379`.
+
+- **Start Redis:** From project root run `docker-compose up -d redis`.
+- **Stop Redis:** Run `docker-compose down`. Add `-v` to remove the data volume for a clean state.
+- **Config:** Keep `REDIS_HOST=localhost` and `REDIS_PORT=6379` in `backend/.env` when the backend and worker run on the host.
 
 ### Using an IDE (VS Code)
 
@@ -186,6 +218,44 @@ After first-time setup, to start the app:
 - **Services:** Keep business logic in `app/services/` for better separation of concerns
 - **Models:** Database models should live in `app/models/`
 - **Auth:** Authentication logic in `app/auth/`
+
+## Background Job Processing (Redis Queue)
+
+The backend uses **Redis Queue (RQ)** for processing resume uploads and evaluations in the background. This allows users to submit applications and continue using the system while evaluations are processed asynchronously.
+
+### Features
+
+- **Non-blocking:** Users get immediate confirmation when submitting applications
+- **Background Processing:** Evaluations run in the background without blocking the API
+- **Status Tracking:** Applications track processing status (pending, processing, evaluated, failed)
+- **Retry Logic:** Failed jobs are automatically retried up to 3 times
+- **Admin Visibility:** Admins can see full processing status and evaluation results
+- **User Privacy:** Users only see basic status (submitted, under_review, reviewed) - no scores or decisions
+
+### Running the Worker
+
+The RQ worker must be running to process background jobs:
+
+```powershell
+# Option 1: Using the worker script
+cd backend
+python worker.py
+
+# Option 2: Using RQ command directly
+python -m rq worker evaluations --with-scheduler
+```
+
+The worker will:
+- Listen for new evaluation jobs in the Redis queue
+- Process evaluations asynchronously
+- Update application status in the database
+- Handle errors and retries automatically
+
+### Worker Requirements
+
+- Redis server must be running (see [Environment variables](#environment-variables))
+- Worker should run in a separate terminal/process from the FastAPI server
+- For production, use a process manager (systemd, supervisor, etc.) to keep the worker running
 
 ## Agentic AI System
 

@@ -177,7 +177,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, Java, SQL, Git, and RESTful APIs. With 3.5 years of experience and exposure to Agile Development, they meet the minimum years required and demonstrate problem-solving skills. Although lacking direct experience with React and Node.js, the candidate's overall fit and potential make them a good fit for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -277,7 +277,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in cloud technologies, backend development, and relevant tools. With 3.5 years of experience and a degree in a related field, they show potential to grow into the Lead Software Engineer role.",
       "role_predictions": [
         {
@@ -371,7 +371,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the required skills and experience for the Junior QA Engineer position. With 3.5 years of experience and a solid background in Python and Java, along with knowledge of testing tools and methodologies, the candidate is well-equipped for the role.",
       "role_predictions": [
         {
@@ -553,7 +553,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like HTML, CSS, JavaScript, Node.js, and React. With 4.3 years of experience and a good mix of relevant skills, the candidate is well-suited for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -644,7 +644,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in React, JavaScript, HTML, CSS, and Node.js. With 4.3 years of experience and 3 positions, they meet the minimum years required and have a good overall fit for the Junior Frontend Developer role.",
       "role_predictions": [
         {
@@ -731,7 +731,7 @@
     },
     "ground_truth": {
       "total_score": 45,
-      "decision": "Not Selected",
+      "decision": "Do Not Proceed",
       "reasoning": "The candidate shows potential with their strong skills in React, Node.js, and MongoDB, but lacks the required experience in cloud platforms, containerization, scripting, and infrastructure as code. They may benefit from further training and experience in DevOps practices.",
       "role_predictions": [
         {
@@ -1353,7 +1353,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, and MongoDB. With 3.3 years of experience and exposure to multiple positions, they show potential for growth into a lead role. Their overall fit is good, although they may need more experience in Agile methodologies and CI/CD.",
       "role_predictions": [
         {
@@ -1556,7 +1556,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in SQL and Python, experience with cloud platforms like AWS, and a good understanding of data modeling. Although slightly below the minimum years required, the candidate's overall fit and diverse skill set make them a good fit for the role.",
       "role_predictions": [
         {
@@ -1767,7 +1767,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, SQL, Git, Docker, AWS, and experience with React. With 4.5 years of experience and exposure to multiple positions, the candidate shows potential for growth into a Principal Software Engineer role. The overall fit is good based on the required skills and experience.",
       "role_predictions": [
         {
@@ -1858,7 +1858,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React, JavaScript, HTML, and CSS. With over 3 years of experience and a relevant degree, they exceed the minimum requirements. Their experience with Node.js and MongoDB adds value to the role.",
       "role_predictions": [
         {
@@ -2139,7 +2139,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With over 3 years of experience and a degree, they meet the minimum requirements for the role. Their overall fit is good, demonstrating proficiency in key areas.",
       "role_predictions": [
         {
@@ -2307,7 +2307,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in React, Node.js, JavaScript, and other required technologies. With almost 3 years of experience and relevant education, the candidate is well-suited for the Junior Frontend Developer role.",
       "role_predictions": [
         {
@@ -2393,7 +2393,7 @@
     },
     "ground_truth": {
       "total_score": 78,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React, Node.js, JavaScript, MongoDB, and Git. Despite slightly less experience than the minimum requirement, the candidate's overall fit and skills make them a good fit for the role.",
       "role_predictions": [
         {
@@ -3033,7 +3033,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with cloud technologies like AWS, and good understanding of database design. With 3.4 years of experience and exposure to multiple positions, the candidate shows potential for growth and leadership. Overall fit is good for the role.",
       "role_predictions": [
         {
@@ -3124,7 +3124,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in SQL and Git. Their 3.4 years of experience and 3 positions demonstrate a good level of expertise. While they fall slightly short on the minimum years required, their overall fit and diverse skill set make them a strong candidate for the mid-level Software Engineer role.",
       "role_predictions": [
         {
@@ -3315,7 +3315,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, MongoDB, and HTML/CSS. With 4.4 years of experience and having worked in 3 positions, they meet the minimum years required for the role. Overall, the candidate's profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -3491,7 +3491,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in React, Node.js, JavaScript, and other required technologies. With almost 3 years of experience and relevant education, they exceed the minimum requirements for the role.",
       "role_predictions": [
         {
@@ -3576,7 +3576,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React, JavaScript, HTML, and CSS. Although slightly below the minimum years required, their diverse experience and education compensate for it. Overall, a good fit for the mid-level frontend developer role.",
       "role_predictions": [
         {
@@ -4077,7 +4077,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React.js, JavaScript, HTML, and CSS. With over 2 years of experience and relevant education, they exceed the minimum requirements for the role.",
       "role_predictions": [
         {
@@ -4168,7 +4168,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, SQL, Git, Docker, AWS, and ReactJS. With 3.1 years of experience and having worked in 3 positions, they meet the minimum years required. Their experience and skills align well with the job requirements, making them a good fit for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -4260,7 +4260,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and backend development. With 3.1 years of experience and exposure to relevant technologies like Docker and ReactJS, they show potential for growth into a senior role.",
       "role_predictions": [
         {
@@ -4357,7 +4357,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in cloud technologies, backend development, microservices architecture, and databases. Their 3.1 years of experience and 3 positions demonstrate a good foundation for the role. Overall, the candidate's profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -4600,7 +4600,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With nearly 3 years of experience and having worked in 2 positions, they meet the minimum years required. Their overall fit is good based on the skills and experience. They demonstrate the ability to work in a collaborative team environment.",
       "role_predictions": [
         {
@@ -4686,7 +4686,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, and MongoDB. With almost 3 years of experience and relevant education, they meet the minimum requirements for the role. Overall, the candidate's profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -5186,7 +5186,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, SQL, Git, and HTML/CSS. With almost 3 years of experience and relevant education, they meet the minimum requirements for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -5267,7 +5267,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, Git, AWS, and Docker. With almost 3 years of experience and relevant education, they meet the minimum requirements for the role. Their overall fit is good, making them a suitable candidate for the Junior Backend Developer position.",
       "role_predictions": [
         {
@@ -5348,7 +5348,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a good skill match with experience in Python, JavaScript, and SQL which are relevant to the job requirements. With almost 3 years of experience and a degree, they meet the minimum requirements. Their experience with Docker and AWS also adds value to the role.",
       "role_predictions": [
         {
@@ -5454,7 +5454,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React, Git, and SQL, which are must-have skills for the role. With almost 8 years of experience and a diverse background, the candidate demonstrates a solid foundation in full-stack development. Overall fit is good, and the candidate meets the minimum years required.",
       "role_predictions": [
         {
@@ -5671,7 +5671,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, Docker, AWS, and Git. With almost 8 years of experience and a diverse skill set, they exceed the minimum years required and demonstrate proficiency in key areas required for the Senior DevOps Engineer role.",
       "role_predictions": [
         {
@@ -5853,7 +5853,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in relevant technologies like Git and AWS. With 3.4 years of experience and 3 positions, they demonstrate a good level of experience. Overall, they meet the must-have skills and have a good fit for the Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -5949,7 +5949,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React, Git, and Docker. With 3.4 years of experience and a good mix of relevant technologies, they meet the minimum years required and exceed the must-have skills. Their overall fit is solid for the mid-level Senior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -6041,7 +6041,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and experience with backend development. Their 3.4 years of experience and exposure to Docker and Git add value. While not meeting the minimum years required, the candidate's overall fit and potential make them a strong choice.",
       "role_predictions": [
         {
@@ -6136,7 +6136,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React, Git, and experience in Docker and AWS. With 3.4 years of experience and a good mix of frontend technologies, the candidate fits well for the mid-level Frontend Developer role.",
       "role_predictions": [
         {
@@ -6323,7 +6323,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, Git, and AWS. With 4.4 years of experience and exposure to multiple positions, they meet the minimum years required and demonstrate a good understanding of software development lifecycle and problem-solving skills.",
       "role_predictions": [
         {
@@ -6414,7 +6414,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, and experience with AWS. Their years of experience and diverse skill set make them a good fit for the Junior Data Scientist - Analytics role.",
       "role_predictions": [
         {
@@ -6512,7 +6512,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, Git, and some experience with JavaScript. With 4.4 years of experience and exposure to multiple positions, they demonstrate good problem-solving skills. While lacking direct experience with RESTful APIs, the candidate's overall profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -6759,7 +6759,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and relevant experience for the Junior Frontend Developer position at WebWorks Inc. Their proficiency in React, JavaScript, HTML, and CSS align well with the job requirements.",
       "role_predictions": [
         {
@@ -6856,7 +6856,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with cloud technologies like AWS, and a good understanding of database design. With 3.2 years of experience and exposure to multiple positions, the candidate shows potential for growth and leadership. The overall fit is solid, meeting most of the must-have requirements.",
       "role_predictions": [
         {
@@ -7130,7 +7130,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and relevant experience for the Junior Full Stack Developer role. Their proficiency in React, Node.js, JavaScript, MongoDB, and Express align well with the job requirements. With 2.2 years of experience and a solid skill set, the candidate is a good fit for the position.",
       "role_predictions": [
         {
@@ -7217,7 +7217,7 @@
     },
     "ground_truth": {
       "total_score": 45,
-      "decision": "Not Selected",
+      "decision": "Do Not Proceed",
       "reasoning": "The candidate has relevant skills in React, Node.js, and MongoDB, but lacks experience in cloud platforms, containerization/orchestration tools, and scripting skills required for the Senior DevOps Engineer role. The years of experience and education level also fall short of the minimum requirements.",
       "role_predictions": [
         {
@@ -7387,7 +7387,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies and meets the minimum required years of experience. Their profile indicates good potential for growth in a Junior QA Engineer role.",
       "role_predictions": [
         {
@@ -7468,7 +7468,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 2.2 years of experience and a degree, they meet the minimum requirements and demonstrate good potential for growth.",
       "role_predictions": [
         {
@@ -7715,7 +7715,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with the required technologies and relevant experience in software development. With over 3 years of experience and a good mix of technical skills, they are well-suited for the Junior QA Engineer role at Software Solutions Inc.",
       "role_predictions": [
         {
@@ -7800,7 +7800,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React, Git, and Docker. While slightly below the minimum years required, the diverse skill set and relevant experience make them a good fit for the role.",
       "role_predictions": [
         {
@@ -8220,7 +8220,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, SQL, Git, Docker, AWS, and experience with React. With 4.6 years of experience across 3 positions, they fall slightly short of the minimum required 7 years but show potential for growth. Their background aligns well with the job requirements, especially in cloud technologies and software development best practices.",
       "role_predictions": [
         {
@@ -8315,7 +8315,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React, Git, and relevant technologies. With almost 5 years of experience and a good mix of skills, the candidate is well-suited for the mid-level Frontend Developer role.",
       "role_predictions": [
         {
@@ -8406,7 +8406,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in JavaScript. With almost 5 years of experience across 3 positions, they demonstrate a good level of expertise. Their skills in Git, Docker, and AWS also align well with the job requirements. Overall, the candidate's profile fits the Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -8846,7 +8846,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Full Stack Developer role, including JavaScript, HTML/CSS, Git, and SQL. With 2.6 years of experience and exposure to AWS, Docker, and Python, the candidate shows potential for growth and adaptability.",
       "role_predictions": [
         {
@@ -9327,7 +9327,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React.js, and Git. With 3.4 years of experience and a good mix of frontend and backend skills, they meet the minimum years required and exceed the must-have skill set for the Frontend Developer position.",
       "role_predictions": [
         {
@@ -9425,7 +9425,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in cloud technologies, backend development, and containerization. Despite not meeting the minimum years required, their diverse skill set, relevant experience, and education level make them a suitable fit for the role.",
       "role_predictions": [
         {
@@ -9620,7 +9620,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in cloud platforms, containerization tools, scripting skills, and CI/CD pipelines. Although slightly below the minimum years required, the candidate's diverse skill set and experience level make them a good fit for the role.",
       "role_predictions": [
         {
@@ -9882,7 +9882,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React, JavaScript, HTML, CSS, and Git. With almost 4 years of experience and relevant education, they demonstrate a good overall fit for the Senior Frontend Developer role. The candidate's experience with Node.js and MongoDB can also be beneficial for the position.",
       "role_predictions": [
         {
@@ -9963,7 +9963,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With almost 4 years of experience and a degree, they meet the minimum requirements and demonstrate good potential for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -10044,7 +10044,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, Git, and some experience with AWS and React. With 2 years of experience and relevant skills, they meet the minimum requirements for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -10692,7 +10692,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With over 3 years of experience and a degree, they meet the minimum requirements and demonstrate the ability to work in a collaborative team environment.",
       "role_predictions": [
         {
@@ -11327,7 +11327,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With over 3 years of experience and a degree, they exceed the minimum requirements for the role. Their experience in 3 positions demonstrates adaptability and growth potential.",
       "role_predictions": [
         {
@@ -11693,7 +11693,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the required skills, relevant experience, and meets the minimum years required. Their skills in React, Node.js, JavaScript, HTML/CSS, and Git align well with the job requirements.",
       "role_predictions": [
         {
@@ -12586,7 +12586,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate meets the must-have skills for the Associate Backend Developer - Junior role, with proficiency in Python, Java, and SQL. They also have experience with RESTful APIs, Git, and AWS. Their 2.5 years of experience and relevant education make them a strong fit for the position.",
       "role_predictions": [
         {
@@ -12752,7 +12752,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, JavaScript, and experience with Git. With 2.5 years of experience and a good mix of technical skills, they are well-suited for the Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -12929,7 +12929,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in JavaScript and React. With 3.3 years of experience and exposure to relevant technologies like Git, Docker, and AWS, they meet the minimum requirements for the role. The overall fit is good, making them a suitable candidate for the Associate Software Engineer position.",
       "role_predictions": [
         {
@@ -13310,7 +13310,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, Git, and some experience with JavaScript, Docker, and AWS. With almost 4 years of experience and a relevant education, the candidate meets the minimum years required and has a good overall fit for the Junior Backend Developer role.",
       "role_predictions": [
         {
@@ -13401,7 +13401,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python programming, SQL database, and experience with AWS. Their 3.9 years of experience across 3 positions also demonstrate adaptability and growth. While lacking direct experience in statistical analysis and machine learning, the candidate's overall profile aligns well with the junior data scientist role.",
       "role_predictions": [
         {
@@ -13695,7 +13695,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, and MongoDB. With 3.6 years of experience and exposure to multiple positions, they demonstrate adaptability and growth potential. While they fall short of the minimum years required, their overall fit and potential make them a strong candidate.",
       "role_predictions": [
         {
@@ -13792,7 +13792,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in backend languages like Python and Node.js, experience with cloud services like AWS, and solid database management skills. With over 3 years of experience and a good mix of required and nice-to-have skills, the candidate shows potential for growth and adaptation to the role.",
       "role_predictions": [
         {
@@ -13884,7 +13884,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, JavaScript, Java, and other required skills. With over 3 years of experience and a relevant educational background, they meet the job requirements well.",
       "role_predictions": [
         {
@@ -13981,7 +13981,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in cloud platforms, CI/CD tools, scripting, containerization technologies, and infrastructure as code. Although slightly below the minimum years required, the candidate's diverse skill set and experience level make them a good fit for the role.",
       "role_predictions": [
         {
@@ -14078,7 +14078,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Full Stack Developer role, including JavaScript, React, Node.js, Git, and SQL. With over 3 years of experience and a diverse skill set, they demonstrate the potential to excel in this position.",
       "role_predictions": [
         {
@@ -14170,7 +14170,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, which are required for the role. Their experience level is slightly below the minimum required but their diverse skill set and relevant experience make them a good fit overall.",
       "role_predictions": [
         {
@@ -14367,7 +14367,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React, Git, and Docker. With 4.4 years of experience and a good mix of technical skills, they meet the minimum years required and exceed the must-have skills. Their overall fit is solid for the Senior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -14459,7 +14459,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and backend development. With 4.4 years of experience and exposure to Docker and Git, the candidate shows potential for growth and adaptation to the role requirements.",
       "role_predictions": [
         {
@@ -14555,7 +14555,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Full Stack Developer role, including JavaScript, React, Git, and SQL. With 4.4 years of experience and a good mix of relevant technologies, the candidate is well-suited for the position.",
       "role_predictions": [
         {
@@ -14747,7 +14747,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React.js, JavaScript, HTML, and CSS. With almost 4 years of experience and relevant education, they exceed the minimum requirements for the role. Their experience with Node.js and MongoDB can also be beneficial for the position.",
       "role_predictions": [
         {
@@ -14838,7 +14838,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React and Node.js. With almost 4 years of experience and a degree, they meet the minimum requirements and demonstrate good potential for the role.",
       "role_predictions": [
         {
@@ -14934,7 +14934,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, HTML/CSS, React, Node.js, and problem-solving skills. With almost 4 years of experience and relevant education, they exceed the minimum requirements for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -15033,7 +15033,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, HTML, CSS, and React. With almost 4 years of experience and relevant education, they meet the minimum years required. Their experience with Node.js and Redux adds value. Overall, a good fit for the mid-level Frontend Developer role.",
       "role_predictions": [
         {
@@ -15229,7 +15229,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has strong skills in Python and Java, experience with cloud technologies like AWS, and a good understanding of database design. With 4.2 years of experience and having held 3 positions, the candidate shows potential to grow into the role of a Principal Software Engineer. The overall fit is good, and the candidate meets most of the must-have requirements.",
       "role_predictions": [
         {
@@ -15324,7 +15324,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React, Git, and Docker. With over 4 years of experience and a background in relevant technologies, the candidate is well-suited for the mid-level Frontend Developer role.",
       "role_predictions": [
         {
@@ -15415,7 +15415,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python programming, SQL database, and some experience with AWS. With 4.5 years of experience and a diverse skill set, they are well-equipped for the Junior Data Scientist role.",
       "role_predictions": [
         {
@@ -15601,7 +15601,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, JavaScript, and other required technologies. With 4.5 years of experience and having worked in 3 positions, the candidate demonstrates good experience level. Overall fit is also solid, meeting the must-have skills and some nice-to-have skills.",
       "role_predictions": [
         {
@@ -15693,7 +15693,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and experience with backend development. Although slightly below the minimum years required, the candidate's diverse skill set and relevant experience make them a good fit for the role.",
       "role_predictions": [
         {
@@ -15789,7 +15789,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React, Git, and SQL. With 4.5 years of experience and a good mix of technical skills, they are well-suited for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -15870,7 +15870,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With almost 3 years of experience and a degree, they meet the minimum requirements for the entry-level position. Their overall fit and experience level make them a good fit for the role.",
       "role_predictions": [
         {
@@ -16385,7 +16385,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With over 3 years of experience and 2 positions, they demonstrate a good level of expertise. Their background in HTML, CSS, and Git aligns well with the job requirements. Overall, the candidate shows a good fit for the Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -16551,7 +16551,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React.js, JavaScript, HTML, and CSS. Their almost 2 years of experience and relevant education make them a good fit for the Junior Frontend Developer role at WebWorks Inc.",
       "role_predictions": [
         {
@@ -16804,7 +16804,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, and React which are relevant to the job requirements. With over 10 years of experience and exposure to multiple technologies, the candidate's overall fit is solid.",
       "role_predictions": [
         {
@@ -16886,7 +16886,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in Python, SQL, and relevant technologies. With over 10 years of experience and 2 positions, they exceed the minimum years required for the role. Their diverse skill set and experience make them a suitable candidate for the Lead Data Scientist position.",
       "role_predictions": [
         {
@@ -16977,7 +16977,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in cloud platforms, CI/CD tools, scripting, containerization technologies, and infrastructure as code. With over 10 years of experience and a good mix of relevant skills, the candidate is well-suited for the mid-level DevOps Engineer role.",
       "role_predictions": [
         {
@@ -17059,7 +17059,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, Java, and testing tools like Selenium. With over 10 years of experience and relevant skills, they exceed the minimum requirements for the role.",
       "role_predictions": [
         {
@@ -17245,7 +17245,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Full Stack Developer role and relevant experience in React, Node.js, and MongoDB. With over 4 years of experience and a good mix of technical skills, the candidate is well-suited for this entry-level position.",
       "role_predictions": [
         {
@@ -17431,7 +17431,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With over 4 years of experience and having worked in 3 positions, they demonstrate the ability to adapt and learn quickly. Their overall fit for the Junior QA Engineer role is solid.",
       "role_predictions": [
         {
@@ -17512,7 +17512,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and relevant experience for the Junior Full Stack Developer role. Their 2 years of experience and proficiency in React, Node.js, and JavaScript make them a good fit for the position.",
       "role_predictions": [
         {
@@ -17682,7 +17682,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 2 years of experience and a degree, they meet the minimum requirements for the role. Their overall fit is good based on the required skills and experience.",
       "role_predictions": [
         {
@@ -18195,7 +18195,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python programming, SQL database, and some experience with AWS. Their 2.1 years of experience across 2 positions align well with the junior level requirement. While lacking in statistical analysis and machine learning, the candidate's overall fit and potential make them a good fit for the role.",
       "role_predictions": [
         {
@@ -18389,7 +18389,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, SQL, Git, Docker, AWS, and API development. With 4.4 years of experience across 3 positions and relevant education, the candidate exceeds the minimum years required and demonstrates a good overall fit for the Associate Backend Developer - Junior role.",
       "role_predictions": [
         {
@@ -18932,7 +18932,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, Docker, AWS, and some DevOps tools. Although slightly below the minimum years required, the diverse skill set and relevant experience make them a good fit for the role.",
       "role_predictions": [
         {
@@ -19114,7 +19114,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and JavaScript. With 4.6 years of experience and exposure to relevant technologies like Docker, AWS, and React.js, the candidate is well-equipped for the mid-level Software Engineer role. The overall fit is good based on the combination of skills and experience.",
       "role_predictions": [
         {
@@ -19539,7 +19539,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with RESTful APIs, and knowledge of database management systems. Their 3.2 years of experience across 3 positions also align well with the job requirements. Overall, they meet the criteria for the Associate Backend Developer - Junior role.",
       "role_predictions": [
         {
@@ -19633,7 +19633,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Backend Developer role, particularly in Python, SQL, Git, and basic frontend technologies. With over 3 years of experience and exposure to AWS and Docker, the candidate's overall fit is solid.",
       "role_predictions": [
         {
@@ -19724,7 +19724,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in relevant technologies like Git and AWS. With over 3 years of experience and a degree, they exceed the minimum requirements for the junior software engineer role. Their overall fit and problem-solving skills make them a good fit for the position.",
       "role_predictions": [
         {
@@ -19815,7 +19815,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like HTML, CSS, JavaScript, Node.js, and React. With over 5 years of experience and a good mix of positions, the candidate demonstrates a solid foundation for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -19906,7 +19906,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies and meets the minimum years required. Their experience in 3 positions demonstrates adaptability and growth. While they may lack direct QA experience, their technical skills and problem-solving abilities make them a good fit for the role.",
       "role_predictions": [
         {
@@ -20098,7 +20098,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and exceeds the minimum years of experience. Their diverse background in React, Node.js, and MongoDB aligns well with the job requirements. The candidate's experience level and skill set make them a suitable fit for the mid-level Frontend Developer role.",
       "role_predictions": [
         {
@@ -20190,7 +20190,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, Java, and testing tools. With over 3 years of experience and a good educational background, they meet the minimum requirements and possess nice-to-have skills as well.",
       "role_predictions": [
         {
@@ -20288,7 +20288,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in cloud platforms, containerization tools, scripting skills, and CI/CD pipelines. Although slightly below the minimum years required, the candidate's diverse skill set and experience level make them a good fit for the role.",
       "role_predictions": [
         {
@@ -20380,7 +20380,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, and React.js, which are must-have skills for the job. With 3.4 years of experience and exposure to AWS and Docker, the candidate shows good potential for growth in the role.",
       "role_predictions": [
         {
@@ -20569,7 +20569,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Node.js, SQL, AWS, and Docker. With 3.4 years of experience and exposure to backend development, cloud services, and database management, the candidate shows potential to grow into the Senior Backend Developer role.",
       "role_predictions": [
         {
@@ -20740,7 +20740,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, SQL, Git, Docker, and AWS, which align well with the job requirements. With almost 3 years of experience and relevant education, the candidate is well-suited for the Junior Backend Developer role.",
       "role_predictions": [
         {
@@ -21117,7 +21117,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React.js, Git, and Agile Methodologies. With 3.5 years of experience and a good mix of frontend technologies, the candidate is well-suited for the mid-level Frontend Developer role.",
       "role_predictions": [
         {
@@ -21302,7 +21302,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Backend Developer - Python role. With 4.3 years of experience and a good mix of relevant skills like Python, SQL, Git, and a basic understanding of frontend technologies, they are well-suited for the position.",
       "role_predictions": [
         {
@@ -21397,7 +21397,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React, Git, and other relevant technologies. With over 4 years of experience and a good educational background, they exceed the minimum years required for the position.",
       "role_predictions": [
         {
@@ -21488,7 +21488,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with RESTful APIs and database management systems, and familiarity with Git and AWS. With 4.3 years of experience across 3 positions, the candidate meets the minimum years required for the role. Overall, the candidate's profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -21837,7 +21837,7 @@
     },
     "ground_truth": {
       "total_score": 45,
-      "decision": "Not Selected",
+      "decision": "Do Not Proceed",
       "reasoning": "The candidate shows potential with relevant skills in React, Node.js, and MongoDB, but lacks experience in cloud platforms, containerization, scripting, and infrastructure as code. With only 1.9 years of experience and missing key requirements for the Senior DevOps Engineer role, further assessment is needed.",
       "role_predictions": [],
       "breakdown": {
@@ -21913,7 +21913,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, SQL, and Agile Development. With 3 years of experience and exposure to testing tools like Selenium, they meet the minimum requirements and show potential for growth.",
       "role_predictions": [
         {
@@ -21995,7 +21995,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and experience with Docker. With 3 years of experience and exposure to Agile development, the candidate shows potential for growth into a Senior Backend Developer role.",
       "role_predictions": [
         {
@@ -22076,7 +22076,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python programming, SQL database, and experience with AWS. Their 3 years of experience and exposure to Agile Development demonstrate a good level of expertise. While lacking direct experience in statistical analysis and machine learning, the candidate's overall fit and potential make them a strong fit for the role.",
       "role_predictions": [
         {
@@ -22161,7 +22161,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in relevant technologies like Git and Docker. With 3 years of experience and 2 positions, they meet the minimum requirements for the role. Their background in Agile Development also adds value to their fit for the Junior Software Engineer position.",
       "role_predictions": [
         {
@@ -22252,7 +22252,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 3.5 years of experience and 3 positions, they meet the minimum years required and demonstrate a good level of experience. Their skills and experience align well with the job requirements, making them a suitable fit for the Junior QA Engineer position at Software Solutions Inc.",
       "role_predictions": [
         {
@@ -22347,7 +22347,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, HTML, CSS, and React. With 3.5 years of experience and exposure to multiple positions, they meet the minimum experience requirement. Overall fit is good, with room for growth in nice-to-have skills.",
       "role_predictions": [
         {
@@ -22788,7 +22788,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and meets the minimum experience requirement. Their experience with React, Node.js, and JavaScript align well with the job requirements. Additionally, their diverse skill set covering both frontend and backend technologies adds value to the role.",
       "role_predictions": [
         {
@@ -22875,7 +22875,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React.js, Git, and Docker. Although the candidate falls short in years of experience, their diverse skill set and relevant experience make them a suitable fit for the role.",
       "role_predictions": [
         {
@@ -22961,7 +22961,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Full Stack Developer role, including JavaScript, React, Git, and SQL. With 3.6 years of experience and a good mix of relevant technologies, the candidate is well-suited for this position.",
       "role_predictions": [
         {
@@ -23143,7 +23143,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with all the must-have skills and relevant experience. Their 3.4 years of experience align well with the minimum requirement, and they have worked with similar technologies in their previous roles.",
       "role_predictions": [
         {
@@ -23234,7 +23234,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React.js, JavaScript, HTML, and CSS. With 3.4 years of experience and having worked in 3 positions, they meet the minimum experience requirement. Overall, the candidate's profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -23325,7 +23325,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Node.js and RESTful APIs. Their 3.4 years of experience across 3 positions demonstrate good exposure. While lacking direct experience with MySQL or PostgreSQL, their MongoDB experience can be transferable. Overall, the candidate's profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -23596,7 +23596,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Backend Developer - Python role, including Python, RESTful APIs, SQL, and Git. With almost 3 years of experience and exposure to relevant technologies like Docker and AWS, the candidate demonstrates a good overall fit for the position.",
       "role_predictions": [
         {
@@ -24031,7 +24031,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React and Node.js. With 3.4 years of experience and a degree, they meet the minimum requirements and show potential for growth. Their overall fit and problem-solving skills are also commendable.",
       "role_predictions": [
         {
@@ -24684,7 +24684,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and SQL, along with experience in backend development. Their experience level of 3 years aligns well with the minimum requirement of 1 year for the role. Overall, the candidate's profile fits the job requirements effectively.",
       "role_predictions": [
         {
@@ -25041,7 +25041,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 2 years of experience and a degree, they meet the minimum requirements and show potential for growth.",
       "role_predictions": [
         {
@@ -25303,7 +25303,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in Python, SQL, Git, and some experience with JavaScript. With almost 5 years of experience and exposure to multiple positions, the candidate demonstrates good problem-solving skills and adaptability. While lacking direct experience in Django and Flask, the candidate's overall fit and potential for growth make them a strong fit for the Junior Backend Developer role.",
       "role_predictions": [
         {
@@ -25590,7 +25590,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and relevant experience. Their proficiency in React, Node.js, and JavaScript align well with the job requirements. With over 4 years of experience and a good mix of skills, the candidate is well-suited for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -25973,7 +25973,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, React.js, HTML, and CSS. With 4.3 years of experience and a diverse background, they show potential for growth and adaptation to new technologies. Overall fit is good for the Senior Frontend Developer role.",
       "role_predictions": [
         {
@@ -26184,7 +26184,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, Java, and testing tools like Selenium. With over 4 years of experience and a good mix of technical skills, they are well-suited for the Junior QA Engineer role.",
       "role_predictions": [
         {
@@ -26286,7 +26286,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in SQL and Python, experience with AWS, and relevant experience in data-related positions. While slightly below the minimum years required, the candidate's overall fit and skills make them a strong contender.",
       "role_predictions": [
         {
@@ -26545,7 +26545,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, HTML, CSS, and React. Although slightly below the minimum years required, their 2 years of experience and diverse skill set make them a good fit for the mid-level frontend developer role.",
       "role_predictions": [
         {
@@ -26707,7 +26707,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and JavaScript, which are essential for the role. Their experience level is suitable for an entry-level position, and they possess relevant skills like Git and Docker. Overall, the candidate's profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -26964,7 +26964,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, and experience with AWS. Their 1.9 years of experience and diverse skill set make them a good fit for the Junior Data Scientist - Analytics role.",
       "role_predictions": [
         {
@@ -27134,7 +27134,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Node.js and API development. While lacking direct experience with MySQL/PostgreSQL, the candidate's MongoDB experience can be transferable. With 2 years of experience and a relevant degree, the candidate meets the minimum requirements and shows potential for growth.",
       "role_predictions": [
         {
@@ -27303,7 +27303,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React, Node.js, and API development. With 2 years of experience and relevant education, they meet the minimum requirements and show potential for growth.",
       "role_predictions": [
         {
@@ -27808,7 +27808,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in cloud platforms, containerization tools, scripting, and CI/CD pipelines. With 8.5 years of experience and a good mix of technical skills, the candidate is well-suited for the Senior DevOps Engineer role.",
       "role_predictions": [
         {
@@ -28052,7 +28052,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in SQL and Python, along with experience in cloud platforms like AWS. With 8.5 years of experience and a good understanding of data modeling and database concepts, the candidate is well-suited for the Senior Data Engineer role.",
       "role_predictions": [
         {
@@ -28242,7 +28242,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in relevant technologies like Git and AWS. With 4.4 years of experience and having held 3 positions, the candidate demonstrates good exposure. The overall fit is solid based on the required skills and experience level for the Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -28338,7 +28338,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, ReactJS, Git, and Docker. With 4.4 years of experience and a good mix of technologies used in previous positions, the candidate is well-suited for the Senior Full Stack Developer role. The candidate's experience with AWS and Python also adds value to the team.",
       "role_predictions": [
         {
@@ -28429,7 +28429,7 @@
     },
     "ground_truth": {
       "total_score": 75,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, and ReactJS. While lacking some specific frontend skills, the overall experience level and adaptability make them a good fit for the Junior Frontend Developer role at WebWorks Inc.",
       "role_predictions": [
         {
@@ -28781,7 +28781,7 @@
     },
     "ground_truth": {
       "total_score": 45,
-      "decision": "Not Selected",
+      "decision": "Do Not Proceed",
       "reasoning": "The candidate has relevant skills like React and Node.js, but lacks experience in cloud platforms, containerization/orchestration tools, and scripting skills required for the Senior DevOps Engineer role. The years of experience and education level also fall short of the minimum requirements.",
       "role_predictions": [
         {
@@ -29032,7 +29032,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, Git, and some experience with JavaScript. Although slightly below the minimum years required, the diverse skill set and quick learning ability make them a good fit for the role.",
       "role_predictions": [
         {
@@ -29292,7 +29292,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 2 years of experience and a degree, they meet the minimum requirements for the role and demonstrate good potential for growth.",
       "role_predictions": [
         {
@@ -29373,7 +29373,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Node.js, MongoDB, and Express. With 2 years of experience and relevant education, they meet the minimum requirements for the Junior Backend Developer role.",
       "role_predictions": [
         {
@@ -29540,7 +29540,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React, JavaScript, HTML, and CSS. With 2 years of experience and relevant education, they meet the minimum requirements for the Junior Frontend Developer position at WebWorks Inc.",
       "role_predictions": [
         {
@@ -29909,7 +29909,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 3.6 years of experience and a degree, they meet the minimum requirements and demonstrate good potential for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -30173,7 +30173,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate meets all the must-have skills and has relevant experience. While they have just met the minimum years required, their diverse skill set and proficiency in key programming languages make them a strong fit for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -30601,7 +30601,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React, JavaScript, HTML, and CSS. With almost 3 years of experience and relevant education, they exceed the minimum requirements for the role.",
       "role_predictions": [
         {
@@ -31016,7 +31016,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and meets the minimum experience requirement. Their experience with React, Node.js, and SQL is particularly valuable for the role. While lacking some nice-to-have skills, their overall fit and problem-solving skills make them a good fit for the Junior Full Stack Developer position.",
       "role_predictions": [
         {
@@ -31097,7 +31097,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in SQL, Git, Docker, and AWS. With almost 3 years of experience and meeting the minimum requirement, the candidate is well-suited for the Associate Software Engineer position.",
       "role_predictions": [
         {
@@ -31259,7 +31259,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and other required technologies. With almost 3 years of experience and a degree, they meet the minimum requirements for the Junior Software Engineer position. Their experience in 2 positions demonstrates adaptability and exposure to different environments.",
       "role_predictions": [
         {
@@ -31526,7 +31526,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React, Git, and Docker. With 4.2 years of experience and a diverse background in multiple positions and education, they exceed the minimum years required and demonstrate adaptability. The candidate's overall fit is solid, making them a suitable choice for the role.",
       "role_predictions": [
         {
@@ -31618,7 +31618,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in Python, SQL, and relevant technologies. Their 4.2 years of experience and multiple positions demonstrate a good level of exposure. Although slightly below the minimum required years, the candidate's overall fit and education level make them a strong contender.",
       "role_predictions": [
         {
@@ -31714,7 +31714,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in SQL and Git. Their years of experience and education level also meet the requirements. Although they fall slightly short in years of experience, their overall fit and skills make them a good fit for the mid-level Software Engineer role.",
       "role_predictions": [
         {
@@ -31913,7 +31913,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, SQL, Git, Docker, AWS, and experience with React. With 4.2 years of experience across 3 positions and 2 degrees, the candidate shows potential for growth. The overall fit is good, and the candidate's skills align well with the job requirements.",
       "role_predictions": [
         {
@@ -32081,7 +32081,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills for the Junior Full Stack Developer role. With over 3 years of experience and relevant technologies, they are well-suited for an entry-level position. Their background in React, Node.js, and MongoDB align well with the job requirements.",
       "role_predictions": [
         {
@@ -32746,7 +32746,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 2 years of experience and proficiency in multiple programming languages, they meet the job requirements well. Their ability to work in a team environment and problem-solving skills further enhance their fit for the role.",
       "role_predictions": [
         {
@@ -33099,7 +33099,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, and React, which are essential for the role. With over 11 years of experience and a diverse skill set, the candidate is well-equipped to excel in the Junior Full Stack Developer position.",
       "role_predictions": [
         {
@@ -33190,7 +33190,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and JavaScript, along with experience in SQL, Git, Docker, and AWS. With over 11 years of experience and a good mix of technical skills, the candidate is well-suited for the mid-level Software Engineer role.",
       "role_predictions": [
         {
@@ -33281,7 +33281,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python and JavaScript, which are essential for QA automation. With over 11 years of experience and exposure to various technologies, the candidate demonstrates a solid foundation. While lacking direct QA experience, the candidate's overall skill set and experience level make them a strong fit for the role.",
       "role_predictions": [
         {
@@ -33373,7 +33373,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and experience with backend development. With over 11 years of experience and exposure to cloud services, the candidate is well-suited for the Senior Backend Developer role.",
       "role_predictions": [
         {
@@ -33464,7 +33464,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills required for the Junior Full Stack Developer role. With 4.3 years of experience and relevant skills in React, Node.js, JavaScript, and MongoDB, the candidate is well-equipped for the position.",
       "role_predictions": [
         {
@@ -33651,7 +33651,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React and Node.js. With over 4 years of experience and a degree, they meet the minimum requirements and show potential for growth.",
       "role_predictions": [
         {
@@ -33746,7 +33746,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, and MongoDB. With 4.3 years of experience and 3 positions, they demonstrate a good level of expertise. While they fall slightly short on the minimum years required, their overall fit and experience level make them a strong candidate for the Lead Full Stack Developer role.",
       "role_predictions": [
         {
@@ -33916,7 +33916,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, HTML, CSS, React, and Git. Although slightly below the minimum years required, the candidate's experience and education level compensate for it. Overall fit is good for the mid-level frontend developer role.",
       "role_predictions": [
         {
@@ -34253,7 +34253,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, Node.js, Git, Docker, and AWS. With 8.8 years of experience and having worked in 2 positions, they meet the minimum years required for the Lead Full Stack Developer role. Their overall fit is good, making them a suitable choice for the position.",
       "role_predictions": [
         {
@@ -34335,7 +34335,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in React.js and JavaScript, which are must-have skills for the role. With almost 9 years of experience and a diverse skill set, the candidate is well-equipped to excel in this position.",
       "role_predictions": [
         {
@@ -34417,7 +34417,7 @@
     },
     "ground_truth": {
       "total_score": 85,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the job requirements, possessing proficiency in Python, Java, and Node.js, along with experience in RESTful APIs and database management systems. With almost 9 years of experience and exposure to AWS and Docker, the candidate is well-suited for the Associate Backend Developer - Junior role.",
       "role_predictions": [
         {
@@ -34499,7 +34499,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and JavaScript, as well as experience with SQL, Git, Docker, AWS, React.js, and Node.js. With 8.8 years of experience and having worked in 2 positions, the candidate exceeds the minimum years required for the mid-level Software Engineer role. Overall, the candidate's profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -34684,7 +34684,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, Git, and some experience with JavaScript. With 3.4 years of experience and exposure to Docker and AWS, they meet the minimum years required and have relevant tools knowledge. Their overall fit and problem-solving skills make them a good fit for the Junior Backend Developer role.",
       "role_predictions": [
         {
@@ -34876,7 +34876,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, and ReactJS. With 3.5 years of experience and a good mix of technical skills, they are well-suited for the Junior Frontend Developer role at WebWorks Inc.",
       "role_predictions": [
         {
@@ -34972,7 +34972,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, Python, Git, Docker, and AWS. With 3.5 years of experience and a good mix of technologies, the candidate is well-suited for the Senior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -35063,7 +35063,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python programming, SQL database, and experience with AWS. With 3.5 years of experience and a diverse skill set, they are well-suited for the Junior Data Scientist - Analytics role.",
       "role_predictions": [
         {
@@ -35249,7 +35249,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. Although they have less than 2 years of experience, their skills align well with the job requirements. Their ability to work with a variety of technologies and their educational background make them a good fit for the Junior Software Engineer position.",
       "role_predictions": [
         {
@@ -35420,7 +35420,7 @@
     },
     "ground_truth": {
       "total_score": 75,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with the required technologies and meets the minimum years of experience. While slightly below the required experience level, the candidate's skills and potential make them a good fit for the role.",
       "role_predictions": [
         {
@@ -35602,7 +35602,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 3.6 years of experience and 3 positions, they demonstrate a good level of expertise. Their skills and experience align well with the job requirements for a Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -35989,7 +35989,7 @@
     },
     "ground_truth": {
       "total_score": 75,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, and MongoDB. With 3.3 years of experience and exposure to multiple positions, they show potential for growth. While they fall short on the minimum years required, their skills and experience compensate for it.",
       "role_predictions": [
         {
@@ -36175,7 +36175,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and relevant experience in React, Node.js, and JavaScript. Their overall fit is good, and they exceed the minimum years required for the role.",
       "role_predictions": [
         {
@@ -36266,7 +36266,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like React, JavaScript, HTML, and CSS. With over 4 years of experience and relevant education, they exceed the minimum requirements. Their experience with Node.js and MongoDB adds value to the role.",
       "role_predictions": [
         {
@@ -36357,7 +36357,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Node.js, MongoDB, and Express. With over 4 years of experience and having worked in 3 positions, the candidate exceeds the minimum required years. Although lacking some specific backend language proficiency, the overall fit is good for the Junior Associate Backend Developer role.",
       "role_predictions": [
         {
@@ -36452,7 +36452,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, and MongoDB. With over 4 years of experience and a good mix of positions, they demonstrate a solid foundation. Their overall fit is also good, showing potential for growth in a lead role.",
       "role_predictions": [
         {
@@ -36644,7 +36644,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with SQL, Git, Docker, AWS, and React.js. While the candidate falls slightly short on the minimum years required, their overall fit, skills, and experience level make them a suitable choice for the mid-level Software Engineer position.",
       "role_predictions": [
         {
@@ -37025,7 +37025,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the required skills, including React.js, JavaScript, and Git. With 3 years of experience and exposure to AWS and Docker, they bring valuable expertise to the role. Their overall fit is solid, making them a good fit for the Junior Frontend Developer position at WebWorks Inc.",
       "role_predictions": [
         {
@@ -37223,7 +37223,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, AWS, Docker, and SQL. With 4.3 years of experience and a relevant degree, they meet the minimum requirements and show potential for growth. Their experience in leading projects also aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -37319,7 +37319,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React, Git, and some exposure to AWS and Docker. With over 4 years of experience and a diverse skill set, they meet the minimum years required and have the potential to excel in the role.",
       "role_predictions": [
         {
@@ -37411,7 +37411,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and backend development. With 4.3 years of experience and a diverse skill set, they show potential for growth and adaptation to the role requirements.",
       "role_predictions": [
         {
@@ -37693,7 +37693,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in relevant technologies like Git and AWS. With 3.3 years of experience and a good educational background, they meet the requirements for the Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -37785,7 +37785,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in SQL and Python, experience with AWS, and relevant experience in data-related positions. While slightly below the minimum years required, the candidate's skills and experience compensate for this gap.",
       "role_predictions": [
         {
@@ -38043,7 +38043,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, SQL, Git, and HTML/CSS. With 3.3 years of experience and relevant education, they meet the minimum requirements for the Junior Full Stack Developer role. Their experience with AWS and Docker adds value to the position.",
       "role_predictions": [
         {
@@ -38123,7 +38123,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the required skills, relevant experience, and meets the minimum years required. With 2 years of experience and proficiency in React, Node.js, and other key technologies, the candidate is well-suited for the Junior Frontend Developer role at WebWorks Inc.",
       "role_predictions": [
         {
@@ -38665,7 +38665,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and backend development. Their almost 4 years of experience across 3 positions and education level make them a good fit for the role. While they lack some experience in DevOps practices, their overall profile aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -38761,7 +38761,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with cloud technologies like AWS, and a good understanding of database design. With almost 4 years of experience and having held 3 positions, the candidate demonstrates the ability to lead and mentor junior engineers. The overall fit is solid, meeting most of the must-have requirements for the Principal Software Engineer - Backend role.",
       "role_predictions": [
         {
@@ -38852,7 +38852,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies and a good overall fit for the Junior QA Engineer role. With 4.5 years of experience and a diverse skill set, the candidate is well-equipped to handle the responsibilities of the position.",
       "role_predictions": [
         {
@@ -39043,7 +39043,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and meets the minimum years of experience. With 4.5 years of experience and a good mix of frontend and backend technologies, they are well-suited for the mid-level Frontend Developer role.",
       "role_predictions": [
         {
@@ -39134,7 +39134,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python and experience in related technologies. Their 7.3 years of experience and diverse background make them a good fit for the Lead Data Scientist role at InnovateX Technologies.",
       "role_predictions": [
         {
@@ -39229,7 +39229,7 @@
     },
     "ground_truth": {
       "total_score": 75,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, and React, which are essential for the role. With 7.3 years of experience and a diverse skill set, the candidate is well-suited for the Junior Full Stack Developer position.",
       "role_predictions": [
         {
@@ -39323,7 +39323,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, Git, and some experience with JavaScript. With 7.3 years of experience and exposure to Docker and AWS, they exceed the minimum years required and have relevant tools knowledge. Their overall fit and problem-solving skills make them a good fit for the role.",
       "role_predictions": [
         {
@@ -39701,7 +39701,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Node.js, MongoDB, and Express which align well with the backend development requirements. With over 3 years of experience and a good educational background, the candidate is well-suited for the Junior Backend Developer role.",
       "role_predictions": [
         {
@@ -39792,7 +39792,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, Java, and testing tools like Selenium. With over 3 years of experience and a good educational background, they meet the minimum requirements and show potential for growth.",
       "role_predictions": [
         {
@@ -39983,7 +39983,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, SQL, AWS, and React.js. With 3.4 years of experience and exposure to cloud services, the candidate shows potential for growth and adaptation to the role requirements.",
       "role_predictions": [
         {
@@ -40080,7 +40080,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, React.js, HTML, and CSS. With over 3 years of experience and exposure to multiple positions, the candidate shows adaptability and growth potential. Although slightly below the minimum years required, the candidate's overall fit and skillset make them a strong contender for the Senior Frontend Developer role.",
       "role_predictions": [
         {
@@ -40171,7 +40171,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 3.2 years of experience and a degree, they meet the minimum requirements and demonstrate good potential for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -40454,7 +40454,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in relevant technologies like React, Node.js, and MongoDB. With over 3 years of experience and 3 positions held, they demonstrate good exposure to software development. Their overall fit and experience level align well with the requirements for the Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -40713,7 +40713,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, Node.js, and Git. Although slightly below the minimum required experience, the candidate's diverse skill set and eagerness to learn make them a good fit for the role.",
       "role_predictions": [
         {
@@ -40801,7 +40801,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React.js, and Git, which are must-have skills for the role. Despite having 2 years of experience, the candidate's diverse skill set and eagerness to learn make them a good fit for the position.",
       "role_predictions": [
         {
@@ -40889,7 +40889,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, Docker, AWS, and some cloud experience. Although the years of experience fall short, the candidate's skills align well with the job requirements and shows potential for growth.",
       "role_predictions": [
         {
@@ -41062,7 +41062,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, HTML/CSS, React, and Node.js. Their 1.6 years of experience and exposure to MongoDB align well with the job requirements. Overall, they demonstrate good potential for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -42306,7 +42306,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, React, Node.js, and HTML/CSS. With almost 3 years of experience and relevant education, they meet the minimum requirements for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -42634,7 +42634,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With almost 4 years of experience and a degree, they meet the minimum requirements for the role. Their overall fit and problem-solving skills also contribute to a positive evaluation.",
       "role_predictions": [
         {
@@ -42821,7 +42821,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, JavaScript, and Git. With 4.4 years of experience and having worked in 3 positions, they demonstrate a good level of experience. Their skills and experience align well with the job requirements for a Junior Software Engineer role.",
       "role_predictions": [
         {
@@ -43078,7 +43078,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and SQL, along with experience in relevant technologies like Git, Docker, and AWS. With 2.3 years of experience and 2 positions, they meet the minimum requirements and show potential for growth.",
       "role_predictions": [
         {
@@ -43442,7 +43442,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and SQL. Their 3.4 years of experience across 3 positions align well with the mid-level role requirements. Additionally, their experience with Docker, AWS, and API development adds value to the team.",
       "role_predictions": [
         {
@@ -43533,7 +43533,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in Python, SQL, and API development. Their 3.4 years of experience across multiple positions demonstrate adaptability and growth potential. While lacking direct experience in statistical analysis and machine learning, the candidate's overall fit and potential make them a strong fit for the Junior Data Scientist - Analytics role.",
       "role_predictions": [
         {
@@ -43633,7 +43633,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and meets the minimum years of experience. Their experience with React, Node.js, MongoDB, and other relevant technologies is impressive. With 3.7 years of experience and a good overall fit, they are well-suited for the Senior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -44008,7 +44008,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies and meets the minimum years required. Their experience in 3 positions shows adaptability and growth. While lacking direct QA experience, their analytical and problem-solving skills can be valuable in a QA role.",
       "role_predictions": [
         {
@@ -44294,7 +44294,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in required technologies like JavaScript, HTML, CSS, and React. With almost 4 years of experience and a relevant educational background, the candidate exceeds the minimum years required and demonstrates a good overall fit for the mid-level Frontend Developer position.",
       "role_predictions": [
         {
@@ -44553,7 +44553,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and SQL, along with experience in backend development. With 2 years of experience and exposure to AWS and Docker, they meet the minimum requirements for the role and show potential for growth.",
       "role_predictions": [
         {
@@ -44638,7 +44638,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, Git, and basic frontend technologies. With 2 years of experience and exposure to Docker and AWS, they meet the minimum requirements for the Junior Backend Developer role. Their overall fit and problem-solving skills further support their selection.",
       "role_predictions": [
         {
@@ -44825,7 +44825,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, React.js, HTML, and CSS. With 3.3 years of experience and exposure to multiple positions, they show adaptability and growth potential. Overall fit is good, although lacking in some specific requirements.",
       "role_predictions": [
         {
@@ -44920,7 +44920,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, and MongoDB. With 3.3 years of experience and a good mix of relevant skills, the candidate shows potential for growth and adaptation to the Lead Full Stack Developer role.",
       "role_predictions": [
         {
@@ -45367,7 +45367,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate meets the must-have skills criteria with proficiency in Python and Java, experience with Git, and strong problem-solving skills. They also have relevant experience and a good overall fit for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -45533,7 +45533,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and SQL, along with experience in relevant technologies like Git, Docker, AWS. With 2.3 years of experience and 2 positions, they meet the minimum years required and have a good overall fit for the Junior Backend Developer role.",
       "role_predictions": [
         {
@@ -45800,7 +45800,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the required skills, relevant experience, and meets the minimum years required. Their skills in React, Node.js, JavaScript, HTML/CSS, and MongoDB align well with the job requirements.",
       "role_predictions": [
         {
@@ -46529,7 +46529,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, Git, and basic frontend technologies. With over 3 years of experience and exposure to Docker and AWS, they exceed the minimum requirement for the role. Their overall fit and problem-solving skills make them a good fit for the Junior Backend Developer position.",
       "role_predictions": [
         {
@@ -46818,7 +46818,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, React.js, HTML, and CSS. With 4.5 years of experience and exposure to multiple positions, they demonstrate a good level of expertise. Although slightly below the minimum years required, their overall fit and experience level make them a suitable candidate.",
       "role_predictions": [
         {
@@ -46909,7 +46909,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With 4.5 years of experience and having held 3 positions, they demonstrate the ability to adapt and grow. Their overall fit with the job requirements is solid, making them a good fit for the Junior QA Engineer role.",
       "role_predictions": [
         {
@@ -47103,7 +47103,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in cloud technologies, backend development, and containerization. With almost 4 years of experience and a relevant degree, they meet the minimum requirements and demonstrate potential for growth.",
       "role_predictions": [
         {
@@ -47194,7 +47194,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with Git, Docker, AWS, and React. With almost 4 years of experience and a degree, they meet the minimum requirements and exceed in some areas. Their overall fit for the Associate Software Engineer role is solid.",
       "role_predictions": [
         {
@@ -47658,7 +47658,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Node.js, MongoDB, and Express which are essential for the role. With 4.4 years of experience and exposure to multiple positions, the candidate demonstrates good experience level. Overall fit is also solid, meeting most of the job requirements.",
       "role_predictions": [
         {
@@ -48138,7 +48138,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, SQL, AWS, and experience with backend development. Although the candidate falls short on the minimum years required, the diverse skill set and relevant experience make them a strong fit for the role.",
       "role_predictions": [
         {
@@ -48234,7 +48234,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React.js, Git, and SQL. With almost 4 years of experience and a diverse skill set, they are well-suited for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -48328,7 +48328,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in Python, SQL, Git, and some experience with JavaScript. With almost 4 years of experience and a good mix of relevant skills, the candidate is well-suited for the Junior Backend Developer - Python role.",
       "role_predictions": [
         {
@@ -48510,7 +48510,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python programming, SQL database, and some experience with AWS. With almost 4 years of experience and a diverse skill set, the candidate is well-suited for the Junior Data Scientist - Analytics role.",
       "role_predictions": [
         {
@@ -48610,7 +48610,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with cloud technologies like AWS, and good knowledge of software development best practices. With almost 4 years of experience and having held 3 positions, the candidate demonstrates the ability to lead and mentor junior engineers. The overall fit is good, meeting most of the must-have requirements for the Principal Software Engineer - Backend role.",
       "role_predictions": [
         {
@@ -48855,7 +48855,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With over 3 years of experience and having worked in 2 positions, they meet the minimum years required. Their skills and experience demonstrate a good fit for the Junior QA Engineer role at Software Solutions Inc.",
       "role_predictions": [
         {
@@ -49018,7 +49018,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React and Node.js. With over 3 years of experience and a degree, they meet the minimum requirements and show potential for growth.",
       "role_predictions": [
         {
@@ -49270,7 +49270,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like HTML, CSS, JavaScript, Node.js, and React. With 2 years of experience and relevant education, they meet the criteria for an entry-level Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -49538,7 +49538,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With over 3 years of experience and a degree, they meet the minimum requirements and demonstrate good potential for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -49639,7 +49639,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, and ReactJS. Their years of experience and diverse skill set make them a good fit for the Junior Full Stack Developer role. Although lacking some of the must-have skills, their overall profile is promising.",
       "role_predictions": [
         {
@@ -49740,7 +49740,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, JavaScript, and other required technologies. With over 4 years of experience and a degree, they exceed the minimum requirements for the entry-level position. Their experience in multiple positions demonstrates adaptability and growth potential.",
       "role_predictions": [
         {
@@ -50039,7 +50039,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, SQL, Git, Docker, AWS, and experience with Spring Boot. With 3.5 years of experience and having worked in 3 positions, they meet the minimum years required. Their overall fit is good for the Junior Associate Backend Developer role.",
       "role_predictions": [
         {
@@ -50131,7 +50131,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Java and Python, along with experience in relevant technologies like Docker and AWS. Although slightly below the minimum years required, the candidate's overall fit and problem-solving skills make them a good fit for the mid-level Software Engineer role.",
       "role_predictions": [
         {
@@ -50227,7 +50227,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React, and Git, which are must-have skills for the job. With 3.5 years of experience and a good mix of frontend and backend technologies, the candidate is well-suited for the mid-level frontend developer role.",
       "role_predictions": [
         {
@@ -50402,7 +50402,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in cloud technologies, backend development, and containerization. With 3 years of experience and relevant skills, they show potential to lead projects effectively. While they fall short on the minimum years required, their overall fit and potential make them a strong candidate.",
       "role_predictions": [
         {
@@ -50484,7 +50484,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in Python, SQL, and relevant technologies. With 3 years of experience and a relevant educational background, the candidate is well-suited for the Junior Data Scientist - Analytics role.",
       "role_predictions": [
         {
@@ -50579,7 +50579,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and SQL. With 3.3 years of experience and exposure to relevant technologies like Git, Docker, and AWS, they show potential for growth into a mid-level role. Their experience in 3 positions and 1 degree also contribute positively to their fit for the position.",
       "role_predictions": [
         {
@@ -50670,7 +50670,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, along with experience in relevant technologies like Git and AWS. With over 3 years of experience and a good educational background, they meet the job requirements well.",
       "role_predictions": [
         {
@@ -50862,7 +50862,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with cloud technologies like AWS, and a good understanding of database design. With 3.3 years of experience and exposure to multiple positions, the candidate shows potential for growth and leadership. The overall fit is solid based on the required skills and experience.",
       "role_predictions": [
         {
@@ -51052,7 +51052,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, Java, and testing tools like Selenium. With over 3 years of experience and a good mix of technical skills, they meet the minimum requirements and show potential for growth.",
       "role_predictions": [
         {
@@ -51641,7 +51641,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with Git, Docker, AWS, and React. With 4.4 years of experience across 4 positions and 2 degrees, they exceed the minimum requirements. Their overall fit is good, making them a suitable candidate for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -51743,7 +51743,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in Python, JavaScript, Java, SQL, Git, Docker, AWS, and React. While lacking direct experience in HTML5 and CSS3, the candidate's overall skill set and years of experience make them a good fit for the Junior Frontend Developer role at WebWorks Inc.",
       "role_predictions": [
         {
@@ -51834,7 +51834,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python and Java, experience with Git, Docker, AWS, and React. With over 4 years of experience and a degree, they exceed the minimum requirements for the Associate Software Engineer role.",
       "role_predictions": [
         {
@@ -52111,7 +52111,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python programming, SQL database, and experience with AWS. With over 4 years of experience and a diverse skill set, the candidate is well-equipped for the Junior Data Scientist - Analytics role.",
       "role_predictions": [],
       "breakdown": {
@@ -52200,7 +52200,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with Python, SQL, Git, and some experience with JavaScript. With over 4 years of experience and exposure to Docker and AWS, they exceed the minimum requirement for the role. Their background in backend development aligns well with the job requirements.",
       "role_predictions": [
         {
@@ -52293,7 +52293,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in backend languages, cloud services, database management, and experience with RESTful APIs. Although the candidate falls short on the minimum years required, their diverse skill set and relevant experience make them a strong fit for the role.",
       "role_predictions": [
         {
@@ -52391,7 +52391,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with expertise in JavaScript, React.js, Git, and experience with AWS and Docker. Although slightly below the minimum years required, the candidate's diverse skill set and relevant experience make them a good fit for the role.",
       "role_predictions": [
         {
@@ -52483,7 +52483,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, Python, and Java which are relevant to the role. With 3.5 years of experience and exposure to multiple positions, the candidate shows good potential for growth. Although slightly below the minimum years required, the overall fit and skill set make them a strong candidate.",
       "role_predictions": [
         {
@@ -52575,7 +52575,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with proficiency in Python, Java, and Node.js, along with experience in SQL and Git. With 3.5 years of experience and exposure to AWS and Docker, the candidate meets the job requirements well.",
       "role_predictions": [
         {
@@ -52670,7 +52670,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the required skills, relevant experience, and meets the minimum years required for the role. Their experience with Python, SQL, Git, and Docker align well with the job requirements. Additionally, their exposure to AWS and JavaScript adds value to their profile.",
       "role_predictions": [
         {
@@ -52986,7 +52986,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in JavaScript, React.js, Git, and SQL. With 4.4 years of experience and a good mix of technical skills, they are well-suited for the Junior Full Stack Developer role.",
       "role_predictions": [
         {
@@ -53081,7 +53081,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with required technologies like JavaScript, Node.js, React, MongoDB, and Git. With almost 4 years of experience and a good educational background, they demonstrate the potential to grow into the Lead Full Stack Developer role.",
       "role_predictions": [
         {
@@ -53177,7 +53177,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong match with the must-have skills and relevant experience for the Junior Full Stack Developer role. Their 3.8 years of experience and proficiency in JavaScript, React, Node.js, HTML/CSS, and Git make them a solid fit for the position.",
       "role_predictions": [
         {
@@ -53442,7 +53442,7 @@
     },
     "ground_truth": {
       "total_score": 80,
-      "decision": "Selected",
+      "decision": "Proceed",
       "reasoning": "The candidate has a strong skill match with experience in relevant technologies like React, Node.js, and MongoDB. With almost 3 years of experience and having worked in 2 positions, they meet the minimum years required. Their skills in JavaScript, HTML, and CSS also add value to the role. The candidate's overall fit is good and they demonstrate the ability to work in a collaborative team environment.",
       "role_predictions": [
         {
