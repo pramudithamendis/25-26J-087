@@ -6,8 +6,10 @@ type CloneRequest = {
 };
 
 const QuestionsClone: React.FC = () => {
-  const [username, setUsername] = useState("pramudithamendis");
-  const [repoName, setRepoName] = useState("Xpress-Hirely");
+  // const [username, setUsername] = useState("pramudithamendis");
+  const [username, setUsername] = useState("");
+  // const [repoName, setRepoName] = useState("Xpress-Hirely");
+  const [repoName, setRepoName] = useState("");
   const [destination, setDestination] = useState("./uploads/repos");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<string | null>(null);

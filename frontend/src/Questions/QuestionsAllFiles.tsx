@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom";
 const API_BASE = "http://127.0.0.1:8000/api/items"; // e.g. "http://localhost:8000"
 
 export default function QuestionsAllFiles() {
-  const [username, setUsername] = useState("pramudithamendis");
-  const [reponame, setReponame] = useState("Xpress-Hirely");
+  // const [username, setUsername] = useState("pramudithamendis");
+  const [username, setUsername] = useState("");
+  // const [reponame, setReponame] = useState("Xpress-Hirely");
+  const [reponame, setReponame] = useState("");
   const [files, setFiles] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [fileContent, setFileContent] = useState("");
