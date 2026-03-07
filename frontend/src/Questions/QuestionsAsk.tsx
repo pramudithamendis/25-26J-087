@@ -66,7 +66,7 @@ const QuestionsAsk: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-flex-start p-6">
       <div className="w-full max-w-md space-y-6">
         {/* Title */}
-        <h1 className="text-3xl font-bold text-center text-gray-800">Generate Questions and answers</h1>
+        <h1 className="text-3xl font-bold text-center text-gray-800">Generate Questions</h1>
 
         {/* Form Card */}
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg space-y-5">
@@ -115,7 +115,7 @@ const QuestionsAsk: React.FC = () => {
                      disabled:bg-gray-400 disabled:cursor-not-allowed
                      transition duration-200"
           >
-            {loading ? "Generating..." : "Generate Questions and answers"}
+            {loading ? "Generating..." : "Generate Questions"}
           </button>
         </form>
 
@@ -125,7 +125,7 @@ const QuestionsAsk: React.FC = () => {
         {/* Questions Card */}
         {questions && (
           <div className="bg-white p-6 rounded-2xl shadow-lg w-364">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Generated Questions and answers</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Generated Questions</h2>
             <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">{questions}</pre>
           </div>
         )}
