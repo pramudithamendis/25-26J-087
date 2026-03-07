@@ -155,6 +155,14 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
               </li>
             )}
           </ul>
+          {!(features.skill_match >= 0.7) &&
+          !(features.exp_match >= 0.7) &&
+          !(features.location_match >= 0.7) &&
+          !(features.avg_tenure_months >= 24) &&
+          !(features.job_hopping_rate < 0.3) &&
+          !(features.overall_match >= 0.7) && (
+            <p className="no-items-note">No notable strengths identified based on available data.</p>
+          )}
         </div>
 
         <div className="concerns-card">
@@ -166,7 +174,7 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             {features.skill_match < 0.5 && (
               <li className="point-item warning">
                 <AlertTriangle size={15} className="point-icon" />
-                <span>Limited skill overlap with job requirements (only {(features.skill_match * 100).toFixed(0)}% match)</span>
+                <span>Limited skill overlap with job requirements</span>
               </li>
             )}
             {features.job_hopping_rate >= 0.5 && (
@@ -200,6 +208,14 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
               </li>
             )}
           </ul>
+          {!(features.skill_match < 0.5) &&
+          !(features.job_hopping_rate >= 0.5) &&
+          !(features.avg_tenure_months < 12) &&
+          !(features.location_match < 0.5) &&
+          !(features.total_experience < 2) &&
+          !(features.exp_match < 0.5) && (
+            <p className="no-items-note">No significant concerns identified for this candidate.</p>
+          )}
         </div>
       </div>
 
