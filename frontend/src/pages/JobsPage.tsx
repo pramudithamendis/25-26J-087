@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { JobsList } from '../components/jobs/JobsList';
 import { JobForm } from '../components/jobs/JobForm';
 import { Modal } from '../components/shared/Modal';
@@ -7,9 +7,11 @@ import { Alert } from '../components/Alert';
 import { useAuth } from '../contexts/AuthContext';
 import { listJobs, createJob } from '../services/jobService';
 import type { Job, JobCreate } from '../types/jobTypes';
+import { CheckCircle, X } from 'lucide-react';
 
 export const JobsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -18,10 +20,21 @@ export const JobsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     loadJobs();
   }, []);
+
+  useEffect(() => {
+    const msg = (location.state as any)?.notification;
+    if (msg) {
+      setNotification(msg);
+      window.history.replaceState({}, '');
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   const loadJobs = async () => {
     try {
@@ -77,6 +90,19 @@ export const JobsPage = () => {
 
   return (
     <div>
+      {/* Notification Banner */}
+      {notification && (
+        <div className="mb-4 flex items-center justify-between gap-3 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+            <span>{notification}</span>
+          </div>
+          <button onClick={() => setNotification(null)} className="text-green-500 hover:text-green-700">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
         <p className="text-gray-600 mt-1">
@@ -115,4 +141,3 @@ export const JobsPage = () => {
     </div>
   );
 };
-

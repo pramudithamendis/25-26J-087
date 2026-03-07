@@ -165,22 +165,25 @@ export const AdminScoreViewPage = () => {
 
   const loadTurnoverPredictions = async () => {
     setLoadingTurnover(true);
-    const predictions: Record<string, TurnoverPredictionResponse> = {};
-    
-    await Promise.all(
-      results.map(async (cv) => {
-        if (!cv.cv_id) return;
-        try {
-          const response = await apiClient.get(`/turnover/result/${cv.cv_id}`);
-          predictions[cv.cv_id] = response.data;
-        } catch (err) {
-          console.error('Failed to load turnover prediction:', err);
+    try {
+      const cvIds = results.map(cv => cv.cv_id).filter(Boolean).join(',');
+      if (!cvIds) return;
+
+      const response = await apiClient.get(`/turnover/latest-results/batch?cv_ids=${cvIds}`);
+      const batchResults: TurnoverPredictionResponse[] = response.data.results || [];
+
+      const predictions: Record<string, TurnoverPredictionResponse> = {};
+      for (const result of batchResults) {
+        if (result.cv_id) {
+          predictions[result.cv_id] = result;
         }
-      })
-    );
-    
-    setTurnoverPredictions(predictions);
-    setLoadingTurnover(false);
+      }
+      setTurnoverPredictions(predictions);
+    } catch (err) {
+      console.error('Failed to load turnover predictions:', err);
+    } finally {
+      setLoadingTurnover(false);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -549,7 +552,7 @@ export const AdminScoreViewPage = () => {
             <div className="mt-6 flex justify-center">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-2 flex items-center gap-2">
                 <LoadingSpinner size="sm" />
-                <span className="text-sm text-gray-600">Loading turnover data...</span>
+                <span className="text-sm text-gray-600">Loading attrition data...</span>
               </div>
             </div>
           )}
