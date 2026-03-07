@@ -68,3 +68,6 @@ uploads/
 Datasetmy/.cache/
 **/.cache/
 *.pkl
+
+notebooks/fair-prehire-attrition-prediction/models/*.joblib
+notebooks/fair-prehire-attrition-prediction/models/*.pkl

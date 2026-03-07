@@ -124,3 +124,6 @@ pytesseract
 
 # Geocoding/Maps
 geopy
+
+pytesseract
+tqdm

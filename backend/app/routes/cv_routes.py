@@ -1,4 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi.responses import FileResponse
 from app.auth.dependencies import get_current_user
 from app.schemas.cv_schema import CVSubmitResponse, CVParsed, CVUpdateRequest
 from app.database import cv_collection
@@ -12,6 +14,7 @@ import os
 import logging
 from app.parsers.cv_parser import parse_resume  
 from app.services.cv_extraction_openai import extract_cv_to_schema_fields, CVOpenAIExtractionError
+
 
 logger = logging.getLogger(__name__)
 
@@ -352,3 +355,56 @@ async def get_parsed_experience(cv_id: str, user: dict = Depends(get_current_use
         
     except Exception as e:
         raise HTTPException(400, f"Error parsing experience: {str(e)}")
+
+
+@router.get("/{cv_id}/pdf")
+async def get_cv_pdf(cv_id: str, user: dict = Depends(get_current_user)):
+    """Retrieve the uploaded PDF file for a CV"""
+
+    try:
+        cv = cv_collection.find_one({"_id": ObjectId(cv_id)})
+
+        if not cv:
+            raise HTTPException(status_code=404, detail="CV not found")
+
+        # Correct email extraction
+        cv_user_email = cv.get("user_email") or cv.get("basics", {}).get("email")
+
+        if not cv_user_email:
+            raise HTTPException(status_code=404, detail="CV owner email not found")
+
+        # Find the user
+        user_doc = users_collection.find_one({"email": cv_user_email})
+
+        if not user_doc:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user_id = str(user_doc["_id"])
+
+        # Try common extensions
+        for ext in ["pdf", "txt", "docx"]:
+            file_path = os.path.join(settings.CV_UPLOAD_FOLDER, f"{user_id}_cv.{ext}")
+
+            if os.path.exists(file_path):
+                return FileResponse(
+                    path=file_path,
+                    media_type="application/pdf" if ext == "pdf" else "application/octet-stream",
+                    filename=f"{cv_id}_cv.{ext}",
+                )
+
+        # Try saved path
+        if user_doc.get("cv_file_path") and os.path.exists(user_doc["cv_file_path"]):
+            ext = user_doc["cv_file_path"].split(".")[-1]
+
+            return FileResponse(
+                path=user_doc["cv_file_path"],
+                media_type="application/pdf" if ext == "pdf" else "application/octet-stream",
+                filename=f"{cv_id}_cv.{ext}",
+            )
+
+        raise HTTPException(status_code=404, detail="CV file not found on disk")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error retrieving PDF: {str(e)}")
