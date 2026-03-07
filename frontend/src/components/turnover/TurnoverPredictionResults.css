@@ -203,6 +203,13 @@
 }
 
 /* ── Strengths & Concerns ── */
+.no-items-note {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: #8a9099;
+  font-style: italic;
+}
+
 .strengths-concerns-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -306,7 +313,7 @@
 
 .stat-label {
   display: block;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -316,14 +323,14 @@
 
 .stat-value1 {
   display: block;
-  font-size: 2rem;
+  font-size: 1.75rem;
   color: #111827;
   font-weight: 700;
 }
 
 .stat-value-label {
   display: block;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: #111827;
   font-weight: 700;
 }
