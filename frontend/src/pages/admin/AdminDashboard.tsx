@@ -6,6 +6,8 @@ import { LoadingSpinner } from "../../components/shared/LoadingSpinner";
 import { Alert } from "../../components/Alert";
 import { getAdminStats } from "../../services/adminService";
 
+import { Link } from "react-router-dom";
+
 export const AdminDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
@@ -118,24 +120,35 @@ export const AdminDashboard = () => {
             View Early Attrition Risk
           </Button>
           {/* Questions */}
-          <Button variant="primary" onClick={() => navigate("/questions/upload")} className="w-full">
-            Upload CV to extract readme
-          </Button>
-          <Button variant="primary" onClick={() => navigate("/questions/bestproject")} className="w-full">
-            Find best matching project
-          </Button>
-          <Button variant="primary" onClick={() => navigate("/questions/clone")} className="w-full">
-            Clone best matching project
-          </Button>
-          <Button variant="primary" onClick={() => navigate("/questions/allfiles")} className="w-full">
-            Display all files
-          </Button>
+          <Link to="/questions/upload" className="w-full">
+            <Button variant="primary" className="w-full">
+              Upload CV to extract readme
+            </Button>
+          </Link>
+          {/*  */}
+          <Link to="/questions/bestproject" className="w-full">
+            <Button variant="primary" className="w-full">
+              Find best matching project
+            </Button>
+          </Link>
+          <Link to="/questions/clone" className="w-full">
+            <Button variant="primary" className="w-full">
+              Clone best matching project
+            </Button>
+          </Link>
+          <Link to="/questions/allfiles" className="w-full">
+            <Button variant="primary" className="w-full">
+              Display all files
+            </Button>
+          </Link>
+          <Link to="/hiring/timeline" className="w-full">
+            <Button variant="primary" className="w-full">
+              Predict hiring duration
+            </Button>
+          </Link>
           {/* <Button variant="primary" onClick={() => navigate("/questions/ask")} className="w-full">
             /questions/ask
           </Button> */}
-          <Button variant="primary" onClick={() => navigate("/hiring/timeline")} className="w-full">
-            Predict hiring duration
-          </Button>
           <Button variant="primary" onClick={() => navigate('/dashboard/admin/scores')} className="w-full">
             Scores View
           </Button>

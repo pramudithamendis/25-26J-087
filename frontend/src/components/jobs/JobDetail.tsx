@@ -137,19 +137,19 @@ export const JobDetail = ({ jobId }: JobDetailProps) => {
               </Button>
             ) : (
               <div className="flex gap-3">
-                <Button
+                {/* <Button
                   type="button"
                   variant="primary"
                   onClick={() => navigate(`/dashboard/jobs/${jobId}/apply`)}
                 >
                   Apply for this Job
-                </Button>
+                </Button> */}
                 <Button
                   type="button"
                   variant="primary"
                   onClick={() => navigate(`/dashboard/evaluate/${jobId}`)}
                 >
-                  Evaluate CV
+                  Apply for this Job
                 </Button>
               </div>
             )}
