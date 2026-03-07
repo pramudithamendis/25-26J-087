@@ -8,7 +8,7 @@ import { listJobs } from '../../services/jobService';
 import { listAllEvaluations } from '../../services/adminService';
 import type { EvaluationListItem } from '../../types/adminTypes';
 import type { Job } from '../../types/jobTypes';
-import { getDecisionDisplayValue } from '../../utils/decisionMapper';
+// import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import apiClient from '../../config/api';
 import type { TurnoverPredictionResponse } from '../../types/turnover.types';
 import { TrendingUp, Briefcase, Users, Mail, Calendar, MapPin, FileText } from 'lucide-react';
@@ -228,7 +228,7 @@ export const AdminScoreViewPage = () => {
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[decision] || 'bg-gray-100 text-gray-800'}`}>
-        {getDecisionDisplayValue(decision)}
+        {/* {getDecisionDisplayValue(decision)} */}
       </span>
     );
   };
