@@ -21,6 +21,7 @@ export const JobForm = ({
   const [jdText, setJdText] = useState('');
   const [location, setLocation] = useState('');
   const [locations, setLocations] = useState<string[]>([]);
+  const [projectType, setProjectType] = useState<string>('general');
   const [errors, setErrors] = useState<{ 
     title?: string; 
     jdText?: string 
@@ -33,6 +34,7 @@ export const JobForm = ({
       setTitle(job.title);
       setJdText(job.jd_text);
       setLocation(job.location || '');
+      setProjectType(job.project_type || 'general');
     }
   }, [job]);
 
@@ -72,28 +74,60 @@ export const JobForm = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    await onSubmit({ title: title.trim(), jd_text: jdText.trim(), location });
+
+    const data: JobCreate | JobUpdate = {
+      title: title.trim(),
+      jd_text: jdText.trim(),
+      location: location || undefined,
+      project_type: projectType,
+    };
+
+    await onSubmit(data);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
-        label="Job Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        error={errors.title}
-        required
-        disabled={isLoading}
-      />
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* Top row: Title + Project type - compact, no scroll */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="min-w-0">
+          <Input
+            label="Job Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            error={errors.title}
+            required
+            disabled={isLoading}
+          />
+        </div>
+        <div className="min-w-0">
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            Project type
+          </label>
+          <select
+            value={projectType}
+            onChange={(e) => setProjectType(e.target.value)}
+            disabled={isLoading}
+            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-all duration-200 disabled:bg-slate-50 disabled:cursor-not-allowed"
+          >
+            <option value="general">General</option>
+            <option value="r_and_d">R&D Project</option>
+            <option value="production">Production Project</option>
+            <option value="support">Support</option>
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            Affects how CVs are scored (e.g. R&D vs Production).
+          </p>
+        </div>
+      </div>
 
       {/* Location dropdown */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">
           Job Location
         </label>
         {isRemote ? (
           <input
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-400 bg-gray-100 cursor-not-allowed"
+            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-slate-400 bg-slate-100 cursor-not-allowed"
             value="Remote"
             readOnly
             disabled
@@ -103,7 +137,7 @@ export const JobForm = ({
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             disabled={isLoading}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-all duration-200 disabled:bg-slate-50 disabled:cursor-not-allowed"
           >
             <option value="">Select location (optional)</option>
             {locations.map(loc => (
@@ -112,37 +146,38 @@ export const JobForm = ({
           </select>
         )}
         {isRemote && (
-          <p className="mt-1.5 text-sm text-gray-500">Remote position — location auto-filled</p>
+          <p className="mt-1.5 text-sm text-slate-500">Remote position — location auto-filled</p>
         )}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Job Description 
-          <span className="text-red-500 ml-1">*</span>
-        </label>
+      {/* Job Description - fixed height so no scroll */}
+      <div className="min-h-0">
+        <div className="flex items-baseline justify-between gap-2 mb-1.5">
+          <label className="text-sm font-medium text-slate-700">
+            Job Description <span className="text-red-500">*</span>
+          </label>
+          <span className="text-xs text-slate-500 tabular-nums">{jdText.length} / 50,000</span>
+        </div>
         <textarea
           value={jdText}
           onChange={(e) => setJdText(e.target.value)}
-          rows={12}
-          className={`w-full px-4 py-2.5 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed ${
-            errors.jdText 
-            ? 'border-red-500 focus:ring-red-500' 
-            : 'border-gray-300 focus:border-blue-500'
+          rows={5}
+          className={`w-full px-3.5 py-2.5 border rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition-all duration-200 disabled:bg-slate-50 disabled:cursor-not-allowed resize-y min-h-[100px] max-h-[200px] ${
+            errors.jdText
+              ? 'border-red-400 focus:ring-red-400'
+              : 'border-slate-200'
           }`}
           placeholder="Enter the full job description..."
           required
           disabled={isLoading}
         />
         {errors.jdText && (
-          <p className="mt-1.5 text-sm text-red-600">{errors.jdText}</p>
+          <p className="mt-1 text-sm text-red-600">{errors.jdText}</p>
         )}
-        <p className="mt-1.5 text-sm text-gray-500">
-          {jdText.length} / 50,000 characters
-        </p>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
+      {/* Actions */}
+      <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
           Cancel
         </Button>

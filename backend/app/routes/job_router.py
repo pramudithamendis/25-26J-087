@@ -9,11 +9,10 @@ from app.models.job_model import jobs_collection
 from app.models.user_model import users_collection
 from app.models.application_model import applications_collection
 from app.schemas.job_schema import JobCreate, JobResponse, JobUpdate
-from app.schemas.application_schema import ApplicationCreate, ApplicationResponse, ApplicationStatusResponse
+from app.schemas.application_schema import ApplicationCreate, ApplicationResponse, ApplicationStatusResponse, UserApplicationStatusResponse
 from app.auth.dependencies import get_current_user, get_admin_user
 from app.utils.file_handler import save_uploaded_file
 from app.config import settings
-from fastapi import BackgroundTasks
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -41,17 +40,20 @@ async def create_job(
             "location": job.location or "",
             "created_at": datetime.utcnow().isoformat() + "Z"
         }
-        
+        if job.project_type is not None:
+            job_doc["project_type"] = job.project_type
+
         # Insert into MongoDB
         result = jobs_collection.insert_one(job_doc)
-        
+
         # Return as dict to ensure _id is included in JSON serialization
         return {
             "_id": str(result.inserted_id),
             "title": job_doc["title"],
             "jd_text": job_doc["jd_text"],
-            "location": job_doc["location"],
-            "created_at": job_doc["created_at"]
+            "location": job_doc.get("location", ""),
+            "created_at": job_doc["created_at"],
+            "project_type": job_doc.get("project_type")
         }
     
     except HTTPException:
@@ -96,7 +98,8 @@ async def list_jobs(
                 "jd_text": job.get("jd_text", ""),
                 "location": job.get("location", ""),
                 "created_at": job.get("created_at", datetime.utcnow().isoformat() + "Z"),
-                "application_count": application_count
+                "application_count": application_count,
+                "project_type": job.get("project_type")
             }
             job_list.append(job_dict)
         
@@ -148,9 +151,10 @@ async def get_job(
             "jd_text": job.get("jd_text", ""),
             "location": job.get("location", ""),
             "created_at": job.get("created_at", datetime.utcnow().isoformat() + "Z"),
-            "application_count": application_count
+            "application_count": application_count,
+            "project_type": job.get("project_type")
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -192,13 +196,16 @@ async def update_job(
             update_data["jd_text"] = job_update.jd_text
         if job_update.location is not None:
             update_data["location"] = job_update.location
+        if job_update.project_type is not None:
+            update_data["project_type"] = job_update.project_type
         
         # Update job
-        jobs_collection.update_one(
-            {"_id": ObjectId(job_id)},
-            {"$set": update_data}
-        )
-        
+        if update_data:
+            jobs_collection.update_one(
+                {"_id": ObjectId(job_id)},
+                {"$set": update_data}
+            )
+
         # Return updated job as dict to ensure _id is included
         updated_job = jobs_collection.find_one({"_id": ObjectId(job_id)})
         return {
@@ -206,7 +213,8 @@ async def update_job(
             "title": updated_job.get("title", ""),
             "jd_text": updated_job.get("jd_text", ""),
             "location": updated_job.get("location", ""),
-            "created_at": updated_job.get("created_at", datetime.utcnow().isoformat() + "Z")
+            "created_at": updated_job.get("created_at", datetime.utcnow().isoformat() + "Z"),
+            "project_type": updated_job.get("project_type")
         }
     
     except HTTPException:
@@ -280,7 +288,6 @@ async def apply_to_job(
     linkedin_url: Optional[str] = Form(None),
     resume: Optional[UploadFile] = File(None),
     linkedin_resume: Optional[UploadFile] = File(None),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
     current_user = Depends(get_current_user)
 ):
     """
@@ -409,18 +416,18 @@ async def apply_to_job(
             "user_id": user_id,
             "job_id": job_id,
             "status": "pending",
+            "evaluation_status": "pending",
             "created_at": datetime.utcnow().isoformat() + "Z"
         }
         application_result = applications_collection.insert_one(application_doc)
         application_id = str(application_result.inserted_id)
         
-        # Trigger evaluation in background (don't wait for it)
-        background_tasks.add_task(
-            run_evaluation_background,
-            user_id,
-            job_id,
-            application_id
-        )
+        # Queue evaluation task using Redis Queue
+        from app.services.queue_service import enqueue_evaluation_task
+        rq_job_id = enqueue_evaluation_task(user_id, job_id, application_id)
+        
+        if not rq_job_id:
+            logger.warning(f"Failed to enqueue evaluation task for application {application_id}, but application was created")
         
         # Return immediate confirmation
         return {
@@ -496,7 +503,7 @@ async def run_evaluation_background(user_id: str, job_id: str, application_id: s
                 "job_id": job_id,
                 "pipeline_output": evaluation_result.get("raw_pipeline", {}),
                 "total_score": evaluation_result.get("total_score", 0),
-                "decision": evaluation_result.get("decision", "Not Selected"),
+                "decision": evaluation_result.get("decision", "Do Not Proceed"),
                 "role_predictions": evaluation_result.get("role_predictions", []),
                 "breakdown": evaluation_result.get("breakdown", {}),
                 "status": "completed",
@@ -551,7 +558,7 @@ async def run_evaluation_background(user_id: str, job_id: str, application_id: s
             role_predictions = classify_roles(skills_canonical, jd_info)
             
             # Determine decision
-            decision = "Selected" if total_score >= 70 else ("Review" if total_score >= 60 else "Not Selected")
+            decision = "Proceed" if total_score >= 70 else ("Review" if total_score >= 60 else "Do Not Proceed")
             
             # Generate explanations
             why = []
@@ -688,5 +695,82 @@ async def get_application_status(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error checking application status: {str(e)}"
+        )
+
+
+@router.get("/{job_id}/my-application-status", status_code=status.HTTP_200_OK)
+async def get_my_application_status(
+    job_id: str,
+    current_user = Depends(get_current_user)
+):
+    """
+    Get basic application status for current user (no evaluation details)
+    Returns: "submitted", "under_review", or "reviewed"
+    """
+    try:
+        from app.schemas.application_schema import UserApplicationStatusResponse
+        
+        # Validate ObjectId format
+        if not ObjectId.is_valid(job_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid job ID format"
+            )
+        
+        # Get current user
+        email = current_user.get("email")
+        user_doc = users_collection.find_one({"email": email})
+        if not user_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        user_id = str(user_doc["_id"])
+        
+        # Find application
+        application = applications_collection.find_one({
+            "user_id": user_id,
+            "job_id": job_id
+        })
+        
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Application not found"
+            )
+        
+        # Map evaluation_status to user-friendly status
+        evaluation_status = application.get("evaluation_status", "pending")
+        if evaluation_status == "pending":
+            user_status = "submitted"
+        elif evaluation_status == "processing":
+            user_status = "under_review"
+        elif evaluation_status == "evaluated":
+            user_status = "reviewed"
+        else:  # failed or other
+            user_status = "under_review"
+        
+        # Get job title
+        job_title = None
+        job = jobs_collection.find_one({"_id": ObjectId(job_id)})
+        if job:
+            job_title = job.get("title", "")
+        
+        return UserApplicationStatusResponse(
+            application_id=str(application["_id"]),
+            job_id=job_id,
+            status=user_status,
+            created_at=application.get("created_at", datetime.utcnow().isoformat() + "Z"),
+            job_title=job_title
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting application status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting application status: {str(e)}"
         )
 

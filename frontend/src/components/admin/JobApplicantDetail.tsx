@@ -6,7 +6,6 @@ import { Alert } from '../Alert';
 import { ScoreBreakdown } from '../evaluations/ScoreBreakdown';
 import { getApplicationDetails, downloadResume, downloadLinkedInResume } from '../../services/adminService';
 import { getEvaluation } from '../../services/evaluationService';
-import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import type { ApplicationDetailResponse, ApplicationTimelineEvent } from '../../types/adminTypes';
 import type { EvaluationResponse } from '../../types/evaluationTypes';
 import TurnoverRiskTabSafe from '../turnover/TurnoverRiskTab';
@@ -248,6 +247,80 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
         {/* ── Evaluation Result ── */}
         {activeTab === 'evaluation-result' && (
           <div className="space-y-6">
+            {/* Evaluation Status Card */}
+            {application && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Evaluation Status</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <p className="text-base font-medium">
+                      {application.evaluation_status === 'pending' && (
+                        <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800">
+                          Pending
+                        </span>
+                      )}
+                      {application.evaluation_status === 'processing' && (
+                        <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800">
+                          Processing
+                        </span>
+                      )}
+                      {application.evaluation_status === 'evaluated' && (
+                        <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-100 text-green-800">
+                          Evaluated
+                        </span>
+                      )}
+                      {application.evaluation_status === 'failed' && (
+                        <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-red-100 text-red-800">
+                          Failed
+                        </span>
+                      )}
+                      {!application.evaluation_status && (
+                        <span className="text-gray-500">Not started</span>
+                      )}
+                    </p>
+                  </div>
+                  {application.processing_started_at && (
+                    <div>
+                      <p className="text-sm text-gray-500">Processing Started</p>
+                      <p className="text-base font-medium text-gray-900">
+                        {new Date(application.processing_started_at).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {application.processing_completed_at && (
+                    <div>
+                      <p className="text-sm text-gray-500">Processing Completed</p>
+                      <p className="text-base font-medium text-gray-900">
+                        {new Date(application.processing_completed_at).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {application.processing_started_at && application.processing_completed_at && (
+                    <div>
+                      <p className="text-sm text-gray-500">Processing Time</p>
+                      <p className="text-base font-medium text-gray-900">
+                        {Math.round(
+                          (new Date(application.processing_completed_at).getTime() -
+                            new Date(application.processing_started_at).getTime()) /
+                            1000
+                        )}{' '}
+                        seconds
+                      </p>
+                    </div>
+                  )}
+                  {application.error_message && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-500">Error Message</p>
+                      <p className="text-base font-medium text-red-600 bg-red-50 p-2 rounded">
+                        {application.error_message}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {evaluation ? (
               <>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -264,12 +337,16 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                       }`}>
                         {evaluation.total_score}
                       </div>
-                      <div className={`mt-2 inline-flex items-center rounded-md px-3 py-1 text-sm font-medium ${
-                        evaluation.decision === 'Selected' ? 'bg-green-100 text-green-800'
-                        : evaluation.decision === 'Review' ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                      }`}>
-                        {getDecisionDisplayValue(evaluation.decision)}
+                      <div
+                        className={`mt-2 inline-flex items-center rounded-md px-3 py-1 text-sm font-medium ${
+                          evaluation.decision === 'Proceed'
+                            ? 'bg-green-100 text-green-800'
+                            : evaluation.decision === 'Review'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {evaluation.decision}
                       </div>
                     </div>
                   </div>
@@ -332,7 +409,9 @@ export const JobApplicantDetail = ({ applicationId, jobId }: JobApplicantDetailP
                                 <p className="text-xs text-gray-600">Score: <span className="font-medium">{event.metadata.score}</span></p>
                               )}
                               {event.metadata.decision && (
-                                <p className="text-xs text-gray-600">Decision: <span className="font-medium">{getDecisionDisplayValue(event.metadata.decision)}</span></p>
+                                <p className="text-xs text-gray-600">
+                                  Decision: <span className="font-medium">{event.metadata.decision}</span>
+                                </p>
                               )}
                             </div>
                           )}

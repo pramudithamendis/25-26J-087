@@ -26,3 +26,11 @@ class ApplicationStatusResponse(BaseModel):
     has_applied: bool
     application_id: Optional[str] = None
 
+
+class UserApplicationStatusResponse(BaseModel):
+    """Schema for user application status (basic info only, no evaluation details)"""
+    application_id: str
+    job_id: str
+    status: str  # "submitted", "under_review", "reviewed"
+    created_at: str
+    job_title: Optional[str] = None

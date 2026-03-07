@@ -15,6 +15,38 @@ from app.services.aggregator import aggregate_scores
 
 logger = logging.getLogger(__name__)
 
+# Weight presets by project type (agentic path). Each dict sums to 1.0.
+WEIGHT_PRESETS: Dict[str, Dict[str, float]] = {
+    "general": {
+        "semantic_fit": 0.30,
+        "role_competency": 0.30,
+        "experience_recency": 0.15,
+        "github_evidence": 0.15,
+        "bonus_malus": 0.10,
+    },
+    "r_and_d": {
+        "semantic_fit": 0.35,
+        "role_competency": 0.25,
+        "experience_recency": 0.10,
+        "github_evidence": 0.25,
+        "bonus_malus": 0.05,
+    },
+    "production": {
+        "semantic_fit": 0.25,
+        "role_competency": 0.35,
+        "experience_recency": 0.22,
+        "github_evidence": 0.08,
+        "bonus_malus": 0.10,
+    },
+    "support": {
+        "semantic_fit": 0.30,
+        "role_competency": 0.30,
+        "experience_recency": 0.18,
+        "github_evidence": 0.12,
+        "bonus_malus": 0.10,
+    },
+}
+
 
 class AggregatorAgent(BaseAgent):
     """
@@ -162,7 +194,8 @@ Respond with JSON in this format:
             ],
             "github_activity": github_info.get("commits_last_12m", 0),
             "experience_count": len(experience_info),
-            "job_title": merged_json.get("job_description", {}).get("title", "")
+            "job_title": merged_json.get("job_description", {}).get("title", ""),
+            "project_type": merged_json.get("job_description", {}).get("project_type") or "",
         }
         
         user_prompt = f"""Given the baseline score and context, determine if any adjustments are needed:
@@ -308,38 +341,36 @@ Respond with JSON containing total_score, breakdown, and reasoning."""
     def determine_weights(self, context: Dict) -> Dict:
         """
         Determine weight distribution based on context.
-        
-        Args:
-            context: Context information
-        
-        Returns:
-            Dictionary with weight distribution
+        Uses project_type first (from job), then senior/junior from job_title.
         """
-        # Default weights
+        project_type = (context.get("project_type") or "").strip()
+        if project_type and project_type in WEIGHT_PRESETS:
+            weights = dict(WEIGHT_PRESETS[project_type])
+            logger.info(f"Using weight preset for project_type={project_type}")
+            return weights
+
+        # Default weights (general)
         weights = {
             "semantic_fit": 0.30,
             "role_competency": 0.30,
             "experience_recency": 0.15,
             "github_evidence": 0.15,
-            "bonus_malus": 0.10
+            "bonus_malus": 0.10,
         }
-        
-        # Adjust based on context
+
+        # Adjust based on job title seniority when no project_type
         job_title = context.get("job_title", "").lower()
-        
         if "senior" in job_title or "lead" in job_title:
-            # Senior roles: more weight on experience and competency
             weights["role_competency"] = 0.35
             weights["experience_recency"] = 0.20
             weights["semantic_fit"] = 0.25
             weights["github_evidence"] = 0.10
         elif "junior" in job_title or "intern" in job_title:
-            # Junior roles: more weight on potential and GitHub
             weights["github_evidence"] = 0.20
             weights["semantic_fit"] = 0.35
             weights["role_competency"] = 0.25
             weights["experience_recency"] = 0.10
-        
+
         return weights
     
     def adjust_for_context(self, baseline_score: float, context: Dict) -> float:

@@ -49,7 +49,7 @@ export const Modal = ({
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+    xl: 'max-w-3xl',
   };
 
   const modalContent = (
@@ -60,32 +60,32 @@ export const Modal = ({
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      {/* Backdrop */}
+      {/* Backdrop - soft overlay, no black */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-slate-400/25 backdrop-blur-[2px] transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Container */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative bg-white rounded-lg shadow-xl transform transition-all w-full ${sizeClasses[size]}`}
+          className={`relative bg-white rounded-xl shadow-2xl ring-1 ring-slate-200/80 transform transition-all w-full ${sizeClasses[size]}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {title && (
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h3 id="modal-title" className="text-lg font-semibold text-gray-900">
+                <h3 id="modal-title" className="text-lg font-semibold text-slate-800">
                   {title}
                 </h3>
                 <button
                   onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 transition-colors rounded-lg p-1 hover:bg-gray-100"
+                  className="text-slate-400 hover:text-slate-600 transition-colors rounded-lg p-1.5 hover:bg-slate-200/60"
                   aria-label="Close modal"
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -102,8 +102,8 @@ export const Modal = ({
             </div>
           )}
 
-          {/* Content */}
-          <div className="px-6 py-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+          {/* Content - no scroll when form is compact */}
+          <div className="px-6 py-5">
             {children}
           </div>
         </div>
