@@ -13,19 +13,19 @@ interface TurnoverPredictionResultsProps {
 
 const RISK_LEVEL_CONFIG = {
   0: {
-    label: 'Early Exit Risk (0-6 months)',
+    label: 'High Early Attrition Risk',
     badgeClass: 'risk-badge-high',
     cardClass: 'risk-card-high',
     icon: <TriangleAlert size={20} />,
   },
   1: {
-    label: 'First-Year Exit Risk (6-12 months)',
+    label: 'Moderate Early Attrition Risk',
     badgeClass: 'risk-badge-medium',
     cardClass: 'risk-card-medium',
     icon: <Zap size={20} />,
   },
   2: {
-    label: 'First-Year Retention Likely (>12 months)',
+    label: 'Low Early Attrition Risk',
     badgeClass: 'risk-badge-low',
     cardClass: 'risk-card-low',
     icon: <CircleCheckBig size={20} />,
@@ -77,7 +77,6 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
           <div className="user-icon"><User size={22} /></div>
           <div className="candidate-details"> 
             <h3>Assessment for {cv_name}</h3>
-            <p className="candidate-name">Turnover Risk Analysis</p>
           </div>
           <div className={`risk-badge ${riskConfig.badgeClass}`}>
             {riskConfig.icon}
