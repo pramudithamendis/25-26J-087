@@ -314,7 +314,7 @@ async def generate_questions(payload: dict, user=Depends(get_current_user)):
     # STEP 1: Generate Questions
     # -------------------------
     generation_prompt = f"""
-    Read the following code/files and generate 20  questions. Also generate the answers for them.
+    Read the following code/files and generate 20  questions.
     The user built this project 1 year ago and may have forgotten details.
     Avoid preamble.
 
