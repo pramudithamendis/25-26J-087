@@ -275,12 +275,54 @@ function App() {
             }
           />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/questions/upload" element={<QuestionsCVUpload />} />
-          <Route path="/questions/bestproject" element={<QuestionsFindBestProject />} />
-          <Route path="/questions/clone" element={<QuestionsClone />} />
-          <Route path="/questions/allfiles" element={<QuestionsAllFiles />} />
-          <Route path="/questions/ask" element={<QuestionsAsk />} />
-          <Route path="/hiring/timeline" element={<HiringTimelinePredictor />} />
+          <Route
+            path="/questions/upload"
+            element={
+              <DashboardLayout>
+                <QuestionsCVUpload />
+              </DashboardLayout>
+            }
+          />
+          <Route
+            path="/questions/bestproject"
+            element={
+              <DashboardLayout>
+                <QuestionsFindBestProject />
+              </DashboardLayout>
+            }
+          />
+          <Route
+            path="/questions/clone"
+            element={
+              <DashboardLayout>
+                <QuestionsClone />
+              </DashboardLayout>
+            }
+          />
+          <Route
+            path="/questions/allfiles"
+            element={
+              <DashboardLayout>
+                <QuestionsAllFiles />
+              </DashboardLayout>
+            }
+          />
+          <Route
+            path="/questions/ask"
+            element={
+              <DashboardLayout>
+                <QuestionsAsk />
+              </DashboardLayout>
+            }
+          />
+          <Route
+            path="/hiring/timeline"
+            element={
+              <DashboardLayout>
+                <HiringTimelinePredictor />
+              </DashboardLayout>
+            }
+          />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
