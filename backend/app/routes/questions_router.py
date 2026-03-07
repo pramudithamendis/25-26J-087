@@ -263,49 +263,116 @@ def clone_repo(payload: CloneRequest,user=Depends(get_current_user)):
 
 
 client = ollama.Client()
-MODEL_NAME = "llama3.2:1b"
+MODEL_NAME = "gameAssistantGeneral"
 
 @router.post("/ask")
-async def generate_questions(payload: dict,user=Depends(get_current_user)):
+async def generate_questions(payload: dict, user=Depends(get_current_user)):
     folder = payload.get("folder")
-    filename = payload.get("filename")
+    filenames = payload.get("filenames")  # <-- now expecting list
 
-    if not folder or not filename:
-        raise HTTPException(status_code=400, detail="Missing 'folder' or 'filename'.")
+    if not folder or not filenames:
+        raise HTTPException(status_code=400, detail="Missing 'folder' or 'filenames'.")
 
-    filepath = os.path.join(folder, filename)
+    if not isinstance(filenames, list) or len(filenames) == 0:
+        raise HTTPException(status_code=400, detail="'filenames' must be a non-empty list.")
 
-    if not os.path.exists(filepath):
-        raise HTTPException(status_code=404, detail="File not found.")
+    combined_content = ""
 
-    # Read file content
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            file_content = f.read()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
+    # 🔁 Loop through all selected files
+    for filename in filenames:
+        filepath = os.path.join(folder, filename)
 
-    # Build model prompt
-    prompt = (
-        "Read the following text and generate a list of clear, helpful questions "
-        "that someone might ask to better understand it.\n\n"
-        f"--- TEXT START ---\n{file_content}\n--- TEXT END ---\n\n"
-        "Questions:"
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                file_content = f.read()
+                combined_content += f"\n\n--- FILE: {filename} ---\n"
+                combined_content += file_content
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error reading file {filename}: {str(e)}"
+            )
+
+    # # 🧠 Build prompt from ALL files
+    # prompt = (
+    #     "Read the following code/files and generate a list of clear, helpful questions "
+    #     "that someone might ask to better understand them. "
+    #     "Note that the user has done this project 1 year ago so sometimes the user might have forgotten some details."
+    #     "Avoid preamble\n\n"
+    #     f"--- TEXT START ---\n{combined_content}\n--- TEXT END ---\n\n"
+    #     "Questions:"
+    # )
+
+    # response = client.generate(model=MODEL_NAME, prompt=prompt)
+
+    # return {"questions": response.response}
+
+ # -------------------------
+    # STEP 1: Generate Questions
+    # -------------------------
+    generation_prompt = f"""
+    Read the following code/files and generate 20  questions. Also generate the answers for them.
+    The user built this project 1 year ago and may have forgotten details.
+    Avoid preamble.
+
+    --- TEXT START ---
+    {combined_content}
+    --- TEXT END ---
+
+    Questions:
+    """
+
+    first_response = client.generate(
+        model=MODEL_NAME,
+        prompt=generation_prompt
     )
 
-    # Call the model
-    response = client.generate(model=MODEL_NAME, prompt=prompt)
+    raw_questions = first_response.response
 
-    return {"questions": response.response}
+    # -------------------------
+    # STEP 2: Improve Questions
+    # -------------------------
+    improve_prompt = f"""
+    You are a senior software engineer.
 
+    Improve the following questions:
+    - Remove duplicates
+    - Make them more technical and structured
+    - Make them suitable for interview preparation
+    - Keep them concise
 
+    Only return the improved list. No preamble.
+
+    Questions:
+    {raw_questions}
+    """
+
+    improved_response = client.generate(
+        model=MODEL_NAME,
+        prompt=improve_prompt
+    )
+
+    improved_questions = improved_response.response
+
+    return {
+        # "raw_questions": raw_questions,
+        # "improved_questions": improved_questions,
+        "questions": improved_questions,
+    }
 
 @router.get("/files/{username}/{reponame}")
-async def list_files(username: str,reponame: str):
-    FILES_DIR = Path(__file__).parent.parent.parent / "uploads" / "repos" / username /reponame
-    print(FILES_DIR)
+async def list_files(username: str, reponame: str):
+    FILES_DIR = Path(__file__).parent.parent.parent / "uploads" / "repos" / username / reponame
+
     try:
-        return [f.name for f in FILES_DIR.iterdir() if f.is_file()]
+        return [
+            str(f.relative_to(FILES_DIR))   # keeps folder structure
+            for f in FILES_DIR.rglob("*") 
+            if f.is_file()
+        ]
     except Exception:
         raise HTTPException(status_code=500, detail="Cannot read files")
 
@@ -317,3 +384,43 @@ async def get_file(username: str,reponame: str,filename: str):
     if not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
     return file_path.read_text()
+
+import joblib
+from app.services.hiring_duration.stage_tracker import StageTracker   # REQUIRED
+
+import os
+import joblib
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "app",
+    "ml_models",
+    "hiring_duration",
+    "stage_tracker_model.pkl"
+)
+
+model_bundle = joblib.load(MODEL_PATH)
+
+tracker = StageTracker(model_bundle["df"])
+
+tracker.models = model_bundle["models"]
+tracker.jobtitle_encoding = model_bundle["jobtitle_encoding"]
+
+
+@router.post("/predict-hiring-timeline")
+async def predict_timeline(payload: dict, user=Depends(get_current_user)):
+
+    try:
+        prediction = tracker.predict_remaining_stages(payload)
+
+        return {
+            "timeline_predictions": prediction
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )

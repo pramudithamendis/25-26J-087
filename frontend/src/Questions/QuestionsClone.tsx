@@ -7,7 +7,7 @@ type CloneRequest = {
 
 const QuestionsClone: React.FC = () => {
   const [username, setUsername] = useState("pramudithamendis");
-  const [repoName, setRepoName] = useState("BI-backend");
+  const [repoName, setRepoName] = useState("Xpress-Hirely");
   const [destination, setDestination] = useState("./uploads/repos");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<string | null>(null);
@@ -76,58 +76,79 @@ const QuestionsClone: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>Clone Repository</h1>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+      <div className="w-full max-w-xl bg-white shadow-xl rounded-2xl p-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Clone Repository</h1>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <div style={{ marginBottom: "0.5rem" }}>
-          <label style={{ display: "block", marginBottom: "0.25rem" }}>GitHub Username:</label>
-          <input type="text" placeholder="GitHub username" value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: "300px" }} />
+        <div className="space-y-4">
+          {/* GitHub Username */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">GitHub Username:</label>
+            <input
+              type="text"
+              placeholder="GitHub username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                       focus:outline-none focus:ring-2 focus:ring-blue-500
+                       focus:border-blue-500 transition"
+            />
+          </div>
+
+          {/* Repository Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Repository Name:</label>
+            <input
+              type="text"
+              placeholder="Repository name"
+              value={repoName}
+              onChange={(e) => setRepoName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                       focus:outline-none focus:ring-2 focus:ring-blue-500
+                       focus:border-blue-500 transition"
+            />
+          </div>
+
+          {/* Destination Path */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Base Destination Path:</label>
+
+            <small className="block text-gray-500 mt-1">Repository will be cloned to:</small>
+
+            <div className="text-sm text-gray-700 break-all mt-1 bg-gray-50 p-2 rounded">{getDestinationPath()}</div>
+          </div>
+
+          {/* Generated Repo URL */}
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <strong className="block text-sm text-gray-700">Generated Repository URL:</strong>
+            <div className="mt-2 text-sm text-blue-600 break-all">{getRepoUrl()}</div>
+          </div>
         </div>
 
-        <div style={{ marginBottom: "0.5rem" }}>
-          <label style={{ display: "block", marginBottom: "0.25rem" }}>Repository Name:</label>
-          <input type="text" placeholder="Repository name" value={repoName} onChange={(e) => setRepoName(e.target.value)} style={{ width: "300px" }} />
-        </div>
+        {/* Button */}
+        <button
+          onClick={handleClone}
+          disabled={loading || !username || !repoName || !destination}
+          className={`mt-6 w-full py-2 px-4 rounded-lg font-medium text-white transition
+          ${loading || !username || !repoName || !destination ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
+        >
+          {loading ? "Cloning..." : "Clone Repository"}
+        </button>
 
-        <div style={{ marginBottom: "0.5rem" }}>
-          <label style={{ display: "block", marginBottom: "0.25rem" }}>Base Destination Path:</label>
-          {/* <input type="text" placeholder="Destination path" value={destination} onChange={(e) => setDestination(e.target.value)} style={{ width: "300px" }} /> */}
-          <small style={{ color: "#666", display: "block", marginTop: "0.25rem" }}>Repository will be cloned to: {getDestinationPath()}</small>
-        </div>
+        {/* Success */}
+        {response && (
+          <div className="mt-6 p-4 rounded-lg bg-green-100 text-green-800 border border-green-200">
+            <strong>Success:</strong> {response}
+          </div>
+        )}
 
-        <div style={{ marginBottom: "1rem", padding: "1rem", borderRadius: "4px" }}>
-          <strong>Generated Repository URL:</strong>
-          <div style={{ marginTop: "0.25rem", wordBreak: "break-all" }}>{getRepoUrl()}</div>
-        </div>
+        {/* Error */}
+        {error && (
+          <div className="mt-6 p-4 rounded-lg bg-red-100 text-red-800 border border-red-200">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
       </div>
-
-      <button
-        onClick={handleClone}
-        disabled={loading || !username || !repoName || !destination}
-        style={{
-          padding: "0.5rem 1rem",
-          backgroundColor: loading ? "#ccc" : "#007bff",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: loading ? "not-allowed" : "pointer",
-        }}
-      >
-        {loading ? "Cloning..." : "Clone Repository"}
-      </button>
-
-      {response && (
-        <div style={{ color: "green", marginTop: "1rem", padding: "1rem", backgroundColor: "#e7f7e7", borderRadius: "4px" }}>
-          <strong>Success:</strong> {response}
-        </div>
-      )}
-
-      {error && (
-        <div style={{ color: "red", marginTop: "1rem", padding: "1rem", backgroundColor: "#ffe7e7", borderRadius: "4px" }}>
-          <strong>Error:</strong> {error}
-        </div>
-      )}
     </div>
   );
 };

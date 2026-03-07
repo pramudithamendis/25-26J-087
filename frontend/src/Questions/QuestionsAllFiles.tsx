@@ -5,19 +5,29 @@ const API_BASE = "http://127.0.0.1:8000/api/items"; // e.g. "http://localhost:80
 
 export default function QuestionsAllFiles() {
   const [username, setUsername] = useState("pramudithamendis");
-  const [reponame, setReponame] = useState("BI-backend");
+  const [reponame, setReponame] = useState("Xpress-Hirely");
   const [files, setFiles] = useState<string[]>([]);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [fileContent, setFileContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  function toggleSelectAll() {
+    if (selectedFiles.length === files.length) {
+      // If everything already selected → deselect all
+      setSelectedFiles([]);
+    } else {
+      // Otherwise select all
+      setSelectedFiles(files);
+    }
+  }
+
   async function loadFiles() {
     setError(null);
     setFiles([]);
-    setSelectedFile(null);
+    setSelectedFiles([]);
     setFileContent("");
     setLoading(true);
 
@@ -36,15 +46,15 @@ export default function QuestionsAllFiles() {
       setLoading(false);
     }
   }
-
   async function loadFile(filename: string) {
     setError(null);
-    setSelectedFile(filename);
     setFileContent("");
     setLoading(true);
 
+    toggleFile(filename); // 👈 handles selection now
+
     try {
-      const res = await fetch(`${API_BASE}/files/${username}/${reponame}/${filename}`);
+      const res = await fetch(`${API_BASE}/files/${username}/${reponame}/${encodeURIComponent(filename)}`);
 
       if (!res.ok) {
         throw new Error(`Failed to load file (${res.status})`);
@@ -60,66 +70,112 @@ export default function QuestionsAllFiles() {
     }
   }
 
+  function toggleFile(file: string) {
+    setSelectedFiles(
+      (prev) =>
+        prev.includes(file)
+          ? prev.filter((f) => f !== file) // remove if already selected
+          : [...prev, file], // add if not selected
+    );
+  }
+
   return (
-    <div style={{ padding: 24, fontFamily: "sans-serif" }}>
-      <h2>Repo File Browser</h2>
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-6xl mx-auto bg-white shadow-xl rounded-2xl p-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Repo File Browser</h2>
 
-      <div style={{ marginBottom: 12 }}>
-        <input placeholder="username" value={username} onChange={(e) => setUsername(e.target.value)} style={{ marginRight: 8 }} />
-        <input placeholder="reponame" value={reponame} onChange={(e) => setReponame(e.target.value)} style={{ marginRight: 8 }} />
-        <button onClick={loadFiles} disabled={!username || !reponame}>
-          Load Files
-        </button>
-      </div>
+        {/* Inputs */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <input
+            placeholder="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="px-4 py-2 border rounded-lg w-full sm:w-auto
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-      {loading && <p>Loading…</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+          <input
+            placeholder="reponame"
+            value={reponame}
+            onChange={(e) => setReponame(e.target.value)}
+            className="px-4 py-2 border rounded-lg w-full sm:w-auto
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-      <div style={{ display: "flex", gap: 24 }}>
-        <ul style={{ minWidth: 200 }}>
-          {files.map((file) => (
-            <li key={file}>
-              <button
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  color: file === selectedFile ? "green" : "white",
-                }}
-                onClick={() => loadFile(file)}
-              >
-                {file}
-              </button>
-            </li>
-          ))}
-        </ul>
+          <button
+            onClick={loadFiles}
+            disabled={!username || !reponame}
+            className="px-5 py-2 rounded-lg font-medium text-white
+                     bg-gray-900 hover:bg-blue-600
+                     disabled:bg-gray-400 disabled:cursor-not-allowed
+                     transition"
+          >
+            Load Files
+          </button>
+        </div>
 
-        <pre
-          style={{
-            flex: 1,
-            background: "#000000ff",
-            padding: 12,
-            overflow: "auto",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {fileContent || "Select a file to view its contents"}
-        </pre>
-        <button
-          style={{ height: "50px" }}
-          disabled={!selectedFile}
-          onClick={() => {
-            const params = new URLSearchParams({
-              username,
-              repoName: reponame,
-              filename: selectedFile || "",
-            });
-            window.open(`/questions/ask?${params.toString()}`, "_blank"); // opens in new tab
-          }}
-        >
-          Go to Questions
-        </button>
+        {loading && <p className="text-gray-600 mb-4 animate-pulse">Loading…</p>}
+
+        {error && <p className="text-red-600 font-medium mb-4">{error}</p>}
+
+        {/* Main Layout */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* File List */}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-600">{selectedFiles.length} selected</span>
+
+            <button
+              onClick={toggleSelectAll}
+              disabled={files.length === 0}
+              className="text-sm px-3 py-1 rounded-md border
+                 bg-gray-200 hover:bg-gray-300
+                 disabled:opacity-50"
+            >
+              {selectedFiles.length === files.length ? "Deselect All" : "Select All"}
+            </button>
+          </div>
+          <ul className="w-full lg:w-64 bg-gray-50 rounded-xl p-4 space-y-2 border">
+            {files.map((file) => (
+              <li key={file}>
+                <button
+                  onClick={() => loadFile(file)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition
+                  ${selectedFiles.includes(file) ? "bg-green-100 text-green-700 font-semibold" : "hover:bg-gray-200 text-gray-700"}`}
+                >
+                  {file}
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {/* File Content */}
+          <div className="flex-1 flex flex-col gap-4">
+            <pre
+              className="flex-1 bg-black text-green-400 rounded-xl p-4 
+                       overflow-auto text-sm whitespace-pre-wrap"
+            >
+              {fileContent || "Select a file to view its contents"}
+            </pre>
+
+            <button
+              disabled={selectedFiles.length === 0}
+              onClick={() => {
+                const params = new URLSearchParams({
+                  username,
+                  repoName: reponame,
+                  filenames: JSON.stringify(selectedFiles),
+                });
+                window.open(`/questions/ask?${params.toString()}`, "_blank");
+              }}
+              className="self-start px-6 py-2 rounded-lg font-medium text-white
+                       bg-green-600 hover:bg-green-700
+                       disabled:bg-gray-400 disabled:cursor-not-allowed
+                       transition"
+            >
+              Go to Questions
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

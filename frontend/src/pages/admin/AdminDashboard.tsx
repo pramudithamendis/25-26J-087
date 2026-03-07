@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { StatsCard } from '../../components/shared/StatsCard';
-import { Button } from '../../components/Button';
-import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
-import { Alert } from '../../components/Alert';
-import { getAdminStats } from '../../services/adminService';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { StatsCard } from "../../components/shared/StatsCard";
+import { Button } from "../../components/Button";
+import { LoadingSpinner } from "../../components/shared/LoadingSpinner";
+import { Alert } from "../../components/Alert";
+import { getAdminStats } from "../../services/adminService";
 
 export const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export const AdminDashboard = () => {
       const data = await getAdminStats();
       setStats(data);
     } catch (err: any) {
-      setError(err.detail || 'Failed to load statistics');
+      setError(err.detail || "Failed to load statistics");
     } finally {
       setLoading(false);
     }
@@ -99,27 +99,47 @@ export const AdminDashboard = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Button variant="primary" onClick={() => navigate('/dashboard/admin/jobs')} className="w-full">
+          <Button variant="primary" onClick={() => navigate("/dashboard/admin/jobs")} className="w-full">
             Manage Jobs
           </Button>
-          <Button variant="primary" onClick={() => navigate('/dashboard/admin/applications')} className="w-full">
+          <Button variant="primary" onClick={() => navigate("/dashboard/admin/applications")} className="w-full">
             Manage Applications
           </Button>
-          <Button variant="primary" onClick={() => navigate('/dashboard/admin/users')} className="w-full">
+          <Button variant="primary" onClick={() => navigate("/dashboard/admin/users")} className="w-full">
             Manage Users
           </Button>
-          <Button variant="primary" onClick={() => navigate('/dashboard/admin/evaluations')} className="w-full">
+          <Button variant="primary" onClick={() => navigate("/dashboard/admin/evaluations")} className="w-full">
             View Multi-Source-Evaluations
           </Button>
-          <Button variant="primary" onClick={() => navigate('/dashboard/admin/trendscore')} className="w-full">
+          <Button variant="primary" onClick={() => navigate("/dashboard/admin/trendscore")} className="w-full">
             View Trend Score
           </Button>
+
+          {/* Questions */}
+          <Button variant="primary" onClick={() => navigate("/questions/upload")} className="w-full">
+            Upload CV to extract readme
+          </Button>
+          <Button variant="primary" onClick={() => navigate("/questions/bestproject")} className="w-full">
+            Find best matching project
+          </Button>
+          <Button variant="primary" onClick={() => navigate("/questions/clone")} className="w-full">
+            Clone best matching project
+          </Button>
+          <Button variant="primary" onClick={() => navigate("/questions/allfiles")} className="w-full">
+            Display all files
+          </Button>
+          {/* <Button variant="primary" onClick={() => navigate("/questions/ask")} className="w-full">
+            /questions/ask
+          </Button> */}
+          <Button variant="primary" onClick={() => navigate("/hiring/timeline")} className="w-full">
+            Predict hiring duration
+
           <Button variant="primary" onClick={() => navigate('/dashboard/admin/turnover/history')} className="w-full">
             View Early Attrition Risk
+
           </Button>
         </div>
       </div>
     </div>
   );
 };
-

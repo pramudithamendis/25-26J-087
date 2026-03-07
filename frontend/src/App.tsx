@@ -25,12 +25,18 @@ import { AdminEvaluationsPage } from './pages/admin/AdminEvaluationsPage';
 import { JobApplicantsPage } from './pages/admin/JobApplicantsPage';
 import { JobApplicantDetailPage } from './pages/admin/JobApplicantDetailPage';
 import { AdminTrendScorePage } from './pages/admin/AdminTrendScorePage'
+
+import HiringTimelinePredictor from "./Questions/HiringTimelinePredictor";
+
+import './App.css';
+
 import CVUpload from './components/cv/CVUpload';
 import TurnoverHistoryPage from './components/turnover/TurnoverHistoryPage';
 import TurnoverResultsView from './components/turnover/TurnoverResultsView';
 import TurnoverNewPrediction from './components/turnover/TurnoverNewPrediction';
 import LocationSettings from './components/locations/LocationSettings';
 import { CVEvaluatorPage } from "./pages/cv-evaluator/CVEvaluatorPage";
+
 
 function App() {
   return (
@@ -274,6 +280,7 @@ function App() {
           <Route path="/questions/clone" element={<QuestionsClone />} />
           <Route path="/questions/allfiles" element={<QuestionsAllFiles />} />
           <Route path="/questions/ask" element={<QuestionsAsk />} />
+          <Route path="/hiring/timeline" element={<HiringTimelinePredictor />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
