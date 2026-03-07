@@ -23,7 +23,7 @@ const steps: Step[] = [
     { id: 2, name: 'Validate Info', description: 'Review and correct parsed information' },
     { id: 3, name: 'Job Match', description: 'Compare with job description' },
     { id: 4, name: 'Article Match', description: 'Check against articles/skills' },
-    { id: 5, name: 'Attrition Risk', description: 'Check early attrition risk' },
+    { id: 5, name: 'Career Insights', description: 'Review your career stability profile' },
 ];
 
 export const CVEvaluatorPage = () => {
@@ -36,12 +36,11 @@ export const CVEvaluatorPage = () => {
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
     const [jobData, setJobData] = useState<JobResponse | null>(null);
 
-    // Fetch job details when jobId is available (from URL or after step 3 completes)
     useEffect(() => {
         if (jobIdFromUrl) {
             getJob(jobIdFromUrl)
                 .then(setJobData)
-                .catch(() => { /* non-fatal – step 5 will show a warning */ });
+                .catch(() => { /* non-fatal */ });
         }
     }, [jobIdFromUrl]);
 
