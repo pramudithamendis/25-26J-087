@@ -24,13 +24,18 @@ backend/
 │   ├── main.py              # FastAPI app initialization and entry point
 │   ├── config.py            # Configuration and environment settings
 │   ├── database.py          # Database connection setup
+│   ├── sceduler.py          # Hirebase job posting and article fetching scheduler
 │   ├── __init__.py          # Package initialization
+│   ├── agents/              # Agentic AI system for CV evaluation
 │   ├── auth/                # Authentication and authorization
 │   ├── data/                # Data files and storage
 │   │   ├── articles/        # Cached articles
 │   │   ├── topics.json      # Topics configuration
 │   │   └── __init__.py
+│   ├── jobs/                # Job postings and article fetching
+│   ├── ml_models/           # ML models for CV evaluation
 │   ├── models/              # Database models (SQLAlchemy, MongoDB, etc.)
+│   ├── parsers/             # CV parsers
 │   ├── routes/              # API endpoint blueprints
 │   ├── schemas/             # Pydantic models for request/response validation
 │   ├── services/            # Business logic layer (fetchers, processors, etc.)
@@ -39,13 +44,20 @@ backend/
 ├── .env                     # Environment variables (not committed)
 ├── venv/                    # virtual environment
 ├── uploads/
-└── README.md                # This file
+├── dataset/
+├── dataset_scripts/
+├── tests/
+├── pytest.ini
+└── README.md                
 ```
 
 ## Prerequisites
 
 - Python 3.11.8 installed and available on `PATH`
 - Git (optional, to clone the repo)
+- **Tesseract OCR**: Required for OCR support (if processing image-based CVs)
+  - Download: [Tesseract for Windows](https://github.com/UB-Mannheim/tesseract/wiki)
+  - Ensure `tesseract.exe` is in your system `PATH`.
 
 ## Setup (Windows PowerShell)
 
@@ -56,7 +68,7 @@ cd "g:\Project\research\25-26J-087"
 # create venv in the project root (if not present)
 python -m venv venv
 # activate the venv
-.\venv\Scripts\Activate.ps1
+venv\Scripts\activate 
 # install dependencies for the backend
 pip install -r requirements.txt
 ```
@@ -116,7 +128,7 @@ The app uses `python-dotenv` to load `.env` automatically when the app starts.
 
 3. **Activate venv:**
    ```powershell
-   .\venv\Scripts\Activate
+   venv\Scripts\activate 
    ```
    You should see `(venv)` at the start of your terminal prompt.
 
@@ -186,6 +198,8 @@ The backend now includes an **agentic AI system** for CV evaluation that uses au
 - **Tool System**: Agents use tools to interact with extractors and services
 - **Memory Management**: Tracks reasoning chain for explainability
 - **Fallback Mechanisms**: Automatically falls back to pipeline on errors
+- **OCR Support**: Support for image-based CVs using `pytesseract` (Tesseract OCR)
+- **Skill Trends Forecasting**: Predict future skill demand using historical job and Google Trends data
 
 ### Agentic Endpoints
 
