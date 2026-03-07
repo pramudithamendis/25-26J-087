@@ -14,6 +14,7 @@ import ollama
 
 from app.models.questions_model import questions_collection
 from app.models.questions_readme_model import questions_readme_collection
+from app.models.cv_model import cv_collection
 from app.schemas.questions_schema import QuestionCreate, QuestionResponse
 from app.schemas.questions_cloneRepo import CloneRequest
 
@@ -417,6 +418,33 @@ async def predict_timeline(payload: dict, user=Depends(get_current_user)):
 
         return {
             "timeline_predictions": prediction
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+@router.get("/cvs/email/{email}")
+async def get_cv_by_email(email: str, user=Depends(get_current_user)):
+    try:
+        cv = cv_collection.find_one(
+            {"basics.email": email},
+            {"_id": 0}
+        )
+
+        if not cv:
+            raise HTTPException(
+                status_code=404,
+                detail="CV not found"
+            )
+
+        url = cv["basics"]["github"]
+        username = url.rstrip("/").split("/")[-1]
+
+        return {
+            "username": username
         }
 
     except Exception as e:

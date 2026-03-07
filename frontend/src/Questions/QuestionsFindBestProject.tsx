@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Project {
   repo: string;
@@ -14,10 +14,47 @@ interface MatchResponse {
 
 const QuestionsFindBestProject: React.FC = () => {
   const [jobDescription, setJobDescription] = useState("Looking for someone experienced in machine learning and NLP.");
-  const [username, setUsername] = useState("pramudithamendis");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<MatchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const email = localStorage.getItem("currentEmail");
+        const token = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
+
+        if (!email) return;
+
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        };
+
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        console.log("email", email);
+        const res = await fetch(`http://127.0.0.1:8000/api/items/cvs/email/${encodeURIComponent(email)}`, {
+          headers,
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        if (data.username) {
+          setUsername(data.username);
+        }
+        console.log("data.username", data.username);
+      } catch (err) {
+        console.error("Failed to fetch username:", err);
+      }
+    };
+
+    fetchUsername();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +64,6 @@ const QuestionsFindBestProject: React.FC = () => {
 
     try {
       const token = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
-
       const headers: HeadersInit = {
         "Content-Type": "application/json",
       };

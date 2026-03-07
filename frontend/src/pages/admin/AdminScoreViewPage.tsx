@@ -512,7 +512,10 @@ export const AdminScoreViewPage = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleAccept(cv.cv_id)}
+                          onClick={() => {
+                            handleAccept(cv.cv_id);
+                            localStorage.setItem("currentEmail", cv.email);
+                            }}
                           className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition-colors"
                         >
                           Accept
