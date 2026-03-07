@@ -101,4 +101,3 @@ export const getToken = (): string | null => {
 export const isAuthenticated = (): boolean => {
   return !!getToken();
 };
-

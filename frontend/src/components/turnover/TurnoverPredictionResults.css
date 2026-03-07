@@ -1,0 +1,430 @@
+.turnover-prediction-results {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ── Header ── */
+.results-header {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.candidate-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-icon {
+  width: 44px;
+  height: 44px;
+  color: #2563eb;
+  background: #eff6ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.candidate-info h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #111827;
+  font-weight: 600;
+  /* flex: 1; */
+}
+
+.candidate-name {
+  margin: 0.2rem 0 0 0;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.candidate-details {
+  flex: 1;  /* ← pushes badge to far right */
+}
+
+/* Risk badge in header */
+.risk-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.risk-badge-high {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.risk-badge-medium {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.risk-badge-low {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+/* ── Risk Card ── */
+.risk-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-top: 3px solid #e5e7eb;
+}
+
+.risk-card-high  { border-top-color: #ef4444; }
+.risk-card-medium { border-top-color: #f59e0b; }
+.risk-card-low   { border-top-color: #10b981; }
+
+.confidence {
+  margin: 0 0 1rem 0;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.confidence strong {
+  color: #374151;
+}
+
+/* HR Recommendation */
+.hr-recommendation {
+  display: flex;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  align-items: flex-start;
+}
+
+.recommendation-icon {
+  flex-shrink: 0;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 0.4rem;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recommendation-content h3 {
+  margin: 0 0 0.2rem 0;
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.recommendation-content p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.5;
+  font-size: 0.925rem;
+}
+
+/* ── Likelihood / Probability Bars ── */
+.likelihood-section h4 {
+  margin: 0 0 0.875rem 0;
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.probability-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.prob-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.prob-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.prob-label {
+  font-size: 0.8rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.prob-confidence-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.prob-bar-container {
+  height: 10px;
+  background: #f3f4f6;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.prob-bar {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 5px;
+  transition: width 0.6s ease;
+  min-width: 2px;
+}
+
+.prob-percent {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* ── Strengths & Concerns ── */
+.no-items-note {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: #8a9099;
+  font-style: italic;
+}
+
+.strengths-concerns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.strengths-card,
+.concerns-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-top: 2px solid #2563eb;
+}
+
+.concerns-card {
+  border-top-color: #9ca3af;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+}
+
+.card-icon {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.concerns-card .card-icon {
+  color: #6b7280;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.points-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.point-item {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  font-size: 0.925rem;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.point-icon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: #2563eb;
+}
+
+.point-item.warning .point-icon {
+  color: #6b7280;
+}
+
+/* ── Career Profile ── */
+.profile-summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.profile-summary-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.875rem;
+}
+
+.stat-box {
+  text-align: center;
+  padding: 0.875rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #f3f4f6;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+}
+
+.stat-value1 {
+  display: block;
+  font-size: 1.75rem;
+  color: #111827;
+  font-weight: 700;
+}
+
+.stat-value-label {
+  display: block;
+  font-size: 1.4rem;
+  color: #111827;
+  font-weight: 700;
+}
+
+/* ── Interview Tips ── */
+.interview-tips-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.interview-tips-header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.875rem;
+}
+
+.interview-tips-header svg {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.interview-tips-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.tips-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.tips-list li {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.tips-list li svg {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  color: #2563eb;
+}
+
+.tips-list li strong {
+  color: #1e40af;
+}
+
+/* ── Disclaimer ── */
+.info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.info-note svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: #9ca3af;
+}
+
+.info-note p { margin: 0; }
+.info-note strong { color: #374151; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .turnover-prediction-results { padding: 0.5rem; }
+  .strengths-concerns-grid { grid-template-columns: 1fr; }
+  .profile-stats { grid-template-columns: repeat(2, 1fr); }
+  .hr-recommendation { flex-direction: column; gap: 0.75rem; }
+  .candidate-info { flex-wrap: wrap; }
+  .risk-badge { margin-left: auto; }
+}
+
+@media (max-width: 480px) {
+  .profile-stats { grid-template-columns: 1fr; }
+}

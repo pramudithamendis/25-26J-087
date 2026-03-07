@@ -13,6 +13,14 @@ from app.scheduler import start_scheduler
 from app.routes.questions_router import router as questions_router
 
 from app.routes.admin_router import router as admin_router
+from app.services.model_downloader import ensure_model_files
+from app.services.model_loader import load_model, load_preprocessor
+from app.routes.cv_routes import router as cv_router
+from app.routes.turnover_router import router as turnover_router
+from app.routes.geocoding_router import router as geocoding_router
+from app.routes.esco_router import router as esco_router
+from app.routes.locations_router import router as locations_router
+
 import logging
 import time
 import asyncio
@@ -38,9 +46,13 @@ async def lifespan(app: FastAPI):
         from app.database import client
         client.admin.command('ping')
         logger.info("MongoDB connection successful")
+        ensure_model_files()
+        load_model()
+        load_preprocessor()
     except Exception as e:
         logger.error(f"MongoDB connection failed: {str(e)}")
         logger.warning("Server will start but database operations may fail")
+        logger.warning(f"Model loading failed: {e}")
 
     yield
 
@@ -109,6 +121,11 @@ app.include_router(hirebase_router)
 app.include_router(trends_router)
 app.include_router(questions_router)
 app.include_router(admin_router)
+app.include_router(cv_router)
+app.include_router(turnover_router)
+app.include_router(geocoding_router)
+app.include_router(esco_router)
+app.include_router(locations_router)
 
 @app.get("/")
 def root():
@@ -141,4 +158,14 @@ def health_check():
 def startup_event():
     start_scheduler()
 
-
+@app.on_event("startup")
+async def startup_event():
+    from app.services.model_loader import get_model
+    from app.services.turnover_service import get_shap_explainer
+    
+    try:
+        get_model()
+        get_shap_explainer()
+        print("Models pre-loaded successfully")
+    except Exception as e:
+        print(f"Warning: Could not pre-load models: {e}")

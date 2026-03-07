@@ -240,9 +240,17 @@ def _get_embeddings_cache_path(dataset_path: str = None) -> Path:
     
     # Create cache directory if it doesn't exist
     cache_dir = dataset_dir / ".cache"
-    cache_dir.mkdir(exist_ok=True)
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        logger.error(f"Failed to create cache directory {cache_dir}: {str(e)}")
+        raise
     
-    return cache_dir / "dataset_embeddings.pkl"
+    cache_file_path = cache_dir / "dataset_embeddings.pkl"
+    logger.debug(f"Cache directory: {cache_dir}")
+    logger.debug(f"Cache file path: {cache_file_path}")
+    
+    return cache_file_path
 
 
 def _precompute_dataset_embeddings(dataset_path: str = None) -> Dict[str, np.ndarray]:
@@ -259,19 +267,40 @@ def _precompute_dataset_embeddings(dataset_path: str = None) -> Dict[str, np.nda
     global _dataset_embeddings_cache
     
     if _dataset_embeddings_cache is not None:
+        logger.info(f"Using in-memory cache with {len(_dataset_embeddings_cache)} embeddings")
         return _dataset_embeddings_cache
     
     # Try to load from disk cache first
     cache_path = _get_embeddings_cache_path(dataset_path)
+    logger.info(f"Checking for embeddings cache at: {cache_path}")
+    logger.info(f"Cache file exists: {cache_path.exists()}")
+    logger.info(f"Cache directory exists: {cache_path.parent.exists()}")
+    
     if cache_path.exists():
         try:
             logger.info(f"Loading embeddings from cache: {cache_path}")
             with open(cache_path, 'rb') as f:
                 _dataset_embeddings_cache = pickle.load(f)
-            logger.info(f"Loaded {len(_dataset_embeddings_cache)} embeddings from cache")
-            return _dataset_embeddings_cache
+            
+            # Validate loaded cache data
+            if not isinstance(_dataset_embeddings_cache, dict):
+                logger.error(f"Cache file contains invalid data type: {type(_dataset_embeddings_cache)}")
+                _dataset_embeddings_cache = None
+            elif len(_dataset_embeddings_cache) == 0:
+                logger.warning("Cache file exists but is empty, will recompute")
+                _dataset_embeddings_cache = None
+            else:
+                # Validate embeddings are numpy arrays
+                sample_key = next(iter(_dataset_embeddings_cache.keys()))
+                if not isinstance(_dataset_embeddings_cache[sample_key], np.ndarray):
+                    logger.error("Cache contains invalid embedding format")
+                    _dataset_embeddings_cache = None
+                else:
+                    logger.info(f"Successfully loaded {len(_dataset_embeddings_cache)} embeddings from cache")
+                    return _dataset_embeddings_cache
         except Exception as e:
-            logger.warning(f"Failed to load embeddings cache: {str(e)}, will recompute")
+            logger.error(f"Failed to load embeddings cache: {str(e)}, will recompute", exc_info=True)
+            _dataset_embeddings_cache = None
     
     logger.info("Pre-computing embeddings for all dataset pairs (this may take a minute on first call)...")
     evaluations_df = load_dataset(dataset_path)
@@ -321,11 +350,32 @@ def _precompute_dataset_embeddings(dataset_path: str = None) -> Dict[str, np.nda
     # Save to disk cache
     try:
         logger.info(f"Saving {len(embeddings_dict)} embeddings to cache: {cache_path}")
-        with open(cache_path, 'wb') as f:
+        # Ensure parent directory exists
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Atomic write: write to temp file first, then rename
+        temp_path = cache_path.with_suffix('.tmp')
+        with open(temp_path, 'wb') as f:
             pickle.dump(embeddings_dict, f)
-        logger.info("Embeddings cache saved successfully")
+        
+        # Atomic rename
+        temp_path.replace(cache_path)
+        
+        # Verify file was saved
+        if cache_path.exists():
+            file_size = cache_path.stat().st_size / (1024 * 1024)  # MB
+            logger.info(f"Embeddings cache saved successfully ({file_size:.2f} MB)")
+        else:
+            logger.error("Cache file was not created after save")
     except Exception as e:
-        logger.warning(f"Failed to save embeddings cache: {str(e)}")
+        logger.error(f"Failed to save embeddings cache: {str(e)}", exc_info=True)
+        # Clean up temp file if it exists
+        temp_path = cache_path.with_suffix('.tmp')
+        if temp_path.exists():
+            try:
+                temp_path.unlink()
+            except:
+                pass
     
     _dataset_embeddings_cache = embeddings_dict
     logger.info(f"Pre-computed {len(embeddings_dict)} embeddings for dataset pairs (cached for future use)")
@@ -407,6 +457,15 @@ def find_similar_pairs(
         query_embedding = get_embeddings(query_text)
         
         # Pre-compute dataset embeddings (cached after first call)
+        # Check if cache exists before calling to avoid expensive computation
+        cache_path = _get_embeddings_cache_path(dataset_path)
+        if not cache_path.exists():
+            logger.warning(
+                f"Dataset embeddings cache not found at {cache_path}. "
+                "Skipping dataset validation. Please pre-compute embeddings first."
+            )
+            return []
+        
         dataset_embeddings = _precompute_dataset_embeddings(dataset_path)
         
         if not dataset_embeddings:

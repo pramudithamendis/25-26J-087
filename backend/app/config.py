@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-3.5-turbo"
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-ada-002"
 
+    # OpenAI CV extraction (structured CVParsed schema)
+    OPENAI_CV_MODEL: str = "gpt-3.5-turbo"
+    OPENAI_CV_TEMPERATURE: float = 0.1
+
     # GNews API
     GNEWS_API_KEY: str = ""
     
@@ -38,6 +42,10 @@ class Settings(BaseSettings):
     AGENTIC_FALLBACK_TO_PIPELINE: bool = True  # Fallback to pipeline on agent failure
     MAX_AGENT_ITERATIONS: int = 20  # Maximum iterations in agentic loop
     AGENT_TEMPERATURE: float = 0.3  # LLM temperature for agents
+    
+    # Turnover Prediction
+    GEOCODING_API_KEY: str = ""
+    MODEL_DIR: Path = Path(__file__).parent.parent.parent / "notebooks" / "fair-prehire-attrition-prediction" / "models"
     
     # Dataset validation settings
     DATASET_PATH: str = "backend/dataset"  # Path to dataset directory

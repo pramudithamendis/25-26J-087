@@ -29,6 +29,15 @@ import { AdminTrendScorePage } from './pages/admin/AdminTrendScorePage'
 import HiringTimelinePredictor from "./Questions/HiringTimelinePredictor";
 
 import './App.css';
+
+import CVUpload from './components/cv/CVUpload';
+import TurnoverHistoryPage from './components/turnover/TurnoverHistoryPage';
+import TurnoverResultsView from './components/turnover/TurnoverResultsView';
+import TurnoverNewPrediction from './components/turnover/TurnoverNewPrediction';
+import LocationSettings from './components/locations/LocationSettings';
+import { CVEvaluatorPage } from "./pages/cv-evaluator/CVEvaluatorPage";
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -62,6 +71,16 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <JobsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/evaluate/:jobId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <CVEvaluatorPage />
                 </DashboardLayout>
               </ProtectedRoute>
             }
@@ -193,6 +212,66 @@ function App() {
               <ProtectedRoute>
                 <Navigate to="/dashboard" replace />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/cv-upload"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <CVUpload />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/turnover"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <TurnoverResultsView />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/turnover/history"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <TurnoverHistoryPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/turnover/results"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <TurnoverResultsView />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/turnover/new"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <TurnoverNewPrediction />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/locations"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <LocationSettings />
+                </DashboardLayout>
+              </AdminRoute>
             }
           />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

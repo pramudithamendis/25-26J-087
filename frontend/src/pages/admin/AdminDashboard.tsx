@@ -114,6 +114,7 @@ export const AdminDashboard = () => {
           <Button variant="primary" onClick={() => navigate("/dashboard/admin/trendscore")} className="w-full">
             View Trend Score
           </Button>
+
           {/* Questions */}
           <Button variant="primary" onClick={() => navigate("/questions/upload")} className="w-full">
             Upload CV to extract readme
@@ -132,6 +133,10 @@ export const AdminDashboard = () => {
           </Button> */}
           <Button variant="primary" onClick={() => navigate("/hiring/timeline")} className="w-full">
             Predict hiring duration
+
+          <Button variant="primary" onClick={() => navigate('/dashboard/admin/turnover/history')} className="w-full">
+            View Early Attrition Risk
+
           </Button>
         </div>
       </div>

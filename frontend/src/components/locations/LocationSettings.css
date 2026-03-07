@@ -1,0 +1,270 @@
+.ls-container {
+  max-width: 100%;
+  padding: 1rem;
+  padding-top: 0;
+}
+
+.ls-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.ls-header-icon {
+  width: 42px;
+  height: 42px;
+  background: #eff6ff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.ls-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.2rem 0;
+}
+
+.ls-header p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.ls-add-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.125rem;
+  margin-bottom: 1rem;
+}
+
+.ls-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.625rem;
+}
+
+.ls-add-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ls-input {
+  flex: 1;
+  height: 38px;
+  padding: 0 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.ls-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.ls-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 38px;
+  padding: 0 1rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.ls-add-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.ls-add-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.ls-hint {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.ls-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 0.875rem;
+}
+
+.ls-alert-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.ls-alert-success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.ls-list-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.ls-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ls-count {
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+.ls-loading,
+.ls-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.ls-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.ls-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+}
+
+.ls-list-item:last-child {
+  border-bottom: none;
+}
+
+.ls-list-item:hover {
+  background: #f9fafb;
+}
+
+.ls-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ls-icon-pin {
+  color: #6b7280;
+}
+
+.ls-icon-remote {
+  color: #2563eb;
+}
+
+.ls-item-name {
+  font-size: 1rem;
+  color: #111827;
+}
+
+.ls-badge-remote {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  padding: 0.1rem 0.5rem;
+  text-transform: uppercase;
+}
+
+.ls-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ls-delete-btn:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.ls-delete-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.ls-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  color: #6b7280;
+}
+
+.ls-info p {
+  font-size: 0.78rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ls-spin {
+  animation: ls-rotate 0.8s linear infinite;
+}
+
+@keyframes ls-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

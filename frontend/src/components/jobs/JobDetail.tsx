@@ -58,8 +58,8 @@ export const JobDetail = ({ jobId }: JobDetailProps) => {
   const handleUpdate = async (data: JobUpdate) => {
     try {
       setIsUpdating(true);
-      const updated = await updateJob(jobId, data);
-      setJob(updated);
+      await updateJob(jobId, data);
+      await loadJob(); 
       setIsEditing(false);
     } catch (err: any) {
       setError(err.detail || 'Failed to update job');
@@ -136,13 +136,22 @@ export const JobDetail = ({ jobId }: JobDetailProps) => {
                 Already Applied
               </Button>
             ) : (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => navigate(`/dashboard/jobs/${jobId}/apply`)}
-              >
-                Apply for this Job
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => navigate(`/dashboard/jobs/${jobId}/apply`)}
+                >
+                  Apply for this Job
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => navigate(`/dashboard/evaluate/${jobId}`)}
+                >
+                  Evaluate CV
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -166,6 +175,14 @@ export const JobDetail = ({ jobId }: JobDetailProps) => {
                 </p>
               </div>
             </div>
+            {job.location && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    Location
+                  </h3>
+                  <p className="text-gray-900">{job.location}</p>
+                </div>
+              )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">
@@ -175,6 +192,7 @@ export const JobDetail = ({ jobId }: JobDetailProps) => {
                   {new Date(job.created_at).toLocaleDateString()}
                 </p>
               </div>
+              
               {job.application_count !== undefined && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-1">

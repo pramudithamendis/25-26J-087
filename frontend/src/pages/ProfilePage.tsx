@@ -7,7 +7,7 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import {
   getCurrentUserProfile,
   updateProfile,
-  uploadCV,
+  uploadUserCV,
   uploadLinkedIn,
 } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
@@ -63,7 +63,7 @@ export const ProfilePage = () => {
   };
 
   const handleCVUpload = async (file: File) => {
-    await uploadCV(file);
+    await uploadUserCV(file);
     await loadProfile();
   };
 
