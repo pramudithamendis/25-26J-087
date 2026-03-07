@@ -118,12 +118,13 @@ export const AdminScoreViewPage = () => {
   const [scoreFilter, setScoreFilter] = useState('');
   const [jobFilter, setJobFilter] = useState('');
   const [decisionFilter, setDecisionFilter] = useState('');
+  const [attritionFilter, setAttritionFilter] = useState('');
 
   useEffect(() => {
     loadJobs();
     loadEvaluations();
     loadTrendScores();
-  }, []); // Remove dependencies to load all data first
+  }, []);
 
   useEffect(() => {
     if (results.length > 0) {
@@ -142,7 +143,7 @@ export const AdminScoreViewPage = () => {
 
   const loadEvaluations = async () => {
     try {
-      const response = await listAllEvaluations({}); // Load all evaluations
+      const response = await listAllEvaluations({});
       setEvaluations(response.evaluations);
     } catch (err) {
       console.error('Failed to load evaluations:', err);
@@ -233,12 +234,10 @@ export const AdminScoreViewPage = () => {
     );
   };
 
-  // Find matching evaluation for a CV
   const getEvaluationForCv = (email: string) => {
     return evaluations.find(e => e.user_email === email);
   };
 
-  // Apply all filters
   const getFilteredResults = () => {
     return results.filter(cv => {
       // Score filter
@@ -254,6 +253,12 @@ export const AdminScoreViewPage = () => {
 
       // Decision filter
       if (decisionFilter && evaluation?.decision !== decisionFilter) return false;
+
+      // Attrition risk filter
+      if (attritionFilter !== '') {
+        const turnover = cv.cv_id ? turnoverPredictions[cv.cv_id] : null;
+        if (!turnover || turnover.prediction.risk_level !== parseInt(attritionFilter)) return false;
+      }
 
       return true;
     });
@@ -282,7 +287,7 @@ export const AdminScoreViewPage = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Admin Score View</h1>
               <p className="text-gray-600 mt-1">
-                Review CV trend scores, evaluations, and turnover risk
+                Review CV trend scores, evaluations, and early attrition risk
               </p>
             </div>
             
@@ -290,9 +295,7 @@ export const AdminScoreViewPage = () => {
             <div className="flex flex-wrap gap-3">
               <select
                 value={jobFilter}
-                onChange={(e) => {
-                  setJobFilter(e.target.value);
-                }}
+                onChange={(e) => setJobFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
               >
                 <option value="">All Jobs</option>
@@ -305,9 +308,7 @@ export const AdminScoreViewPage = () => {
 
               <select
                 value={decisionFilter}
-                onChange={(e) => {
-                  setDecisionFilter(e.target.value);
-                }}
+                onChange={(e) => setDecisionFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
               >
                 <option value="">All Decisions</option>
@@ -318,15 +319,24 @@ export const AdminScoreViewPage = () => {
 
               <select
                 value={scoreFilter}
-                onChange={(e) => {
-                  setScoreFilter(e.target.value);
-                }}
+                onChange={(e) => setScoreFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
               >
                 <option value="">All Trend Scores</option>
                 <option value="high">High Trend (≥70%)</option>
                 <option value="medium">Medium Trend (40-70%)</option>
                 <option value="low">Low Trend (&lt;40%)</option>
+              </select>
+
+              <select
+                value={attritionFilter}
+                onChange={(e) => setAttritionFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
+              >
+                <option value="">All Attrition Risks</option>
+                <option value="2">Low Risk</option>
+                <option value="1">Medium Risk</option>
+                <option value="0">High Risk</option>
               </select>
             </div>
           </div>
@@ -424,12 +434,12 @@ export const AdminScoreViewPage = () => {
                         </div>
                       </div>
 
-                      {/* Turnover Risk */}
+                      {/* Attrition Risk */}
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <div className="flex items-center gap-1">
                             <Users size={12} className="text-gray-400" />
-                            <span className="text-gray-500">Turnover</span>
+                            <span className="text-gray-500">Attrition Risk</span>
                           </div>
                           {loadingTurnover ? (
                             <LoadingSpinner size="sm" />
@@ -441,11 +451,6 @@ export const AdminScoreViewPage = () => {
                             <span className="text-xs text-gray-400">N/A</span>
                           )}
                         </div>
-                        {turnover && (
-                          <div className="text-xs text-gray-500">
-                            Conf: {(turnover.prediction.confidence * 100).toFixed(0)}%
-                          </div>
-                        )}
                       </div>
 
                       {/* Evaluation Score */}

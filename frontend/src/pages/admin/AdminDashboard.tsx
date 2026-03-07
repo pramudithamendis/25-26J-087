@@ -116,7 +116,9 @@ export const AdminDashboard = () => {
           <Button variant="primary" onClick={() => navigate("/dashboard/admin/trendscore")} className="w-full">
             View Trend Score
           </Button>
-
+          <Button variant="primary" onClick={() => navigate("/dashboard/admin/turnover/history")} className="w-full">
+            View Early Attrition Risk
+          </Button>
           {/* Questions */}
           <Link to="/questions/upload" className="w-full">
             <Button variant="primary" className="w-full">
@@ -147,10 +149,6 @@ export const AdminDashboard = () => {
           {/* <Button variant="primary" onClick={() => navigate("/questions/ask")} className="w-full">
             /questions/ask
           </Button> */}
-
-          <Button variant="primary" onClick={() => navigate("/dashboard/admin/turnover/history")} className="w-full">
-            View Early Attrition Risk
-          </Button>
           <Button variant="primary" onClick={() => navigate('/dashboard/admin/scores')} className="w-full">
             Scores View
           </Button>

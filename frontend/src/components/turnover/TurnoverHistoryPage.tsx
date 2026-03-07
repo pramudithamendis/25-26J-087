@@ -25,9 +25,9 @@ const RISK_COLORS = {
 };
 
 const RISK_LABELS_SHORT = {
-  0: 'High Risk',
-  1: 'Medium Risk',
-  2: 'Low Risk'
+  0: 'High Early Attrition Risk',
+  1: 'Moderate Early Attrition Risk',
+  2: 'Low Early Attrition Risk'
 };
 
 const TurnoverHistoryPage: React.FC = () => {

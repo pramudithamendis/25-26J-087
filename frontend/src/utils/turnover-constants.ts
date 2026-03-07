@@ -1,7 +1,7 @@
 export const RISK_LABELS = {
-  0: 'Early Exit Risk (0-6 months)',
-  1: 'First-Year Exit Risk (6-12 months)',
-  2: 'First-Year Retention Likely (>12 months)'
+  0: 'High Early Attrition Risk',
+  1: 'Moderate Early Attrition Risk',
+  2: 'Low Early Attrition Risk'
 } as const;
 
 export const RISK_COLORS = {
