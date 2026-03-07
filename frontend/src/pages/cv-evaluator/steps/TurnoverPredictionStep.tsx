@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AlertCircle, Briefcase, Clock, TrendingUp, CheckCircle } from "lucide-react";
 import type { CVSubmitResponse, Work } from "../../../types/cv.types";
 import { predictTurnover } from "../../../services/turnover-api.service";
@@ -14,7 +15,6 @@ interface TurnoverPredictionStepProps {
     onComplete?: () => void;
 }
 
-// Calculate months between two date strings
 const monthsBetween = (start: string, end: string): number => {
     try {
         const s = new Date(start);
@@ -41,8 +41,6 @@ const deriveCareerStats = (work: Work[]) => {
 
     const totalMonths = durations.reduce((a, b) => a + b, 0);
     const avgMonths = durations.length > 0 ? Math.round(totalMonths / durations.length) : 0;
-
-    // Derive career pattern from job titles
     const positions = validJobs.map(w => w.position || '').filter(Boolean);
     const hasProgression = positions.length >= 2;
 
@@ -55,7 +53,7 @@ const deriveCareerStats = (work: Work[]) => {
     };
 };
 
-const getCareerPatternText = (stats: ReturnType<typeof deriveCareerStats>, name?: string): string => {
+const getCareerPatternText = (stats: ReturnType<typeof deriveCareerStats>): string => {
     if (!stats) return "Your career history has been analysed.";
     const { jobCount, avgMonths, hasProgression, latestRole } = stats;
 
@@ -75,6 +73,7 @@ export const TurnoverPredictionStep = ({
     onNext,
     onComplete,
 }: TurnoverPredictionStepProps) => {
+    const navigate = useNavigate();
     const email = userEmail || cvData?.data?.user_email || "";
     const cvId = cvData?.data?.cv_id || "";
     const work = cvData?.data?.work || [];
@@ -86,7 +85,6 @@ export const TurnoverPredictionStep = ({
     const hasPredicted = useRef(false);
     const [predictionStatus, setPredictionStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
 
-    // Silently trigger prediction in background
     useEffect(() => {
         if (missingCV || missingJob || hasPredicted.current || !cvId || !jobDescription) return;
 
@@ -101,11 +99,22 @@ export const TurnoverPredictionStep = ({
             .then(() => {
                 setPredictionStatus('done');
                 onComplete?.();
+                // Redirect to jobs page with notification flag after short delay
+                setTimeout(() => {
+                    navigate('/dashboard/jobs', {
+                        state: { notification: 'CV submitted. You will be notified if selected.' }
+                    });
+                }, 1500);
             })
             .catch(() => {
                 setPredictionStatus('error');
-                // Still mark complete so candidate can proceed
                 onComplete?.();
+                // Still redirect even on error
+                setTimeout(() => {
+                    navigate('/dashboard/jobs', {
+                        state: { notification: 'CV submitted. You will be notified if selected.' }
+                    });
+                }, 1500);
             });
     }, [cvId, jobDescription]);
 
@@ -185,10 +194,10 @@ export const TurnoverPredictionStep = ({
             {/* Career Pattern */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5 mb-6">
                 <p className="text-xs font-semibold uppercase tracking-wide text-blue-400 mb-1">Career Pattern</p>
-                <p className="text-gray-700 text-sm leading-relaxed">{getCareerPatternText(stats, name)}</p>
+                <p className="text-gray-700 text-sm leading-relaxed">{getCareerPatternText(stats)}</p>
             </div>
 
-            {/* Silent prediction status - subtle, no risk language */}
+            {/* Prediction status */}
             <div className="flex items-center gap-2 text-xs text-gray-400">
                 {predictionStatus === 'running' && (
                     <>
@@ -199,11 +208,11 @@ export const TurnoverPredictionStep = ({
                 {predictionStatus === 'done' && (
                     <>
                         <CheckCircle size={14} className="text-green-400" />
-                        <span>Profile analysis complete.</span>
+                        <span>Profile analysis complete. Redirecting...</span>
                     </>
                 )}
                 {predictionStatus === 'error' && (
-                    <span>Profile analysis could not be completed at this time.</span>
+                    <span>Profile analysis could not be completed. Redirecting...</span>
                 )}
             </div>
         </div>
