@@ -162,6 +162,35 @@ async def get_prediction_by_result_id(
         raise HTTPException(500, f"Error fetching result: {str(e)}")
     
 
+@router.get("/latest-results/batch")
+async def get_batch_results(
+    cv_ids: str,
+    user: dict = Depends(get_current_user)
+):
+    """Get latest turnover results for multiple CVs in one query"""
+    from app.database import turnover_collection
+
+    try:
+        id_list = [cid.strip() for cid in cv_ids.split(",") if cid.strip()]
+        if not id_list:
+            return {"results": []}
+
+        pipeline = [
+            {"$match": {"cv_id": {"$in": id_list}}},
+            {"$sort": {"calculated_at": -1}},
+            {"$group": {"_id": "$cv_id", "doc": {"$first": "$$ROOT"}}},
+            {"$replaceRoot": {"newRoot": "$doc"}}
+        ]
+        results = list(turnover_collection.aggregate(pipeline))
+        for r in results:
+            r.pop("_id", None)
+
+        return {"results": results}
+
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching batch results: {str(e)}")
+
+
 @router.get("/candidates")
 async def get_all_candidates(
     user: dict = Depends(get_current_user)
