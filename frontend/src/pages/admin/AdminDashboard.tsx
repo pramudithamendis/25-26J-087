@@ -115,7 +115,7 @@ export const AdminDashboard = () => {
             View Trend Score
           </Button>
           <Button variant="primary" onClick={() => navigate('/dashboard/admin/turnover/history')} className="w-full">
-            View Turnover Risk
+            View Early Attrition Risk
           </Button>
         </div>
       </div>
