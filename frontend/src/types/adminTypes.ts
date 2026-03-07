@@ -31,6 +31,10 @@ export interface ApplicationListItem {
   status: string;
   created_at: string;
   evaluation_id?: string;
+  evaluation_status?: 'pending' | 'processing' | 'evaluated' | 'failed';
+  processing_started_at?: string;
+  processing_completed_at?: string;
+  error_message?: string;
   user_email?: string;
   user_name?: string;
   job_title?: string;
@@ -48,6 +52,10 @@ export interface ApplicationDetailResponse {
   status: string;
   created_at: string;
   evaluation_id?: string;
+  evaluation_status?: 'pending' | 'processing' | 'evaluated' | 'failed';
+  processing_started_at?: string;
+  processing_completed_at?: string;
+  error_message?: string;
   user: {
     email?: string;
     first_name?: string;
@@ -104,6 +112,10 @@ export interface JobApplicantListItem {
   status: string;
   created_at: string;
   evaluation_id?: string;
+  evaluation_status?: 'pending' | 'processing' | 'evaluated' | 'failed';
+  processing_started_at?: string;
+  processing_completed_at?: string;
+  error_message?: string;
   total_score?: number;
   decision?: string;
   has_evaluation: boolean;

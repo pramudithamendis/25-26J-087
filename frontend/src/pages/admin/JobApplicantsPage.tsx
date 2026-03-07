@@ -7,7 +7,6 @@ import { Alert } from '../../components/Alert';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { getJobApplicants } from '../../services/adminService';
 import { getJob } from '../../services/jobService';
-import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import type { JobApplicantListItem } from '../../types/adminTypes';
 import type { Job } from '../../types/jobTypes';
 
@@ -76,13 +75,13 @@ export const JobApplicantsPage = () => {
     if (!decision) return <span className="text-gray-500">-</span>;
     let colorClass = '';
     switch (decision.toLowerCase()) {
-      case 'selected':
+      case 'proceed':
         colorClass = 'bg-green-100 text-green-800';
         break;
       case 'review':
         colorClass = 'bg-yellow-100 text-yellow-800';
         break;
-      case 'not selected':
+      case 'do not proceed':
         colorClass = 'bg-red-100 text-red-800';
         break;
       default:
@@ -90,7 +89,7 @@ export const JobApplicantsPage = () => {
     }
     return (
       <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${colorClass}`}>
-        {getDecisionDisplayValue(decision)}
+        {decision}
       </span>
     );
   };
@@ -120,6 +119,38 @@ export const JobApplicantsPage = () => {
     );
   };
 
+  const getEvaluationStatusBadge = (status?: string) => {
+    if (!status) return <span className="text-gray-500">-</span>;
+    let colorClass = '';
+    let displayText = '';
+    switch (status.toLowerCase()) {
+      case 'pending':
+        colorClass = 'bg-gray-100 text-gray-800';
+        displayText = 'Pending';
+        break;
+      case 'processing':
+        colorClass = 'bg-blue-100 text-blue-800';
+        displayText = 'Processing';
+        break;
+      case 'evaluated':
+        colorClass = 'bg-green-100 text-green-800';
+        displayText = 'Evaluated';
+        break;
+      case 'failed':
+        colorClass = 'bg-red-100 text-red-800';
+        displayText = 'Failed';
+        break;
+      default:
+        colorClass = 'bg-gray-100 text-gray-800';
+        displayText = status;
+    }
+    return (
+      <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${colorClass}`}>
+        {displayText}
+      </span>
+    );
+  };
+
   const columns = [
     { key: 'user_name', header: 'Applicant Name' },
     { key: 'user_email', header: 'Email' },
@@ -127,6 +158,11 @@ export const JobApplicantsPage = () => {
       key: 'status',
       header: 'Status',
       render: (applicant: JobApplicantListItem) => getStatusBadge(applicant.status),
+    },
+    {
+      key: 'evaluation_status',
+      header: 'Evaluation Status',
+      render: (applicant: JobApplicantListItem) => getEvaluationStatusBadge(applicant.evaluation_status),
     },
     {
       key: 'total_score',
@@ -255,9 +291,9 @@ export const JobApplicantsPage = () => {
               onChange={(e) => setDecisionFilter(e.target.value)}
             >
               <option value="">All Decisions</option>
-              <option value="Selected">Proceed</option>
+              <option value="Proceed">Proceed</option>
               <option value="Review">Review Required</option>
-              <option value="Not Selected">Do Not Proceed</option>
+              <option value="Do Not Proceed">Do Not Proceed</option>
             </select>
           </div>
 

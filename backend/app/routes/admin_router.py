@@ -100,7 +100,11 @@ async def list_all_applications(
                 "job_id": app.get("job_id", ""),
                 "status": app.get("status", "pending"),
                 "created_at": app.get("created_at", datetime.utcnow().isoformat() + "Z"),
-                "evaluation_id": str(app["evaluation_id"]) if app.get("evaluation_id") else None
+                "evaluation_id": str(app["evaluation_id"]) if app.get("evaluation_id") else None,
+                "evaluation_status": app.get("evaluation_status", "pending"),
+                "processing_started_at": app.get("processing_started_at"),
+                "processing_completed_at": app.get("processing_completed_at"),
+                "error_message": app.get("error_message")
             }
             
             # Get user info
@@ -187,6 +191,10 @@ async def get_application_details(
             status=application.get("status", "pending"),
             created_at=application.get("created_at", datetime.utcnow().isoformat() + "Z"),
             evaluation_id=str(application["evaluation_id"]) if application.get("evaluation_id") else None,
+            evaluation_status=application.get("evaluation_status", "pending"),
+            processing_started_at=application.get("processing_started_at"),
+            processing_completed_at=application.get("processing_completed_at"),
+            error_message=application.get("error_message"),
             user=user_dict,
             job=job_dict
         )
@@ -198,6 +206,103 @@ async def get_application_details(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting application details: {str(e)}"
         )
+
+
+@router.get("/applications/{application_id}/status")
+async def get_application_status(
+    application_id: str,
+    admin_user=Depends(get_admin_user)
+):
+    """Get application processing status (admin only)"""
+    try:
+        if not ObjectId.is_valid(application_id):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid application ID format")
+        
+        application = applications_collection.find_one({"_id": ObjectId(application_id)})
+        if not application:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+        
+        return {
+            "application_id": application_id,
+            "status": application.get("status", "pending"),
+            "evaluation_status": application.get("evaluation_status", "pending"),
+            "processing_started_at": application.get("processing_started_at"),
+            "processing_completed_at": application.get("processing_completed_at"),
+            "error_message": application.get("error_message"),
+            "evaluation_id": str(application["evaluation_id"]) if application.get("evaluation_id") else None
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting application status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting application status: {str(e)}"
+        )
+
+
+@router.get("/applications/{application_id}/evaluation")
+async def get_application_evaluation(
+    application_id: str,
+    admin_user=Depends(get_admin_user)
+):
+    """Get evaluation details for an application (admin only)"""
+    try:
+        if not ObjectId.is_valid(application_id):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid application ID format")
+        
+        application = applications_collection.find_one({"_id": ObjectId(application_id)})
+        if not application:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+        
+        evaluation_id = application.get("evaluation_id")
+        if not evaluation_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Evaluation not available for this application"
+            )
+        
+        from app.models.evaluation_model import evaluations_collection
+        evaluation = evaluations_collection.find_one({"_id": ObjectId(evaluation_id)})
+        if not evaluation:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evaluation not found")
+        
+        # Get user and job info
+        user_dict = {}
+        if application.get("user_id"):
+            user = users_collection.find_one({"_id": ObjectId(application["user_id"])})
+            if user:
+                user_dict = convert_objectid_to_str(user)
+        
+        job_dict = {}
+        if application.get("job_id"):
+            job = jobs_collection.find_one({"_id": ObjectId(application["job_id"])})
+            if job:
+                job_dict = convert_objectid_to_str(job)
+        
+        return {
+            "evaluation_id": str(evaluation["_id"]),
+            "application_id": application_id,
+            "user_id": evaluation.get("user_id", ""),
+            "job_id": evaluation.get("job_id", ""),
+            "total_score": evaluation.get("total_score", 0),
+            "decision": evaluation.get("decision", ""),
+            "role_predictions": evaluation.get("role_predictions", []),
+            "breakdown": evaluation.get("breakdown", {}),
+            "status": evaluation.get("status", "completed"),
+            "created_at": evaluation.get("created_at"),
+            "user": user_dict,
+            "job": job_dict
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting application evaluation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting application evaluation: {str(e)}"
+        )
+
 
 @router.post("/applications/{application_id}/approve")
 async def approve_application(
@@ -529,7 +634,7 @@ async def list_all_evaluations(
                 "user_id": evaluation.get("user_id", ""),
                 "job_id": evaluation.get("job_id", ""),
                 "total_score": evaluation.get("total_score", 0),
-                "decision": evaluation.get("decision", "Not Selected"),
+                "decision": evaluation.get("decision", "Do Not Proceed"),
                 "status": evaluation.get("status", "completed"),
                 "created_at": evaluation.get("created_at", datetime.utcnow().isoformat() + "Z")
             }

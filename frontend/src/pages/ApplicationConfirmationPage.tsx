@@ -98,8 +98,8 @@ export const ApplicationConfirmationPage = () => {
             </svg>
             <div>
               <p className="text-sm text-blue-800">
-                <strong>Evaluation in progress:</strong> Your application is being evaluated. 
-                You will be notified once the evaluation is complete.
+                <strong>Your application is under review:</strong> Your application has been submitted successfully. 
+                Our team will review your application and you can continue browsing other opportunities.
               </p>
             </div>
           </div>

@@ -32,6 +32,10 @@ class ApplicationListItem(BaseModel):
     status: str
     created_at: str
     evaluation_id: Optional[str] = None
+    evaluation_status: Optional[str] = None  # "pending" | "processing" | "evaluated" | "failed"
+    processing_started_at: Optional[str] = None
+    processing_completed_at: Optional[str] = None
+    error_message: Optional[str] = None
     user_email: Optional[str] = None
     user_name: Optional[str] = None
     job_title: Optional[str] = None
@@ -51,6 +55,10 @@ class ApplicationDetailResponse(BaseModel):
     status: str
     created_at: str
     evaluation_id: Optional[str] = None
+    evaluation_status: Optional[str] = None  # "pending" | "processing" | "evaluated" | "failed"
+    processing_started_at: Optional[str] = None
+    processing_completed_at: Optional[str] = None
+    error_message: Optional[str] = None
     user: dict  # Full user profile
     job: dict  # Full job details
 

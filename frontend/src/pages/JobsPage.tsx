@@ -103,7 +103,7 @@ export const JobsPage = () => {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           title="Create New Job"
-          size="lg"
+          size="xl"
         >
           <JobForm
             onSubmit={handleCreate}
