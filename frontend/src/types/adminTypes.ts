@@ -150,6 +150,7 @@ export interface CVTrendScore {
   cv_trend_score: number;      // trend score (0.0 - 1.0, for example)
   email: string;               // user's email
   created_at: string;          // ISO datetime string
+  email_status?: 'accepted' | 'rejected'; // Tracks decision state
 }
 
 export interface CVTrendScoreListResponse {

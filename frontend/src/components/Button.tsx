@@ -26,22 +26,25 @@ export const Button = ({
 
   const variantClasses = {
     primary: `
-      bg-blue-600 text-white
-      hover:bg-blue-700
+      bg-blue-600 text-white shadow-sm shadow-blue-600/20
+      hover:bg-blue-700 hover:shadow-md hover:shadow-blue-600/30 hover:-translate-y-0.5
       focus:ring-blue-500
-      active:bg-blue-800
+      active:bg-blue-800 active:translate-y-0
+      transition-all duration-300
     `,
     secondary: `
-      bg-purple-600 text-white
-      hover:bg-purple-700
-      focus:ring-purple-500
-      active:bg-purple-800
+      bg-slate-800 text-white shadow-sm shadow-slate-800/20
+      hover:bg-slate-900 hover:shadow-md hover:-translate-y-0.5
+      focus:ring-slate-500
+      active:bg-black active:translate-y-0
+      transition-all duration-300
     `,
     outline: `
-      border-2 border-gray-300 text-gray-700 bg-white
-      hover:bg-gray-50 hover:border-gray-400
-      focus:ring-gray-500
-      active:bg-gray-100
+      border-2 border-slate-200 text-slate-700 bg-white shadow-sm
+      hover:bg-slate-50 hover:border-blue-300 hover:text-blue-700 hover:-translate-y-0.5
+      focus:ring-slate-500
+      active:bg-slate-100 active:translate-y-0
+      transition-all duration-300
     `,
     danger: `
       bg-red-600 text-white

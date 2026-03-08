@@ -45,10 +45,10 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-1">Manage jobs, applications, users, and evaluations</p>
+    <div className="space-y-6">
+      <div className="mb-8 border-b border-slate-200 pb-6">
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Dashboard</h1>
+        <p className="text-slate-500 mt-2 text-lg">Manage jobs, applications, users, and evaluations</p>
       </div>
 
       {error && (
@@ -98,8 +98,11 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
+        <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
+          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          Quick Actions
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Button variant="primary" onClick={() => navigate("/dashboard/admin/jobs")} className="w-full">
             Manage Jobs

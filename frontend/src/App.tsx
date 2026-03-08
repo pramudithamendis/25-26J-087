@@ -37,6 +37,7 @@ import TurnoverNewPrediction from './components/turnover/TurnoverNewPrediction';
 import LocationSettings from './components/locations/LocationSettings';
 import { CVEvaluatorPage } from "./pages/cv-evaluator/CVEvaluatorPage";
 import { AdminScoreViewPage } from "./pages/admin/AdminScoreViewPage";
+import { AdminDecisionsPage } from "./pages/admin/AdminDecisionsPage";
 
 
 function App() {
@@ -281,6 +282,16 @@ function App() {
               <AdminRoute>
                 <DashboardLayout>
                   <AdminScoreViewPage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/decisions"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminDecisionsPage />
                 </DashboardLayout>
               </AdminRoute>
             }

@@ -799,6 +799,13 @@ async def send_application_email(
                 detail="Invalid email type. Use 'accepted' or 'rejected'."
             )
 
+        # Update the cv_trend_scores collection to store the decision
+        from app.models.cv_trend_score_model import cv_trend_scores_collection
+        cv_trend_scores_collection.update_many(
+            {"email": payload.email},
+            {"$set": {"email_status": payload.type}}
+        )
+
         return {"message": f"Email sent successfully to {payload.email}", "detail": result}
     except HTTPException:
         raise

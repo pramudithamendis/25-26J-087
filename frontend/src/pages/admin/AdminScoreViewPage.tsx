@@ -247,13 +247,13 @@ export const AdminScoreViewPage = () => {
 
   const getDecisionBadge = (decision: string) => {
     const colors: Record<string, string> = {
-      Selected: 'bg-green-100 text-green-800',
+      Proceed: 'bg-green-100 text-green-800',
       Review: 'bg-yellow-100 text-yellow-800',
-      'Not Selected': 'bg-red-100 text-red-800',
+      'Do Not Proceed': 'bg-red-100 text-red-800',
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[decision] || 'bg-gray-100 text-gray-800'}`}>
-        {/* {getDecisionDisplayValue(decision)} */}
+        {decision}
       </span>
     );
   };
@@ -287,6 +287,9 @@ export const AdminScoreViewPage = () => {
         if (!turnover || turnover.prediction.risk_level !== parseInt(attritionFilter)) return false;
       }
 
+      // Hide rejected CVs
+      if (cv.email_status === 'rejected') return false;
+
       return true;
     });
   };
@@ -304,9 +307,9 @@ export const AdminScoreViewPage = () => {
         job_title: job?.title || 'the position',
       });
       setSuccess(`Acceptance email sent to ${cv.email}`);
-      localStorage.setItem('currentEmail', cv.email);
+      await loadTrendScores(); // Refresh from backend to get updated email_status
     } catch (err: any) {
-      setError(err.detail || 'Failed to send acceptance email');
+      setError(err?.detail || err?.message || 'Failed to send acceptance email');
     } finally {
       setSendingEmail(null);
       setTimeout(() => setSuccess(null), 3000);
@@ -326,8 +329,9 @@ export const AdminScoreViewPage = () => {
         job_title: job?.title || 'the position',
       });
       setSuccess(`Rejection email sent to ${cv.email}`);
+      await loadTrendScores(); // Refresh from backend to hide the rejected CV
     } catch (err: any) {
-      setError(err.detail || 'Failed to send rejection email');
+      setError(err?.detail || err?.message || 'Failed to send rejection email');
     } finally {
       setSendingEmail(null);
       setTimeout(() => setSuccess(null), 3000);
@@ -411,22 +415,31 @@ export const AdminScoreViewPage = () => {
       header: 'Actions',
       render: (cv: CVTrendScore) => (
         <div className="flex gap-2">
-          <button
-            onClick={() => handleAccept(cv)}
-            disabled={sendingEmail === (cv.cv_id || cv.email)}
-            className="p-1 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Accept"
-          >
-            {sendingEmail === (cv.cv_id || cv.email) ? <LoadingSpinner size="sm" /> : <CheckCircle size={16} />}
-          </button>
-          <button
-            onClick={() => handleReject(cv)}
-            disabled={sendingEmail === (cv.cv_id || cv.email)}
-            className="p-1 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Reject"
-          >
-            <XCircle size={16} />
-          </button>
+          {cv.email_status === 'accepted' ? (
+            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+              <CheckCircle size={14} className="mr-1" />
+              Accepted
+            </span>
+          ) : (
+            <>
+              <button
+                onClick={() => handleAccept(cv)}
+                disabled={sendingEmail === (cv.cv_id || cv.email)}
+                className="p-1 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Accept"
+              >
+                {sendingEmail === (cv.cv_id || cv.email) ? <LoadingSpinner size="sm" /> : <CheckCircle size={16} />}
+              </button>
+              <button
+                onClick={() => handleReject(cv)}
+                disabled={sendingEmail === (cv.cv_id || cv.email)}
+                className="p-1 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Reject"
+              >
+                <XCircle size={16} />
+              </button>
+            </>
+          )}
           {cv.cv_id && turnoverPredictions[cv.cv_id] && (
             <button
               onClick={() => navigate(`/dashboard/admin/turnover/result?cv_id=${cv.cv_id}`)}
@@ -442,14 +455,14 @@ export const AdminScoreViewPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200  top-0 z-10">
-        <div className="mx-auto pb-4">
-          <div className="flex flex-col md:flex-col  justify-between gap-4">
+      <div className="bg-white border-b border-slate-200 top-0 z-10 py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col gap-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Score View</h1>
-              <p className="text-gray-600 mt-1">
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Score View</h1>
+              <p className="text-slate-500 mt-2 text-lg">
                 Review CV trend scores, evaluations, and early attrition risk
               </p>
             </div>
@@ -598,11 +611,7 @@ export const AdminScoreViewPage = () => {
                             {cv.email}
                           </span>
                         </div>
-                        {evaluation && (
-                          <div className="flex-shrink-0">
-                            {getDecisionBadge(evaluation.decision)}
-                          </div>
-                        )}
+
                       </div>
                     </div>
 
@@ -679,6 +688,12 @@ export const AdminScoreViewPage = () => {
                           </div>
                         )}
 
+                        {evaluation && (
+                          <div className="flex-shrink-0">
+                            {getDecisionBadge(evaluation.decision)}
+                          </div>
+                        )}
+
                         {/* Skills Preview */}
                         {cv.skills_matched && cv.skills_matched.length > 0 && (
                           <div className="flex flex-wrap gap-1 pt-1">
@@ -718,20 +733,40 @@ export const AdminScoreViewPage = () => {
                     <div className="border-t border-gray-200 bg-gray-50 px-4 py-2">
                       <div className="flex items-center justify-between">
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAccept(cv)}
-                            disabled={sendingEmail === (cv.cv_id || cv.email)}
-                            className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {sendingEmail === (cv.cv_id || cv.email) ? 'Sending...' : 'Accept'}
-                          </button>
-                          <button
-                            onClick={() => handleReject(cv)}
-                            disabled={sendingEmail === (cv.cv_id || cv.email)}
-                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Reject
-                          </button>
+                          {cv.email_status === 'accepted' ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                              <CheckCircle size={14} className="mr-1.5" />
+                              Accepted
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleAccept(cv)}
+                                disabled={sendingEmail === (cv.cv_id || cv.email)}
+                                className="flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                              >
+                                {sendingEmail === (cv.cv_id || cv.email) ? (
+                                  <>
+                                    <LoadingSpinner size="sm" />
+                                    <span>Sending...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle size={14} />
+                                    <span>Accept</span>
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleReject(cv)}
+                                disabled={sendingEmail === (cv.cv_id || cv.email)}
+                                className="flex items-center gap-1.5 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                              >
+                                <XCircle size={14} />
+                                <span>Reject</span>
+                              </button>
+                            </>
+                          )}
                         </div>
                         {turnover && (
                           <button
