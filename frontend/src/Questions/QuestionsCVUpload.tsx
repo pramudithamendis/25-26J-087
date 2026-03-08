@@ -5,10 +5,18 @@ const QuestionsCVUpload: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [repos, setRepos] = useState<string[]>([]);
+  const [githubUsername, setGithubUsername] = useState<string | null>(null);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (githubUsername) {
+      await navigator.clipboard.writeText(githubUsername);
+      alert("Copied to clipboard!");
     }
   };
 
@@ -48,6 +56,15 @@ const QuestionsCVUpload: React.FC = () => {
       const data = await response.json();
       setMessage(data.message || "Done!");
       setRepos(data.repos_stored || []);
+
+      if (data.repos_stored && data.repos_stored.length > 0) {
+        const url = data.repos_stored[0];
+        const username = url.split("github.com/")[1].split("/")[0];
+        setGithubUsername(username);
+      }
+
+      console.log(data.repos_stored[0]);
+
     } catch (err: any) {
       setMessage(err.message || "An error occurred");
     } finally {
@@ -101,6 +118,16 @@ const QuestionsCVUpload: React.FC = () => {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {githubUsername && (
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-gray-800 font-medium">GitHub Username: {githubUsername}</span>
+
+            <button onClick={copyToClipboard} className="px-3 py-1 text-sm rounded-lg bg-gray-900 text-white hover:bg-blue-600">
+              Copy
+            </button>
           </div>
         )}
       </div>
