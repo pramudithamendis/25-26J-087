@@ -1,5 +1,7 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { LogOut, User, ChevronUp } from 'lucide-react';
 
 interface NavItem {
   name: string;
@@ -11,6 +13,19 @@ export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownRef]);
 
   const handleLogout = () => {
     logout();
@@ -115,28 +130,35 @@ export const Sidebar = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-gray-200">
+    <div className="flex flex-col h-full bg-white border-r border-slate-200">
       {/* Logo/Title */}
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">CV Analysis</h1>
-        <p className="text-sm text-gray-500 mt-1">Dashboard</p>
+      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">CV Analysis</h1>
+          <p className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">Dashboard</p>
+        </div>
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm shadow-blue-600/30">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
         {isAdmin ? (
           // Admin users only see admin navigation items
           adminNavItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path)
-                  ? 'bg-blue-50 text-blue-700 font-medium'
-                  : 'text-gray-700 hover:bg-gray-50'
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive(item.path)
+                ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm border border-blue-100/50'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
             >
-              {item.icon}
-              <span>{item.name}</span>
+              <div className={isActive(item.path) ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}>
+                {item.icon}
+              </div>
+              <span className="text-sm">{item.name}</span>
             </Link>
           ))
         ) : (
@@ -145,31 +167,74 @@ export const Sidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path)
-                  ? 'bg-blue-50 text-blue-700 font-medium'
-                  : 'text-gray-700 hover:bg-gray-50'
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive(item.path)
+                ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm border border-blue-100/50'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
             >
-              {item.icon}
-              <span>{item.name}</span>
+              <div className={isActive(item.path) ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}>
+                {item.icon}
+              </div>
+              <span className="text-sm">{item.name}</span>
             </Link>
           ))
         )}
       </nav>
 
-      {/* User Section */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="mb-4 px-4 py-2 bg-gray-50 rounded-lg">
-          <p className="text-sm font-medium text-gray-900">{user?.email}</p>
-          <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+      {/* User Section Dropdown */}
+      <div className="p-4 border-t border-slate-100 hidden md:block" ref={dropdownRef}>
+        <div className="relative">
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${isDropdownOpen ? 'bg-slate-50 shadow-inner' : 'hover:bg-slate-50'}`}
+          >
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-9 h-9 flex-shrink-0 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm uppercase">
+                {user?.email?.charAt(0) || 'U'}
+              </div>
+              <div className="text-left truncate">
+                <p className="text-sm font-semibold text-slate-900 truncate">{user?.email}</p>
+                <p className="text-xs font-medium text-slate-500 capitalize">{user?.role}</p>
+              </div>
+            </div>
+            <ChevronUp size={16} className={`text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Floating Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className="absolute bottom-full left-0 mb-2 w-full bg-white border border-slate-200 shadow-lg shadow-slate-200/50 rounded-xl overflow-hidden z-50 animate-in slide-in-from-bottom-2 fade-in duration-200">
+              <div className="p-3 border-b border-slate-100">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Account</p>
+                <Link
+                  to="/dashboard/profile"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  <User size={16} className="text-slate-400" />
+                  Profile Settings
+                </Link>
+              </div>
+              <div className="p-1">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                >
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Mobile User Section (No Dropdown, Just Button) */}
+      <div className="p-4 border-t border-slate-100 md:hidden">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-rose-600 bg-rose-50 rounded-xl hover:bg-rose-100 transition-colors"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
+          <LogOut size={16} />
           <span>Logout</span>
         </button>
       </div>
