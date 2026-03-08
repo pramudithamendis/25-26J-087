@@ -11,7 +11,10 @@ import type { Job } from '../../types/jobTypes';
 // import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import apiClient from '../../config/api';
 import type { TurnoverPredictionResponse } from '../../types/turnover.types';
-import { TrendingUp, Briefcase, Users, Mail, Calendar, MapPin, FileText } from 'lucide-react';
+import { TrendingUp, Briefcase, Users, Mail, Calendar, MapPin, FileText, AlertCircle, LayoutGrid, List, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { Modal } from '../../components/shared/Modal';
+import { Table } from '../../components/shared/Table';
+
 
 const MiniPDFViewer = ({ cvId, email }: { cvId?: string; email: string }) => {
   const [showFullscreen, setShowFullscreen] = useState(false);
@@ -20,7 +23,7 @@ const MiniPDFViewer = ({ cvId, email }: { cvId?: string; email: string }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!cvId) return;
+    if (!cvId || !showFullscreen || pdfBlobUrl) return;
 
     const loadPdf = async () => {
       try {
@@ -46,60 +49,74 @@ const MiniPDFViewer = ({ cvId, email }: { cvId?: string; email: string }) => {
     loadPdf();
 
     return () => {
+      // We don't necessarily want to revoke immediately if we want to cache it while the component is mounted,
+      // but if the user closes and reopens, we might want to keep it.
+      // However, for memory management, revoking on unmount is good.
+    };
+  }, [cvId, showFullscreen, pdfBlobUrl]);
+
+  useEffect(() => {
+    return () => {
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
     };
-  }, [cvId]);
+  }, [pdfBlobUrl]);
 
-  if (showFullscreen) {
-    return (
-      <div className="fixed inset-4 z-50 bg-white rounded-lg shadow-xl border flex flex-col">
-        <div className="border-b px-4 py-3 flex justify-between items-center">
-          <h3 className="font-semibold">CV: {email}</h3>
-          <button
-            onClick={() => setShowFullscreen(false)}
-            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded"
-          >
-            Close
-          </button>
-        </div>
+  return (
+    <>
+      <div
+        onClick={cvId ? () => setShowFullscreen(true) : undefined}
+        className={`h-full bg-gray-50 rounded-lg border border-gray-200 transition-all duration-200 flex flex-col items-center justify-center ${cvId
+          ? 'cursor-pointer hover:bg-white hover:border-blue-400 hover:shadow-sm'
+          : 'cursor-not-allowed opacity-50'
+          }`}
+        title={cvId ? "Click to view PDF" : "No PDF available"}
+      >
+        {loading && showFullscreen ? (
+          <LoadingSpinner size="sm" />
+        ) : cvId ? (
+          <>
+            <div className="p-3 bg-blue-50 rounded-full mb-2 group-hover:bg-blue-100 transition-colors">
+              <FileText size={24} className="text-blue-600" />
+            </div>
+            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">View CV</span>
+          </>
+        ) : (
+          <>
+            <FileText size={24} className="text-gray-300 mb-2" />
+            <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">No PDF</span>
+          </>
+        )}
+      </div>
 
-        <div className="flex-1 bg-gray-100 p-2">
+      <Modal
+        isOpen={showFullscreen}
+        onClose={() => setShowFullscreen(false)}
+        title={`CV View: ${email}`}
+        size="xl"
+      >
+        <div className="w-full bg-gray-100 rounded-lg overflow-hidden border border-gray-200" style={{ height: '75vh' }}>
           {loading ? (
             <div className="flex items-center justify-center h-full">
-              <LoadingSpinner size="lg" />
+              <div className="text-center">
+                <LoadingSpinner size="lg" />
+                <p className="mt-4 text-gray-500 font-medium">Loading PDF document...</p>
+              </div>
             </div>
           ) : pdfBlobUrl ? (
-            <iframe src={pdfBlobUrl} className="w-full h-full border-0" title={`CV for ${email}`} />
+            <iframe
+              src={pdfBlobUrl}
+              className="w-full h-full border-0"
+              title={`CV for ${email}`}
+            />
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
-              {error || "No PDF available"}
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <AlertCircle size={48} className="text-gray-300 mb-4" />
+              <p className="font-medium">{error || "No PDF available for display"}</p>
             </div>
           )}
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div 
-      onClick={() => setShowFullscreen(true)}
-      className="h-full bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors flex flex-col items-center justify-center border-2 border-transparent hover:border-blue-300"
-      title="Click to view PDF"
-    >
-      {loading ? (
-        <LoadingSpinner size="sm" />
-      ) : pdfBlobUrl ? (
-        <>
-          <FileText size={32} className="text-gray-400 mb-2" />
-          <span className="text-xs text-gray-500">Click to view PDF</span>
-        </>
-      ) : (
-        <>
-          <FileText size={32} className="text-gray-300 mb-2" />
-          <span className="text-xs text-gray-400">{error || "No PDF"}</span>
-        </>
-      )}
-    </div>
+      </Modal>
+    </>
   );
 };
 
@@ -113,7 +130,10 @@ export const AdminScoreViewPage = () => {
   const [loadingTurnover, setLoadingTurnover] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [selectedPdfCv, setSelectedPdfCv] = useState<CVTrendScore | null>(null);
+
   // Filters
   const [scoreFilter, setScoreFilter] = useState('');
   const [jobFilter, setJobFilter] = useState('');
@@ -281,67 +301,200 @@ export const AdminScoreViewPage = () => {
 
   const filteredResults = getFilteredResults();
 
+  const tableColumns = [
+    {
+      key: 'email',
+      header: 'Applicant',
+      render: (cv: CVTrendScore) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-900">{cv.email}</span>
+          <button
+            onClick={() => setSelectedPdfCv(cv)}
+            className="text-[10px] text-blue-600 hover:underline text-left mt-0.5"
+          >
+            View CV
+          </button>
+        </div>
+      )
+    },
+    {
+      key: 'job',
+      header: 'Job Title',
+      render: (cv: CVTrendScore) => {
+        const evaluation = getEvaluationForCv(cv.email);
+        const job = jobs.find(j => j._id === evaluation?.job_id);
+        return <span className="text-sm text-gray-600">{job?.title || 'N/A'}</span>;
+      }
+    },
+    {
+      key: 'cv_trend_score',
+      header: 'Trend',
+      render: (cv: CVTrendScore) => (
+        <div className="flex items-center gap-2">
+          <span className={`font-semibold ${getTrendScoreColor(cv.cv_trend_score)}`}>
+            {(cv.cv_trend_score * 100).toFixed(1)}%
+          </span>
+          <div className="w-16 bg-gray-200 rounded-full h-1.5 hidden md:block">
+            <div
+              className={`h-1.5 rounded-full ${cv.cv_trend_score >= 0.7 ? 'bg-green-600' :
+                cv.cv_trend_score >= 0.4 ? 'bg-yellow-600' :
+                  cv.cv_trend_score >= 0.2 ? 'bg-orange-600' : 'bg-red-600'
+                }`}
+              style={{ width: `${cv.cv_trend_score * 100}%` }}
+            />
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'attrition',
+      header: 'Attrition Risk',
+      render: (cv: CVTrendScore) => {
+        const turnover = cv.cv_id ? turnoverPredictions[cv.cv_id] : null;
+        if (loadingTurnover) return <LoadingSpinner size="sm" />;
+        return turnover ? (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTurnoverRiskBg(turnover.prediction.risk_level)} ${getTurnoverRiskColor(turnover.prediction.risk_level)}`}>
+            {getTurnoverRiskText(turnover.prediction.risk_level)}
+          </span>
+        ) : <span className="text-xs text-gray-400">N/A</span>;
+      }
+    },
+    {
+      key: 'evaluation',
+      header: 'Evaluation',
+      render: (cv: CVTrendScore) => {
+        const evaluation = getEvaluationForCv(cv.email);
+        return evaluation ? (
+          <span className={`font-medium ${getScoreColor(evaluation.total_score)}`}>
+            {evaluation.total_score.toFixed(1)}
+          </span>
+        ) : <span className="text-xs text-gray-400">-</span>;
+      }
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (cv: CVTrendScore) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              handleAccept(cv.cv_id);
+              localStorage.setItem("currentEmail", cv.email);
+            }}
+            className="p-1 text-green-600 hover:bg-green-50 rounded-md transition-colors"
+            title="Accept"
+          >
+            <CheckCircle size={16} />
+          </button>
+          <button
+            onClick={() => handleReject(cv.cv_id)}
+            className="p-1 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+            title="Reject"
+          >
+            <XCircle size={16} />
+          </button>
+          {cv.cv_id && turnoverPredictions[cv.cv_id] && (
+            <button
+              onClick={() => navigate(`/dashboard/admin/turnover/result?cv_id=${cv.cv_id}`)}
+              className="p-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              title="Details"
+            >
+              <ArrowRight size={16} />
+            </button>
+          )}
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white border-b border-gray-200  top-0 z-10">
+        <div className="mx-auto pb-4">
+          <div className="flex flex-col md:flex-col  justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Admin Score View</h1>
               <p className="text-gray-600 mt-1">
                 Review CV trend scores, evaluations, and early attrition risk
               </p>
             </div>
-            
+
             {/* Filters */}
-            <div className="flex flex-wrap gap-3">
-              <select
-                value={jobFilter}
-                onChange={(e) => setJobFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
-              >
-                <option value="">All Jobs</option>
-                {jobs.map((job) => (
-                  <option key={job._id} value={job._id}>
-                    {job.title}
-                  </option>
-                ))}
-              </select>
+            <div className="flex  justify-between items-center">
+              <div className="flex gap-4">
+                <select
+                  value={jobFilter}
+                  onChange={(e) => setJobFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
+                >
+                  <option value="">All Jobs</option>
+                  {jobs.map((job) => (
+                    <option key={job._id} value={job._id}>
+                      {job.title}
+                    </option>
+                  ))}
+                </select>
 
-              <select
-                value={decisionFilter}
-                onChange={(e) => setDecisionFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
-              >
-                <option value="">All Decisions</option>
-                <option value="Selected">Proceed</option>
-                <option value="Review">Review Required</option>
-                <option value="Not Selected">Do Not Proceed</option>
-              </select>
+                <select
+                  value={decisionFilter}
+                  onChange={(e) => setDecisionFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
+                >
+                  <option value="">All Decisions</option>
+                  <option value="Selected">Proceed</option>
+                  <option value="Review">Review Required</option>
+                  <option value="Not Selected">Do Not Proceed</option>
+                </select>
 
-              <select
-                value={scoreFilter}
-                onChange={(e) => setScoreFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
-              >
-                <option value="">All Trend Scores</option>
-                <option value="high">High Trend (≥70%)</option>
-                <option value="medium">Medium Trend (40-70%)</option>
-                <option value="low">Low Trend (&lt;40%)</option>
-              </select>
+                <select
+                  value={scoreFilter}
+                  onChange={(e) => setScoreFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
+                >
+                  <option value="">All Trend Scores</option>
+                  <option value="high">High Trend (≥70%)</option>
+                  <option value="medium">Medium Trend (40-70%)</option>
+                  <option value="low">Low Trend (&lt;40%)</option>
+                </select>
 
-              <select
-                value={attritionFilter}
-                onChange={(e) => setAttritionFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
+                <select
+                  value={attritionFilter}
+                  onChange={(e) => setAttritionFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
+                >
+                  <option value="">All Attrition Risks</option>
+                  <option value="2">Low Risk</option>
+                  <option value="1">Medium Risk</option>
+                  <option value="0">High Risk</option>
+                </select>
+              </div>
+
+              <div className="flex bg-gray-100 p-1 rounded-md border border-gray-200 w-18">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                title="Grid View"
               >
-                <option value="">All Attrition Risks</option>
-                <option value="2">Low Risk</option>
-                <option value="1">Medium Risk</option>
-                <option value="0">High Risk</option>
-              </select>
+                <LayoutGrid size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded-md transition-all ${viewMode === 'table'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                title="Table View"
+              >
+                <List size={18} />
+              </button>
             </div>
+            </div>
+
+            
           </div>
         </div>
       </div>
@@ -374,181 +527,204 @@ export const AdminScoreViewPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Results count */}
           <div className="mb-4 text-sm text-gray-600">
-            Showing {filteredResults.length} CVs
+            Showing {filteredResults?.length} CVs
           </div>
 
-          {/* Grid of CV Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredResults.map((cv) => {
-              const evaluation = getEvaluationForCv(cv.email);
-              const turnover = cv.cv_id ? turnoverPredictions[cv.cv_id] : null;
+          {viewMode === 'grid' ? (
+            /* Grid of CV Cards */
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredResults?.map((cv) => {
+                const evaluation = getEvaluationForCv(cv.email);
+                const turnover = cv.cv_id ? turnoverPredictions[cv.cv_id] : null;
 
-              return (
-                <div
-                  key={cv.cv_id || cv.email}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  {/* Header */}
-                  <div className="border-b border-gray-200 bg-gray-50 px-4 py-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Mail size={14} className="text-gray-400 flex-shrink-0" />
-                        <span className="text-sm font-medium text-gray-900 truncate" title={cv.email}>
-                          {cv.email}
-                        </span>
-                      </div>
-                      {evaluation && (
-                        <div className="flex-shrink-0">
-                          {getDecisionBadge(evaluation.decision)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="flex h-48">
-                    {/* Left side - PDF Thumbnail */}
-                    <div className="w-1/3 p-2">
-                      <MiniPDFViewer cvId={cv.cv_id} email={cv.email} />
-                    </div>
-
-                    {/* Right side - Scores */}
-                    <div className="w-2/3 p-3 space-y-2">
-                      {/* Trend Score */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <div className="flex items-center gap-1">
-                            <TrendingUp size={12} className="text-gray-400" />
-                            <span className="text-gray-500">Trend</span>
-                          </div>
-                          <span className={`font-medium ${getTrendScoreColor(cv.cv_trend_score)}`}>
-                            {(cv.cv_trend_score * 100).toFixed(1)}%
+                return (
+                  <div
+                    key={cv.cv_id || cv.email}
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    {/* Header */}
+                    <div className="border-b border-gray-200 bg-gray-50 px-4 py-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Mail size={14} className="text-gray-400 flex-shrink-0" />
+                          <span className="text-sm font-medium text-gray-900 truncate" title={cv.email}>
+                            {cv.email}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1.5">
-                          <div 
-                            className={`h-1.5 rounded-full ${
-                              cv.cv_trend_score >= 0.7 ? 'bg-green-600' :
-                              cv.cv_trend_score >= 0.4 ? 'bg-yellow-600' :
-                              cv.cv_trend_score >= 0.2 ? 'bg-orange-600' : 'bg-red-600'
-                            }`}
-                            style={{ width: `${cv.cv_trend_score * 100}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Attrition Risk */}
-                      <div>
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <div className="flex items-center gap-1">
-                            <Users size={12} className="text-gray-400" />
-                            <span className="text-gray-500">Attrition Risk</span>
+                        {evaluation && (
+                          <div className="flex-shrink-0">
+                            {getDecisionBadge(evaluation.decision)}
                           </div>
-                          {loadingTurnover ? (
-                            <LoadingSpinner size="sm" />
-                          ) : turnover ? (
-                            <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getTurnoverRiskBg(turnover.prediction.risk_level)} ${getTurnoverRiskColor(turnover.prediction.risk_level)}`}>
-                              {getTurnoverRiskText(turnover.prediction.risk_level)}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-400">N/A</span>
-                          )}
-                        </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex h-48">
+                      {/* Left side - PDF Thumbnail */}
+                      <div className="w-1/3 p-2">
+                        <MiniPDFViewer cvId={cv.cv_id} email={cv.email} />
                       </div>
 
-                      {/* Evaluation Score */}
-                      {evaluation && (
+                      {/* Right side - Scores */}
+                      <div className="w-2/3 p-3 space-y-2">
+                        {/* Trend Score */}
                         <div>
                           <div className="flex items-center justify-between text-xs mb-1">
                             <div className="flex items-center gap-1">
-                              <Briefcase size={12} className="text-gray-400" />
-                              <span className="text-gray-500">Evaluation</span>
+                              <TrendingUp size={12} className="text-gray-400" />
+                              <span className="text-gray-500">Trend</span>
                             </div>
-                            <span className={`font-medium ${getScoreColor(evaluation.total_score)}`}>
-                              {evaluation.total_score.toFixed(1)}
+                            <span className={`font-medium ${getTrendScoreColor(cv.cv_trend_score)}`}>
+                              {(cv.cv_trend_score * 100).toFixed(1)}%
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className={`h-1.5 rounded-full ${
-                                evaluation.total_score >= 75 ? 'bg-green-600' :
-                                evaluation.total_score >= 60 ? 'bg-yellow-600' : 'bg-red-600'
-                              }`}
-                              style={{ width: `${evaluation.total_score}%` }}
+                            <div
+                              className={`h-1.5 rounded-full ${cv.cv_trend_score >= 0.7 ? 'bg-green-600' :
+                                cv.cv_trend_score >= 0.4 ? 'bg-yellow-600' :
+                                  cv.cv_trend_score >= 0.2 ? 'bg-orange-600' : 'bg-red-600'
+                                }`}
+                              style={{ width: `${cv.cv_trend_score * 100}%` }}
                             />
                           </div>
                         </div>
-                      )}
 
-                      {/* Skills Preview */}
-                      {cv.skills_matched && cv.skills_matched.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          {cv.skills_matched.slice(0, 2).map((skill, idx) => (
-                            <span
-                              key={idx}
-                              className={`text-[10px] px-1 py-0.5 rounded ${getSkillScoreColor(skill.score)}`}
-                            >
-                              {skill.skill}
-                            </span>
-                          ))}
-                          {cv.skills_matched.length > 2 && (
-                            <span className="text-[10px] text-gray-400">
-                              +{cv.skills_matched.length - 2}
-                            </span>
-                          )}
+                        {/* Attrition Risk */}
+                        <div>
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <div className="flex items-center gap-1">
+                              <Users size={12} className="text-gray-400" />
+                              <span className="text-gray-500">Attrition Risk</span>
+                            </div>
+                            {loadingTurnover ? (
+                              <LoadingSpinner size="sm" />
+                            ) : turnover ? (
+                              <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getTurnoverRiskBg(turnover.prediction.risk_level)} ${getTurnoverRiskColor(turnover.prediction.risk_level)}`}>
+                                {getTurnoverRiskText(turnover.prediction.risk_level)}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">N/A</span>
+                            )}
+                          </div>
                         </div>
-                      )}
 
-                      {/* Location and Date */}
-                      <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1">
-                        {turnover?.job_location && (
-                          <div className="flex items-center gap-1">
-                            <MapPin size={10} />
-                            <span className="truncate max-w-[80px]">{turnover.job_location}</span>
+                        {/* Evaluation Score */}
+                        {evaluation && (
+                          <div>
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <div className="flex items-center gap-1">
+                                <Briefcase size={12} className="text-gray-400" />
+                                <span className="text-gray-500">Evaluation</span>
+                              </div>
+                              <span className={`font-medium ${getScoreColor(evaluation.total_score)}`}>
+                                {evaluation.total_score.toFixed(1)}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div
+                                className={`h-1.5 rounded-full ${evaluation.total_score >= 75 ? 'bg-green-600' :
+                                  evaluation.total_score >= 60 ? 'bg-yellow-600' : 'bg-red-600'
+                                  }`}
+                                style={{ width: `${evaluation.total_score}%` }}
+                              />
+                            </div>
                           </div>
                         )}
-                        <div className="flex items-center gap-1">
-                          <Calendar size={10} />
-                          <span>{new Date(cv.created_at).toLocaleDateString()}</span>
+
+                        {/* Skills Preview */}
+                        {cv.skills_matched && cv.skills_matched.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {cv.skills_matched.slice(0, 2).map((skill, idx) => (
+                              <span
+                                key={idx}
+                                className={`text-[10px] px-1 py-0.5 rounded ${getSkillScoreColor(skill.score)}`}
+                              >
+                                {skill.skill}
+                              </span>
+                            ))}
+                            {cv.skills_matched.length > 2 && (
+                              <span className="text-[10px] text-gray-400">
+                                +{cv.skills_matched.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Location and Date */}
+                        <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1">
+                          {turnover?.job_location && (
+                            <div className="flex items-center gap-1">
+                              <MapPin size={10} />
+                              <span className="truncate max-w-[80px]">{turnover.job_location}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Calendar size={10} />
+                            <span>{new Date(cv.created_at).toLocaleDateString()}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Footer */}
-                  <div className="border-t border-gray-200 bg-gray-50 px-4 py-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            handleAccept(cv.cv_id);
-                            localStorage.setItem("currentEmail", cv.email);
+                    {/* Footer */}
+                    <div className="border-t border-gray-200 bg-gray-50 px-4 py-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              handleAccept(cv.cv_id);
+                              localStorage.setItem("currentEmail", cv.email);
                             }}
-                          className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition-colors"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleReject(cv.cv_id)}
-                          className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md transition-colors"
-                        >
-                          Reject
-                        </button>
+                            className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition-colors"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => handleReject(cv.cv_id)}
+                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                        {turnover && (
+                          <button
+                            onClick={() => navigate(`/dashboard/admin/turnover/result?cv_id=${cv.cv_id}`)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            Details →
+                          </button>
+                        )}
                       </div>
-                      {turnover && (
-                        <button
-                          onClick={() => navigate(`/dashboard/admin/turnover/result?cv_id=${cv.cv_id}`)}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Details →
-                        </button>
-                      )}
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Table View */
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <Table
+                columns={tableColumns}
+                data={filteredResults}
+                emptyMessage="No CVs found matching the selected criteria"
+              />
+            </div>
+          )}
+
+          {/* Modal for PDF View from Table */}
+          {selectedPdfCv && (
+            <Modal
+              isOpen={!!selectedPdfCv}
+              onClose={() => setSelectedPdfCv(null)}
+              title={`CV View: ${selectedPdfCv.email}`}
+              size="xl"
+            >
+              <div className="w-full bg-gray-100 rounded-lg overflow-hidden border border-gray-200" style={{ height: '75vh' }}>
+                <LazyPDFViewer cvId={selectedPdfCv.cv_id} email={selectedPdfCv.email} />
+              </div>
+            </Modal>
+          )}
 
           {/* Loading indicator */}
           {loadingTurnover && filteredResults.length > 0 && (
@@ -561,6 +737,61 @@ export const AdminScoreViewPage = () => {
           )}
         </div>
       )}
+    </div>
+  );
+};
+
+// Simplified PDF Viewer component for the Table Modal or shared use
+const LazyPDFViewer = ({ cvId, email }: { cvId?: string; email: string }) => {
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!cvId || pdfBlobUrl) return;
+
+    const loadPdf = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await apiClient.get(`/cv/${cvId}/pdf`, { responseType: "blob" });
+        const blob = new Blob([response.data], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        setPdfBlobUrl(url);
+      } catch (error) {
+        console.error("Failed to load CV PDF:", error);
+        setError("Failed to load PDF");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPdf();
+
+    return () => {
+      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+    };
+  }, [cvId, pdfBlobUrl]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-500 font-medium">Loading PDF document...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (pdfBlobUrl) {
+    return <iframe src={pdfBlobUrl} className="w-full h-full border-0" title={`CV for ${email}`} />;
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+      <AlertCircle size={48} className="text-gray-300 mb-4" />
+      <p className="font-medium">{error || "No PDF available for display"}</p>
     </div>
   );
 };
