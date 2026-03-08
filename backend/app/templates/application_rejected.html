@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Update</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f9; padding: 40px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 32px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
+                Application Update
+              </h1>
+              <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">
+                Regarding your recent application
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px; line-height: 1.6;">
+                Dear <strong>{{applicant_name}}</strong>,
+              </p>
+              <p style="margin: 0 0 16px; color: #4b5563; font-size: 15px; line-height: 1.7;">
+                Thank you for your interest in the position of
+                <strong style="color: #1f2937;">{{job_title}}</strong> at <strong style="color: #1f2937;">{{company_name}}</strong>
+                and for taking the time to submit your application.
+              </p>
+
+              <!-- Info Box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
+                <tr>
+                  <td style="background-color: #f5f3ff; border-left: 4px solid #6366f1; padding: 20px 24px; border-radius: 0 8px 8px 0;">
+                    <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
+                      After careful evaluation, we regret to inform you that we will not be moving forward with your application at this time. This decision was made after a thorough review of all candidates, and it does not diminish the value of your experience and qualifications.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0 0 16px; color: #4b5563; font-size: 15px; line-height: 1.7;">
+                We truly appreciate the effort you put into your application. The competition was strong, and this decision does not reflect on your abilities or potential.
+              </p>
+              <p style="margin: 0 0 16px; color: #4b5563; font-size: 15px; line-height: 1.7;">
+                We encourage you to apply for future openings that match your profile. We would be happy to consider your application again.
+              </p>
+              <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.7;">
+                We wish you the very best in your career journey.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 4px; color: #6b7280; font-size: 13px;">
+                Best regards,
+              </p>
+              <p style="margin: 0 0 16px; color: #1f2937; font-size: 14px; font-weight: 600;">
+                The {{company_name}} Recruitment Team
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 11px; line-height: 1.5;">
+                This is an automated message. Please do not reply directly to this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
-import { listAllCVTrendScores } from '../../services/adminService';
+import { listAllCVTrendScores, listAllEvaluations, sendApplicationEmail } from '../../services/adminService';
 import type { CVTrendScore } from '../../types/adminTypes';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { Alert } from '../../components/Alert';
 import { useNavigate } from 'react-router-dom';
 import { listJobs } from '../../services/jobService';
-import { listAllEvaluations } from '../../services/adminService';
 import type { EvaluationListItem } from '../../types/adminTypes';
 import type { Job } from '../../types/jobTypes';
 // import { getDecisionDisplayValue } from '../../utils/decisionMapper';
 import apiClient from '../../config/api';
 import type { TurnoverPredictionResponse } from '../../types/turnover.types';
-import { TrendingUp, Briefcase, Users, Mail, Calendar, MapPin, FileText, AlertCircle, LayoutGrid, List, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { TrendingUp, Briefcase, Users, Mail, Calendar, MapPin, FileText, AlertCircle, LayoutGrid, List, CheckCircle, XCircle, ArrowRight, Search } from 'lucide-react';
 import { Modal } from '../../components/shared/Modal';
 import { Table } from '../../components/shared/Table';
 
@@ -133,12 +132,14 @@ export const AdminScoreViewPage = () => {
 
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedPdfCv, setSelectedPdfCv] = useState<CVTrendScore | null>(null);
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null); // tracks cv_id being emailed
 
   // Filters
   const [scoreFilter, setScoreFilter] = useState('');
   const [jobFilter, setJobFilter] = useState('');
   const [decisionFilter, setDecisionFilter] = useState('');
   const [attritionFilter, setAttritionFilter] = useState('');
+  const [emailFilter, setEmailFilter] = useState('');
 
   useEffect(() => {
     loadJobs();
@@ -263,6 +264,9 @@ export const AdminScoreViewPage = () => {
 
   const getFilteredResults = () => {
     return results.filter(cv => {
+      // Email search filter
+      if (emailFilter && !cv.email.toLowerCase().includes(emailFilter.toLowerCase())) return false;
+
       // Score filter
       if (scoreFilter === 'high' && cv.cv_trend_score < 0.7) return false;
       if (scoreFilter === 'medium' && (cv.cv_trend_score < 0.4 || cv.cv_trend_score >= 0.7)) return false;
@@ -287,16 +291,47 @@ export const AdminScoreViewPage = () => {
     });
   };
 
-  const handleAccept = (cvId?: string) => {
-    console.log('Accepted CV:', cvId);
-    setSuccess('CV accepted successfully');
-    setTimeout(() => setSuccess(null), 3000);
+  const handleAccept = async (cv: CVTrendScore) => {
+    if (sendingEmail) return;
+    setSendingEmail(cv.cv_id || cv.email);
+    try {
+      const evaluation = getEvaluationForCv(cv.email);
+      const job = jobs.find(j => j._id === evaluation?.job_id);
+      await sendApplicationEmail({
+        email: cv.email,
+        type: 'accepted',
+        applicant_name: cv.email.split('@')[0],
+        job_title: job?.title || 'the position',
+      });
+      setSuccess(`Acceptance email sent to ${cv.email}`);
+      localStorage.setItem('currentEmail', cv.email);
+    } catch (err: any) {
+      setError(err.detail || 'Failed to send acceptance email');
+    } finally {
+      setSendingEmail(null);
+      setTimeout(() => setSuccess(null), 3000);
+    }
   };
 
-  const handleReject = (cvId?: string) => {
-    console.log('Rejected CV:', cvId);
-    setSuccess('CV rejected successfully');
-    setTimeout(() => setSuccess(null), 3000);
+  const handleReject = async (cv: CVTrendScore) => {
+    if (sendingEmail) return;
+    setSendingEmail(cv.cv_id || cv.email);
+    try {
+      const evaluation = getEvaluationForCv(cv.email);
+      const job = jobs.find(j => j._id === evaluation?.job_id);
+      await sendApplicationEmail({
+        email: cv.email,
+        type: 'rejected',
+        applicant_name: cv.email.split('@')[0],
+        job_title: job?.title || 'the position',
+      });
+      setSuccess(`Rejection email sent to ${cv.email}`);
+    } catch (err: any) {
+      setError(err.detail || 'Failed to send rejection email');
+    } finally {
+      setSendingEmail(null);
+      setTimeout(() => setSuccess(null), 3000);
+    }
   };
 
   const filteredResults = getFilteredResults();
@@ -377,18 +412,17 @@ export const AdminScoreViewPage = () => {
       render: (cv: CVTrendScore) => (
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              handleAccept(cv.cv_id);
-              localStorage.setItem("currentEmail", cv.email);
-            }}
-            className="p-1 text-green-600 hover:bg-green-50 rounded-md transition-colors"
+            onClick={() => handleAccept(cv)}
+            disabled={sendingEmail === (cv.cv_id || cv.email)}
+            className="p-1 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Accept"
           >
-            <CheckCircle size={16} />
+            {sendingEmail === (cv.cv_id || cv.email) ? <LoadingSpinner size="sm" /> : <CheckCircle size={16} />}
           </button>
           <button
-            onClick={() => handleReject(cv.cv_id)}
-            className="p-1 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+            onClick={() => handleReject(cv)}
+            disabled={sendingEmail === (cv.cv_id || cv.email)}
+            className="p-1 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Reject"
           >
             <XCircle size={16} />
@@ -422,7 +456,20 @@ export const AdminScoreViewPage = () => {
 
             {/* Filters */}
             <div className="flex  justify-between items-center">
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-center">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search size={14} className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search by email..."
+                    value={emailFilter}
+                    onChange={(e) => setEmailFilter(e.target.value)}
+                    className="pl-9 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+                  />
+                </div>
+
                 <select
                   value={jobFilter}
                   onChange={(e) => setJobFilter(e.target.value)}
@@ -471,30 +518,30 @@ export const AdminScoreViewPage = () => {
               </div>
 
               <div className="flex bg-gray-100 p-1 rounded-md border border-gray-200 w-18">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                title="Grid View"
-              >
-                <LayoutGrid size={18} />
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-md transition-all ${viewMode === 'table'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                title="Table View"
-              >
-                <List size={18} />
-              </button>
-            </div>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'grid'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  title="Grid View"
+                >
+                  <LayoutGrid size={18} />
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'table'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  title="Table View"
+                >
+                  <List size={18} />
+                </button>
+              </div>
             </div>
 
-            
+
           </div>
         </div>
       </div>
@@ -672,17 +719,16 @@ export const AdminScoreViewPage = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex gap-2">
                           <button
-                            onClick={() => {
-                              handleAccept(cv.cv_id);
-                              localStorage.setItem("currentEmail", cv.email);
-                            }}
-                            className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition-colors"
+                            onClick={() => handleAccept(cv)}
+                            disabled={sendingEmail === (cv.cv_id || cv.email)}
+                            className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Accept
+                            {sendingEmail === (cv.cv_id || cv.email) ? 'Sending...' : 'Accept'}
                           </button>
                           <button
-                            onClick={() => handleReject(cv.cv_id)}
-                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md transition-colors"
+                            onClick={() => handleReject(cv)}
+                            disabled={sendingEmail === (cv.cv_id || cv.email)}
+                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Reject
                           </button>

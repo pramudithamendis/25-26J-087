@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from bson import ObjectId
 from datetime import datetime
 from typing import Optional, List
@@ -761,6 +762,53 @@ async def export_evaluations(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error exporting evaluations: {str(e)}"
         )
+
+# --- Email Notification ---
+
+class SendApplicationEmailRequest(BaseModel):
+    email: str
+    type: str  # 'accepted' or 'rejected'
+    applicant_name: str = "Applicant"
+    job_title: str = "the position"
+
+
+@router.post("/send-application-email")
+async def send_application_email(
+    payload: SendApplicationEmailRequest,
+    admin_user=Depends(get_admin_user)
+):
+    """Send acceptance or rejection email to an applicant (admin only)"""
+    try:
+        from app.services.email_service import email_service
+
+        if payload.type == "accepted":
+            result = email_service.send_acceptance_email(
+                to_email=payload.email,
+                applicant_name=payload.applicant_name,
+                job_title=payload.job_title,
+            )
+        elif payload.type == "rejected":
+            result = email_service.send_rejection_email(
+                to_email=payload.email,
+                applicant_name=payload.applicant_name,
+                job_title=payload.job_title,
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email type. Use 'accepted' or 'rejected'."
+            )
+
+        return {"message": f"Email sent successfully to {payload.email}", "detail": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending application email: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error sending email: {str(e)}"
+        )
+
 
 @router.get("/settings", response_model=SystemSettingsResponse)
 async def get_settings(admin_user=Depends(get_admin_user)):

@@ -145,7 +145,7 @@ export const getJobApplicants = async (
     // Merge applications with evaluations
     let applicants: JobApplicantListItem[] = applications.map((app) => {
       const evaluation = app.evaluation_id ? evaluationMap.get(app.evaluation_id) : null;
-      
+
       return {
         application_id: app._id,
         user_id: app.user_id,
@@ -484,6 +484,30 @@ export const listAllCVTrendScores = async (weekId?: string): Promise<CVTrendScor
   } catch (error: any) {
     const apiError: ApiError = {
       detail: error.response?.data?.detail || 'Failed to fetch CV trend scores.',
+      statusCode: error.response?.status,
+    };
+    throw apiError;
+  }
+};
+
+/**
+ * Send application email (accept/reject) to an applicant (admin only)
+ */
+export const sendApplicationEmail = async (data: {
+  email: string;
+  type: 'accepted' | 'rejected';
+  applicant_name?: string;
+  job_title?: string;
+}): Promise<{ message: string; detail: any }> => {
+  try {
+    const response = await apiClient.post<{ message: string; detail: any }>(
+      '/api/admin/send-application-email',
+      data
+    );
+    return response.data;
+  } catch (error: any) {
+    const apiError: ApiError = {
+      detail: error.response?.data?.detail || 'Failed to send application email.',
       statusCode: error.response?.status,
     };
     throw apiError;

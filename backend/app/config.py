@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: str = ""  # Optional
     EVALUATION_QUEUE_NAME: str = "evaluations"
     
+    # Brevo (SendinBlue) Email settings
+    BREVO_API_KEY: str = ""
+    BREVO_SENDER_EMAIL: str = "noreply@yourdomain.com"
+    BREVO_SENDER_NAME: str = "HR Team"
+    
     @property
     def CV_UPLOAD_FOLDER(self) -> str:
         """Get CV upload folder path"""
