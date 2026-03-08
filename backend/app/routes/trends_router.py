@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.auth.dependencies import get_admin_user, get_current_user
 from app.services.goolge_trends_service import fetch_google_trends
 from app.services.trend_calculation_service import calculate_skill_trends
-from app.services.cv_trend_score_service import calculate_all_cv_trend_score, calculate_single_cv_trend_score
+from app.services.cv_trend_score_service import calculate_all_cv_trend_score, calculate_single_cv_trend_score, get_job_applicants_scores
 from app.utils.date_utils import current_week_id
 from app.models.cv_trend_score_model import cv_trend_scores_collection
 
@@ -100,3 +100,8 @@ def calculate_single_cv_trend_score_endpoint(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Trend calculation failed: {str(e)}")
+
+@router.get("/{job_id}/evaluation")
+def job_evaluation(job_id: str, user=Depends(get_current_user)):
+    week_id = current_week_id()
+    return get_job_applicants_scores(job_id, week_id)

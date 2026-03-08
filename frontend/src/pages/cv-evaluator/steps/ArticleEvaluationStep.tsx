@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { AlertCircle, BarChart3, CheckCircle, Loader2, TrendingUp } from "lucide-react";
-import { calculateCVTrendScore, type TrendScoreResult } from "../../../services/trendService";
+import { calculateCVTrendScore, getJobEvaluation, type TrendScoreResult } from "../../../services/trendService";
 import type { CVSubmitResponse } from "../../../types/cv.types";
 
 interface ArticleEvaluationStepProps {
@@ -10,9 +11,11 @@ interface ArticleEvaluationStepProps {
 }
 
 export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEvaluationStepProps) => {
+    const { jobId } = useParams<{ jobId: string }>();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [result, setResult] = useState<TrendScoreResult | null>(null);
+    const [jobStats, setJobStats] = useState<{ average_score: number; applicant_count: number } | null>(null);
 
     const cvId = cvData?.data?.cv_id;
 
@@ -27,6 +30,15 @@ export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEva
         try {
             const data = await calculateCVTrendScore(cvId);
             setResult(data);
+
+            // Fetch job-level stats
+            if (jobId) {
+                const evalData = await getJobEvaluation(jobId);
+                setJobStats({
+                    average_score: evalData.average_score,
+                    applicant_count: evalData.applicant_count,
+                });
+            }
         } catch (err: any) {
             setError(err.message || 'Failed to calculate trend score');
         } finally {
@@ -35,9 +47,7 @@ export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEva
     };
 
     useEffect(() => {
-        if (cvId && !result && !loading) {
-            handleCalculate();
-        }
+        if (cvId && !result && !loading) handleCalculate();
     }, [cvId]);
 
     const getScoreColor = (score: number) => {
@@ -46,9 +56,7 @@ export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEva
         return 'text-red-500';
     };
 
-    const getScoreBarWidth = (score: number) => {
-        return `${Math.min(score * 100, 100)}%`;
-    };
+    const getScoreBarWidth = (score: number) => `${Math.min(score * 100, 100)}%`;
 
     const handleContinue = () => {
         if (onComplete) onComplete();
@@ -73,7 +81,6 @@ export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEva
                 </p>
             </div>
 
-            {/* Loading State */}
             {loading && (
                 <div className="text-center py-12">
                     <Loader2 className="mx-auto h-10 w-10 text-blue-500 animate-spin mb-4" />
@@ -82,7 +89,6 @@ export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEva
                 </div>
             )}
 
-            {/* Error State */}
             {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                     <div className="flex items-center">
@@ -98,32 +104,42 @@ export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEva
                 </div>
             )}
 
-            {/* Results */}
             {result && !loading && (
                 <div className="space-y-6">
                     {/* Overall Score Card */}
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center">
-                                <BarChart3 className="h-6 w-6 text-blue-600 mr-2" />
-                                <h3 className="text-lg font-semibold text-gray-900">Overall Trend Score</h3>
+                            <div className="flex items-center gap-2">
+                                <BarChart3 className="h-6 w-6 text-blue-600" />
+                                <h3 className="text-lg font-semibold text-gray-900">Your Trend Score</h3>
                             </div>
                             <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
                                 Week: {result.week_id}
                             </span>
                         </div>
+
                         <div className="flex items-end gap-3">
                             <span className={`text-4xl font-bold ${getScoreColor(result.cv_trend_score)}`}>
                                 {(result.cv_trend_score * 100).toFixed(1)}%
                             </span>
                             <span className="text-gray-500 text-sm mb-1">trend relevance</span>
                         </div>
-                        <div className="mt-3 bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div className="mt-2 bg-gray-200 rounded-full h-3 overflow-hidden">
                             <div
                                 className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-1000"
                                 style={{ width: getScoreBarWidth(result.cv_trend_score) }}
                             />
                         </div>
+
+                        {/* Job Average */}
+                        {jobStats && (
+                            <p className="mt-2 text-gray-600 text-m">
+                                Average score of applicants for this job ({jobStats.applicant_count} applicants):{" "}
+                                <span className={`font-semibold ${getScoreColor(jobStats.average_score)}`}>
+                                    {(jobStats.average_score * 100).toFixed(1)}%
+                                </span>
+                            </p>
+                        )}
                     </div>
 
                     {/* Matched Skills */}
@@ -142,7 +158,7 @@ export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEva
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {result.skills_matched
-                                    .sort((a, b) => b.score - a.score)
+                                    .sort((a, b) => b.combined_score - a.combined_score)
                                     .map((skill, index) => (
                                         <div
                                             key={index}
@@ -153,11 +169,11 @@ export const ArticleEvaluationStep = ({ cvData, onNext, onComplete }: ArticleEva
                                                 <div className="w-16 bg-gray-200 rounded-full h-2 overflow-hidden">
                                                     <div
                                                         className="h-full bg-green-500 rounded-full"
-                                                        style={{ width: getScoreBarWidth(skill.score) }}
+                                                        style={{ width: getScoreBarWidth(skill.combined_score) }}
                                                     />
                                                 </div>
-                                                <span className={`text-sm font-semibold ${getScoreColor(skill.score)}`}>
-                                                    {(skill.score * 100).toFixed(0)}%
+                                                <span className={`text-sm font-semibold ${getScoreColor(skill.combined_score)}`}>
+                                                    {(skill.combined_score * 100).toFixed(0)}%
                                                 </span>
                                             </div>
                                         </div>
