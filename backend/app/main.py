@@ -20,6 +20,7 @@ from app.routes.turnover_router import router as turnover_router
 from app.routes.geocoding_router import router as geocoding_router
 from app.routes.esco_router import router as esco_router
 from app.routes.locations_router import router as locations_router
+from app.routes.forecast_router import router as forecast_router
 
 import logging
 import time
@@ -126,6 +127,7 @@ app.include_router(turnover_router)
 app.include_router(geocoding_router)
 app.include_router(esco_router)
 app.include_router(locations_router)
+app.include_router(forecast_router)
 
 @app.get("/")
 def root():

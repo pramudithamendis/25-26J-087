@@ -2,6 +2,7 @@
 from datetime import datetime
 from app.models.hirebase_skill_stats_model import hirebase_skill_stats_collection
 from app.models.google_trends_model import google_trends_collection
+from app.services.monthly_retrain_service import predict_future_skills
 from app.models.skill_trend_model import skill_trend_collection
 from app.utils.date_utils import current_week_id, current_month_id
 
@@ -25,7 +26,7 @@ def calculate_skill_trends():
 
     previous_weeks = get_previous_week_ids(week_id,MAX_WEEKS)
 
-    # Get the weekly snapshot
+    # Fetch Data
     job_docs = list(hirebase_skill_stats_collection.find({"week_id":{"$in":previous_weeks}}))
 
     trend_docs = list(google_trends_collection.find({"week_id":{"$in":previous_weeks}}))
@@ -35,12 +36,14 @@ def calculate_skill_trends():
     
     job_map = {}
     
+    # Aggregate job counts
     for doc in job_docs:
         for skill,count in doc.get("skill_counts",{}).items():
             job_map[skill] = job_map.get(skill,0) + count
 
     trend_map = {}
     
+    # Aggregate trend scores
     for doc in trend_docs:
         skill = doc.get("skill")
         score = doc.get("interest_score", 0)
@@ -56,6 +59,9 @@ def calculate_skill_trends():
         job_count = job_map.get(skill,0)
         interest = trend_map.get(skill,0)
 
+        # Forecast with fail-safe (returns 0 if skill not in encoder)
+        forecast_score = predict_future_skills(skill, job_count, interest) or 0.0
+
         # Normalise
         job_norm = job_count / max_job
         trend_norm = interest / max_trend
@@ -69,6 +75,7 @@ def calculate_skill_trends():
             "job_count":job_count,
             "google_interest":interest,
             "trend_score":trend_score,
+            "forecast_score":forecast_score,
             "created_at":datetime.utcnow()
         }
 
