@@ -13,7 +13,6 @@ from app.scheduler import start_scheduler
 from app.routes.questions_router import router as questions_router
 
 from app.routes.admin_router import router as admin_router
-from app.services.model_downloader import ensure_model_files
 from app.services.model_loader import load_model, load_preprocessor
 from app.routes.cv_routes import router as cv_router
 from app.routes.turnover_router import router as turnover_router
@@ -47,7 +46,6 @@ async def lifespan(app: FastAPI):
         from app.database import client
         client.admin.command('ping')
         logger.info("MongoDB connection successful")
-        ensure_model_files()
         load_model()
         load_preprocessor()
     except Exception as e:
