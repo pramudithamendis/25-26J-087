@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.jobs.hirebase_daily_job import hirebase_daily_job
 from app.jobs.weekly_trend_job import weekly_trend_job
+from app.jobs.monthly_retrain_job import monthly_retrain_job
 
 scheduler = BackgroundScheduler()
 
@@ -21,8 +22,17 @@ def start_scheduler():
         weekly_trend_job,
         trigger = "cron",
         day_of_week = "sun",
-        hour = "2",
+        hour = 2,
         id = "weekly_trend",
+        replace_existing = True
+    )
+
+    scheduler.add_job(
+        monthly_retrain_job,
+        trigger = "cron",
+        day = 1,
+        hour = 3,
+        id = "monthly_retrain",
         replace_existing = True
     )
 
