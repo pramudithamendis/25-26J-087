@@ -55,6 +55,19 @@ async def lifespan(app: FastAPI):
         logger.warning("Server will start but database operations may fail")
         logger.warning(f"Model loading failed: {e}")
 
+    #start background scheduler
+    start_scheduler()
+    
+    #pre-load ML models
+    try:
+        from app.services.model_loader import get_model
+        from app.services.turnover_service import get_shap_explainer
+        get_model()
+        get_shap_explainer()
+        logger.info("Models pre-loaded successfully")
+    except Exception as e:
+        logger.warning(f"Could not pre-load models: {e}")
+
     yield
 
     # Shutdown
@@ -156,18 +169,3 @@ def health_check():
     }
 
 
-@app.on_event("startup")
-def startup_event():
-    start_scheduler()
-
-@app.on_event("startup")
-async def startup_event():
-    from app.services.model_loader import get_model
-    from app.services.turnover_service import get_shap_explainer
-    
-    try:
-        get_model()
-        get_shap_explainer()
-        print("Models pre-loaded successfully")
-    except Exception as e:
-        print(f"Warning: Could not pre-load models: {e}")
