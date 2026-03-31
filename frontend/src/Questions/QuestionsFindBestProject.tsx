@@ -5,6 +5,7 @@ interface Project {
   readme: string;
   github_url: string;
   score: number;
+  user: string;
 }
 
 interface MatchResponse {
@@ -108,6 +109,7 @@ const QuestionsFindBestProject: React.FC = () => {
       try {
         const data: MatchResponse = JSON.parse(text);
         setResult(data);
+        console.log(data);
       } catch (parseError) {
         console.error("JSON Parse Error:", parseError, "Response text:", text);
         throw new Error(`Invalid JSON response from server. Response: ${text.substring(0, 200)}...`);
@@ -177,7 +179,8 @@ const QuestionsFindBestProject: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-800 mb-4">Best Project</h2>
 
               <div className="border border-gray-200 rounded-xl p-6 shadow-sm bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{result.best_project.repo}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Username: {result.best_project.github_url.split("/").at(-2)}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Repo    : {result.best_project.repo}</h3>  
 
                 <p className="text-gray-700 mb-4 whitespace-pre-wrap">{result.best_project.readme}</p>
 

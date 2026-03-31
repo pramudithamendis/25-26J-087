@@ -15,6 +15,7 @@ import ollama
 from app.models.questions_model import questions_collection
 from app.models.questions_readme_model import questions_readme_collection
 from app.models.cv_model import cv_collection
+from app.models.evaluation_model import evaluations_collection
 from app.schemas.questions_schema import QuestionCreate, QuestionResponse
 from app.schemas.questions_cloneRepo import CloneRequest
 
@@ -64,6 +65,70 @@ async def fetch_readme(user: str, repo: str):
     return response.text
 
 
+# @router.post("/extract-github-readme")
+# async def extract_github_and_store(user=Depends(get_current_user), file: UploadFile = File(...)):
+#     """
+#     Extract GitHub links from PDF, fetch README content, and store in MongoDB.
+#     """
+#     try:
+#         pdf_stream = io.BytesIO(await file.read())
+#         reader = PyPDF2.PdfReader(pdf_stream)
+#         github_links = []
+
+#         github_pattern = r'(?:https?://)?(?:www\.)?github\.com/[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)?'
+
+#         # Extract links from text and annotations
+#         for page in reader.pages:
+#             text = page.extract_text() or ""
+#             github_links += re.findall(github_pattern, text, re.IGNORECASE)
+
+#             if "/Annots" in page:
+#                 for annot in page["/Annots"]:
+#                     obj = annot.get_object()
+#                     if obj.get("/A") and obj["/A"].get("/URI"):
+#                         url = obj["/A"]["/URI"]
+#                         if re.match(github_pattern, url, re.IGNORECASE):
+#                             github_links.append(url)
+
+#         clean_links = []
+#         for link in github_links:
+#             link = link.rstrip('/.')
+#             if not link.startswith("http"):
+#                 link = "https://" + link
+#             if link not in clean_links:
+#                 clean_links.append(link)
+
+#         if not clean_links:
+#             return {"message": "No GitHub links found in the PDF."}
+
+#         # Fetch README and store in MongoDB
+#         stored_repos = []
+#         for link in clean_links:
+#             parts = link.replace("https://github.com/", "").split("/")
+#             if len(parts) < 2:
+#                 continue
+#             user, repo = parts[0], parts[1]
+#             readme_content = await fetch_readme(user, repo)
+#             if readme_content:
+#                 doc = {
+#                     "user": user,
+#                     "repo": repo,
+#                     "github_url": link,
+#                     "readme": readme_content
+#                 }
+#                 questions_readme_collection.insert_one(doc)
+#                 stored_repos.append(link)
+
+#         return {
+#             "message": f"Stored README content for {len(stored_repos)} repositories",
+#             "repos_stored": stored_repos
+#         }
+
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Error extracting GitHub links or storing README: {str(e)}"
+#         )
 @router.post("/extract-github-readme")
 async def extract_github_and_store(user=Depends(get_current_user), file: UploadFile = File(...)):
     """
@@ -99,25 +164,57 @@ async def extract_github_and_store(user=Depends(get_current_user), file: UploadF
 
         if not clean_links:
             return {"message": "No GitHub links found in the PDF."}
-
+        print("clean_links", clean_links)
+        currentUser = ""
         # Fetch README and store in MongoDB
         stored_repos = []
-        for link in clean_links:
+        for link in clean_links[:1]:
             parts = link.replace("https://github.com/", "").split("/")
             if len(parts) < 2:
                 continue
             user, repo = parts[0], parts[1]
+            print(repo)
+            currentUser = user
+            # readme_content = "await fetch_readme(user, repo)"
+            # if readme_content:
+            #     doc = {
+            #         "user": user,
+            #         "repo": repo,
+            #         "github_url": link,
+            #         "readme": readme_content
+            #     }
+            #     questions_readme_collection.insert_one(doc)
+            #     stored_repos.append(link)
+        print("stored_repos", stored_repos)
+        print("currentUserrr0", currentUser)
+        doc = evaluations_collection.find_one({"pipeline_output.candidate.cv_data.github_handle": currentUser})
+        print("currentUserrr1", currentUser)
+
+        repos = doc["pipeline_output"]["candidate"]["github"]["repos"]
+        print("currentUserrr2", currentUser)
+
+        repo_links = [repo["url"] for repo in repos]
+
+        print("repo_links", repo_links[:6])
+        
+        for link in repo_links[:3]:
+            parts = link.replace("https://github.com/", "").split("/")
+            if len(parts) < 2:
+                continue
+            user, repo = parts[0], parts[1]
+            print(repo)
+            # currentUser = user
             readme_content = await fetch_readme(user, repo)
             if readme_content:
                 doc = {
-                    "user": user,
+                    "user": currentUser,
                     "repo": repo,
                     "github_url": link,
                     "readme": readme_content
                 }
                 questions_readme_collection.insert_one(doc)
-                stored_repos.append(link)
-
+                stored_repos.append(link)        
+            
         return {
             "message": f"Stored README content for {len(stored_repos)} repositories",
             "repos_stored": stored_repos
@@ -128,6 +225,7 @@ async def extract_github_and_store(user=Depends(get_current_user), file: UploadF
             status_code=500,
             detail=f"Error extracting GitHub links or storing README: {str(e)}"
         )
+
                 
 GITHUB_API = "https://api.github.com/repos"
 
@@ -192,7 +290,8 @@ async def match_project(payload: dict,user=Depends(get_current_user)):
             "repo": best_project["repo"],
             "readme": best_project["readme"],
             "github_url": best_project["github_url"],
-            "score": round(best_score, 4)
+            "score": round(best_score, 4),
+            "user": username
         },
         "ranking": ranking_sorted
     }
