@@ -24,7 +24,6 @@ export const useTurnoverPrediction = (): UseTurnoverPredictionReturn => {
   const [status, setStatus] = useState<PredictionStatus>(PREDICTION_STATUS.IDLE);
 
   const predict = async (data: TurnoverPredictionRequest) => {
-    // Validate job description
     const validation = validateJobDescription(data.job_description);
     if (!validation.valid) {
       setError(validation.error || 'Invalid job description');
@@ -42,11 +41,10 @@ export const useTurnoverPrediction = (): UseTurnoverPredictionReturn => {
       setStatus(PREDICTION_STATUS.SUCCESS);
     } catch (err: any) {
       let errorMessage = 'Failed to predict turnover risk';
-      
+
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
         if (Array.isArray(detail)) {
-          // 422 validation error - extract messages
           errorMessage = detail.map((e: any) => e.msg).join(', ');
         } else {
           errorMessage = detail;
@@ -54,10 +52,10 @@ export const useTurnoverPrediction = (): UseTurnoverPredictionReturn => {
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
       setStatus(PREDICTION_STATUS.ERROR);
-    }finally {
+    } finally {
       setLoading(false);
     }
   };

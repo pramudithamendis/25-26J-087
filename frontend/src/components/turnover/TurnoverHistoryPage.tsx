@@ -66,6 +66,7 @@ const TurnoverHistoryPage: React.FC = () => {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     try {
+      // Append 'Z' if no timezone offset is present - backend returns naive UTC timestamps
       const normalized = dateStr.endsWith('Z') || dateStr.includes('+')
         ? dateStr
         : dateStr + 'Z';
@@ -114,15 +115,15 @@ const TurnoverHistoryPage: React.FC = () => {
           <div className="th-stat-value">{stats.total}</div>
         </div>
         <div className="th-stat-card high-risk">
-          <div className="th-stat-label">High Risk</div>
+          <div className="th-stat-label">High Early Attrition Risk</div>
           <div className="th-stat-value">{stats.high_risk}</div>
         </div>
         <div className="th-stat-card medium-risk">
-          <div className="th-stat-label">Medium Risk</div>
+          <div className="th-stat-label">Moderate Early Attrition Risk</div>
           <div className="th-stat-value">{stats.medium_risk}</div>
         </div>
         <div className="th-stat-card low-risk">
-          <div className="th-stat-label">Low Risk</div>
+          <div className="th-stat-label">Low Early Attrition Risk</div>
           <div className="th-stat-value">{stats.low_risk}</div>
         </div>
       </div>
@@ -134,9 +135,9 @@ const TurnoverHistoryPage: React.FC = () => {
             <label>Filter by Risk</label>
             <select value={filterRisk} onChange={e => setFilterRisk(e.target.value)}>
               <option value="all">All Risk Levels</option>
-              <option value="0">High Risk</option>
-              <option value="1">Medium Risk</option>
-              <option value="2">Low Risk</option>
+              <option value="0">High Early Attrition Risk</option>
+              <option value="1">Moderate Early Attrition Risk</option>
+              <option value="2">Low Early Attrition Risk</option>
             </select>
           </div>
           <div className="th-filter-group">

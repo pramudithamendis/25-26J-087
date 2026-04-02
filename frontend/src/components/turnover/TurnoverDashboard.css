@@ -1,13 +1,12 @@
 .turnover-dashboard {
   min-height: 100vh;
   background: #f8fafc;
-  /* padding: 2rem 1rem; */
 }
 
 .dashboard-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;  /* ← add this */
+  justify-content: space-between;
   margin-bottom: 1.5rem;
 }
 

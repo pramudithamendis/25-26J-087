@@ -89,11 +89,7 @@
   color: #6b7280;
 }
 
-.positive-icon {
-  width: 20px;
-  height: 20px;
-}
-
+.positive-icon,
 .negative-icon {
   width: 20px;
   height: 20px;

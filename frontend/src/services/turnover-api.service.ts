@@ -6,13 +6,6 @@ import type {
   TurnoverHealthResponse
 } from '../types/turnover.types';
 
-// ============================================================
-// TURNOVER PREDICTION ENDPOINTS
-// ============================================================
-
-/**
- * Predict turnover risk for a candidate
- */
 export const predictTurnover = async (
   data: TurnoverPredictionRequest
 ): Promise<TurnoverPredictionResponse> => {
@@ -38,14 +31,11 @@ export const predictTurnover = async (
   } catch (error: any) {
     throw new Error(
       error.response?.data?.detail ||
-      'Failed to predict turnover risk'
+      'Failed to predict early attrition risk'
     );
   }
 };
 
-/**
- * Check if turnover prediction model is loaded
- */
 export const checkTurnoverHealth = async (): Promise<TurnoverHealthResponse> => {
   try {
     const response = await apiClient.get<TurnoverHealthResponse>('/turnover/health');
@@ -58,32 +48,19 @@ export const checkTurnoverHealth = async (): Promise<TurnoverHealthResponse> => 
   }
 };
 
-// ============================================================
-// HELPER FUNCTIONS
-// ============================================================
-
-/**
- * Format prediction confidence as percentage
- */
 export const formatConfidence = (confidence: number): string => {
   return `${(confidence * 100).toFixed(1)}%`;
 };
 
-/**
- * Get risk level text from numeric value
- */
 export const getRiskLevelText = (riskLevel: number): string => {
   const labels = {
-    0: 'High Risk',
-    1: 'Medium Risk',
-    2: 'Low Risk'
+    0: 'High Early Attrition Risk',
+    1: 'Moderate Early Attrition Risk',
+    2: 'Low Early Attrition Risk'
   };
   return labels[riskLevel as keyof typeof labels] || 'Unknown';
 };
 
-/**
- * Validate job description length
- */
 export const validateJobDescription = (description: string): {
   valid: boolean;
   error?: string
