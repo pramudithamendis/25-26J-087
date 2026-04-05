@@ -30,7 +30,6 @@ import HiringTimelinePredictor from "./Questions/HiringTimelinePredictor";
 
 import './App.css';
 
-import CVUpload from './components/cv/CVUpload';
 import TurnoverHistoryPage from './components/turnover/TurnoverHistoryPage';
 import TurnoverResultsView from './components/turnover/TurnoverResultsView';
 import TurnoverNewPrediction from './components/turnover/TurnoverNewPrediction';
@@ -214,16 +213,6 @@ function App() {
               <ProtectedRoute>
                 <Navigate to="/dashboard" replace />
               </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/admin/cv-upload"
-            element={
-              <AdminRoute>
-                <DashboardLayout>
-                  <CVUpload />
-                </DashboardLayout>
-              </AdminRoute>
             }
           />
           <Route
