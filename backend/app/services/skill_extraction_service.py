@@ -2,7 +2,9 @@
 
 from typing import Dict, Set
 from app.models.article_model import articles_collection
-from app.ml_models.hybrid_extractor import hybrid_detect
+import requests
+
+NER_SERVICE_URL = "http://localhost:8000/extract"
 
 def extract_skills_from_articles() -> Dict:
     """
@@ -22,7 +24,13 @@ def extract_skills_from_articles() -> Dict:
 
         # Run hybrid skill extraction
         try:
-            skills = hybrid_detect(text_to_analyze)
+            response = requests.post(
+                NER_SERVICE_URL,
+                json={"text": text_to_analyze},
+                timeout=10
+            )
+            response.raise_for_status() 
+            skills = response.json().get("skills", [])
         except Exception as e:
             print(f"[WARN] Skill extraction failed for article {article['_id']}: {e}")
             continue

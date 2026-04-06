@@ -71,3 +71,6 @@ Datasetmy/.cache/
 
 notebooks/fair-prehire-attrition-prediction/models/*.joblib
 notebooks/fair-prehire-attrition-prediction/models/*.pkl
+
+ml-service/*/models/
+ml-service/*/model/
