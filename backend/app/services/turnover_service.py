@@ -6,15 +6,69 @@ import pandas as pd
 from app.database import cv_collection, turnover_collection
 from datetime import datetime
 from app.services.feature_engineering import create_feature_vector_from_mongo
-from app.services.model_loader import predict_with_model, get_model
 from app.services.fairness_utils import extract_fairness_metadata, get_fairness_context
 import time
 from app.services.feature_engineering import extract_location_from_jd_enhanced
-import threading
+import httpx
 
-_shap_lock = threading.Lock()
-_shap_explainer = None
-_shap_model = None
+# Modified
+# ML Microservice connection
+ML_SERVICE_URL = "http://localhost:8001"
+ML_PREDICT_URL = f"{ML_SERVICE_URL}/predict"
+ML_SHAP_URL    = f"{ML_SERVICE_URL}/shap"
+
+# Modified
+def _sync_predict(features: Dict[str, float]) -> tuple:
+    """
+    Synchronous HTTP call to the prehire-attrition ML microservice.
+    Used for counterfactual generation (synchronous context).
+    Returns (predicted_class: int, probabilities: np.ndarray)
+    """
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(ML_PREDICT_URL, json={"features": features})
+            response.raise_for_status()
+            data = response.json()
+        if data.get("status") == "error":
+            raise RuntimeError(f"ML service error: {data.get('message')}")
+        return int(data["prediction"]), np.array(data["probability"], dtype=float)
+    except httpx.ConnectError:
+        raise RuntimeError(
+            f"Prehire-attrition ML service unreachable at {ML_SERVICE_URL}. "
+            "Make sure it is running: uvicorn main:app --port 8001"
+        )
+        
+# Modified
+async def _async_predict(features: Dict[str, float]) -> tuple:
+    """
+    Async HTTP call to the prehire-attrition ML microservice.
+    Used in the main async prediction pipeline.
+    Returns (predicted_class: int, probabilities: np.ndarray)
+    """
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(ML_PREDICT_URL, json={"features": features})
+            response.raise_for_status()
+            data = response.json()
+        if data.get("status") == "error":
+            raise RuntimeError(f"ML service error: {data.get('message')}")
+        return int(data["prediction"]), np.array(data["probability"], dtype=float)
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Prehire-attrition ML service is unreachable at {ML_SERVICE_URL}. "
+                "Make sure it is running: uvicorn main:app --port 8001"
+            ),
+        )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="ML service request timed out after 30s.")
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=exc.response.status_code,
+            detail=f"ML service returned HTTP {exc.response.status_code}: {exc.response.text}",
+        )
+
 
 RISK_LABELS = {
     0: "High Risk (leaves within 6 months)",
@@ -56,9 +110,9 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
             job_title=job_title 
         )
         
-        # Step 3: Predict using model
-        predicted_class, probabilities = predict_with_model(features)
-        model = get_model()
+        # Step 3: Predict via prehire-attrition ML microservice
+        # Modified
+        predicted_class, probabilities = await _async_predict(features)
 
         # Soft-clamp probabilities so UI never shows exactly 0% or 100%
         probabilities = np.clip(probabilities, 0.02, 0.96)
@@ -79,14 +133,9 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
                 probabilities = np.array([0.80, 0.15, 0.05])
                 overqualification_override = True
         
-        # Step 4: Generate SHAP explanations (with hard timeout)
-        shap_start = time.time()
-        shap_explanation = generate_shap_explanation_safe(features, predicted_class, timeout_seconds=8)
-        shap_elapsed = time.time() - shap_start
-
-        if shap_elapsed > 8.0:
-            print(f"   SHAP generation exceeded timeout ({shap_elapsed:.2f}s)")
-            shap_explanation = get_empty_shap_explanation()
+        # Step 4: Generate SHAP explanations (delegated to ML microservice, 8s timeout)
+        #Modified
+        shap_explanation = await generate_shap_explanation_safe(features, predicted_class, timeout_seconds=8)
         
         # Step 5: Identify risk factors
         if shap_explanation and shap_explanation.get('top_features'):
@@ -111,11 +160,13 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
         if shap_explanation and shap_explanation.get('top_features'):
             print("Generating SHAP-guided counterfactuals")
             counterfactuals = generate_shap_counterfactuals(
-                features, predicted_class, probabilities, model, shap_explanation
+            #Modified
+                features, predicted_class, probabilities, shap_explanation
             )
         else:
             print("Generating simple counterfactuals")
-            counterfactuals = generate_counterfactuals(features, predicted_class, probabilities, model)
+            #Modified
+            counterfactuals = generate_counterfactuals(features, predicted_class, probabilities)
         
         # Handle empty counterfactuals for low-risk candidates
         if not counterfactuals and predicted_class == 2:
@@ -222,55 +273,35 @@ async def predict_turnover_from_cv_id(cv_id: str, job_description: str, job_loca
             "details": traceback.format_exc(),
             "prediction": None
         }
-
-def get_shap_explainer():
-    global _shap_explainer, _shap_model
-    if _shap_explainer is None:
-        from app.services.model_loader import get_model_for_shap
-        import shap
-        _shap_model = get_model_for_shap()
-        clf = _shap_model.named_steps.get('clf') if hasattr(_shap_model, 'named_steps') else _shap_model
-        _shap_explainer = shap.TreeExplainer(clf)
-        print("SHAP explainer cached")
-    return _shap_explainer
-
-def generate_shap_explanation_safe(features: Dict[str, float], predicted_class: int, timeout_seconds: int = 8) -> Dict[str, Any]:
-    
-    print("   Waiting for SHAP lock...")
-    lock_acquired = _shap_lock.acquire(blocking=True, timeout=25)
-    
-    if not lock_acquired:
-        print("   Could not acquire SHAP lock after 25s - using rule-based")
-        return get_empty_shap_explanation()
-    
+#Modified
+async def generate_shap_explanation_safe(
+    features: Dict[str, float], predicted_class: int, timeout_seconds: int = 8
+) -> Dict[str, Any]:
+    """
+    Request SHAP explanation from the ML microservice.
+    Falls back to empty explanation on timeout or error.
+    """
     try:
-        result = {'explanation': None, 'error': None, 'completed': False}
-        
-        def generate_with_timeout():
-            try:
-                import shap
-                explanation = generate_shap_explanation_internal(features, None, predicted_class)
-                result['explanation'] = explanation
-                result['completed'] = True
-            except Exception as e:
-                result['error'] = str(e)
-                result['completed'] = True
-        
-        thread = threading.Thread(target=generate_with_timeout, daemon=True)
-        thread.start()
-        thread.join(timeout=timeout_seconds)
-        
-        if thread.is_alive():
-            print(f"   SHAP timed out after {timeout_seconds}s")
+        async with httpx.AsyncClient(timeout=float(timeout_seconds)) as client:
+            response = await client.post(
+                ML_SHAP_URL,
+                json={"features": features, "predicted_class": predicted_class},
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        if data.get("status") == "error":
+            print(f"   SHAP service error: {data.get('message')}")
             return get_empty_shap_explanation()
-        
-        if result['explanation']:
-            return result['explanation']
-            
+
+        return data
+
+    except httpx.TimeoutException:
+        print(f"   SHAP request timed out after {timeout_seconds}s - using rule-based")
         return get_empty_shap_explanation()
-        
-    finally:
-        _shap_lock.release()
+    except Exception as e:
+        print(f"   SHAP request failed: {e} - using rule-based")
+        return get_empty_shap_explanation()
 
 
 def get_empty_shap_explanation() -> Dict[str, Any]:
@@ -623,12 +654,12 @@ def identify_risk_factors_shap(features: Dict[str, float], shap_explanation: Dic
     return risk_factors
 
 
-def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities: np.ndarray, model, shap_explanation: Dict) -> List[Dict]:
+def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities: np.ndarray, shap_explanation: Dict) -> List[Dict]:
     """Generate personalized counterfactuals based on top SHAP features"""
     counterfactuals = []
     
     if not shap_explanation or not shap_explanation.get('top_features'):
-        return generate_counterfactuals(features, prediction, probabilities, model)
+        return generate_counterfactuals(features, prediction, probabilities)
     
     risk_features = [f for f in shap_explanation['top_features'][:5] 
                      if f['impact'] == 'increases_risk'][:3]
@@ -661,8 +692,8 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
         modified_features[feature_name] = new_value
         
         try:
-            new_pred, new_proba = predict_with_model(modified_features)
-            
+            new_pred, new_proba = _sync_predict(modified_features)
+
             if new_pred > prediction:
                 counterfactuals.append({
                     "scenario": f"If candidate {description}",
@@ -681,7 +712,7 @@ def generate_shap_counterfactuals(features: Dict, prediction: int, probabilities
     return counterfactuals[:3]
 
 
-def generate_counterfactuals(features: Dict, prediction: int, probabilities: np.ndarray, model) -> List[Dict]:
+def generate_counterfactuals(features: Dict, prediction: int, probabilities: np.ndarray) -> List[Dict]:
     """Generate simple counterfactual scenarios"""
     counterfactuals = []
     
@@ -696,8 +727,8 @@ def generate_counterfactuals(features: Dict, prediction: int, probabilities: np.
         modified_features[feature_name] = new_value
         
         try:
-            new_pred, new_proba = predict_with_model(modified_features)
-            
+            new_pred, new_proba = _sync_predict(modified_features)
+
             if new_pred > prediction:
                 counterfactuals.append({
                     "scenario": f"If candidate {description}",

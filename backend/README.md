@@ -337,10 +337,6 @@ pip freeze > backend\requirements.txt
 - Use Pydantic schemas for validation
 - Keep business logic in services, not in route handlers
 
-# ML-services 
-```bash
-docker run -it --rm -p 8000:8000 ner-service
-```
 
 ## License
 

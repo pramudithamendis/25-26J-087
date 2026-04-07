@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Form, Depends, HTTPException
 from app.auth.dependencies import get_current_user
 from app.services.turnover_service import predict_turnover_from_cv_id
+import httpx
+
+ML_SERVICE_URL = "http://ml-service:8001"
 
 router = APIRouter(prefix="/turnover", tags=["Turnover Prediction"])
 
@@ -34,18 +37,19 @@ async def predict_turnover_api(
 @router.get("/health")
 async def health_check():
     """Check if model is loaded"""
-    from app.services.model_loader import get_model
-    
-    try:
-        model = get_model()
-        return {
-            "status": "healthy",
-            "model_loaded": model is not None,
-            "message": "Turnover prediction service is operational",
-            "explainability": "SHAP-based explanations enabled"
-        }
-    except Exception as e:
-        raise HTTPException(500, f"Model not loaded: {str(e)}")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{ML_SERVICE_URL}/health")
+            response.raise_for_status()
+            ml_status = response.json()
+            return {
+                "status": "healthy" if ml_status.get("model_loaded") else "unhealthy",
+                "ml_service_status": ml_status,
+                "message": "Turnover prediction service is operational",
+                "explainability": "SHAP-based explanations enabled"
+            }
+        except Exception as e:
+            raise HTTPException(500, f"ML service health check failed: {str(e)}")
 
 
 @router.post("/explain")
