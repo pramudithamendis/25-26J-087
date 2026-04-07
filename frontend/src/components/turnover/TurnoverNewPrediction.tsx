@@ -17,6 +17,7 @@ interface Job {
   title: string;
   jd_text: string;
   created_at: string;
+  location?: string;
 }
 
 const isRemoteJob = (title: string) =>
@@ -50,6 +51,8 @@ const TurnoverNewPrediction: React.FC = () => {
     if (selectedJob) {
       if (isRemoteJob(selectedJob.title)) {
         setJobLocation('Remote');
+      } else if (selectedJob.location) {
+        setJobLocation(selectedJob.location);
       } else {
         setJobLocation('');
       }
@@ -193,7 +196,7 @@ const TurnoverNewPrediction: React.FC = () => {
 
       {error && <div className="tnp-error">{error}</div>}
 
-      {/* Step 1 — Select Candidate */}
+      {/* Step 1 - Select Candidate */}
       {step === 1 && (
         <div className="tnp-card">
           <div className="tnp-card-title">
@@ -236,7 +239,7 @@ const TurnoverNewPrediction: React.FC = () => {
         </div>
       )}
 
-      {/* Step 2 — Select Job */}
+      {/* Step 2 - Select Job */}
       {step === 2 && (
         <div className="tnp-card">
           <div className="tnp-card-nav">
@@ -288,7 +291,7 @@ const TurnoverNewPrediction: React.FC = () => {
         </div>
       )}
 
-      {/* Step 3 — Confirm & Assess */}
+      {/* Step 3 - Confirm & Assess */}
       {step === 3 && (
         <div className="tnp-card">
           <div className="tnp-card-nav">

@@ -523,10 +523,10 @@ export const AdminScoreViewPage = () => {
                   onChange={(e) => setAttritionFilter(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm min-w-[150px]"
                 >
-                  <option value="">All Attrition Risks</option>
-                  <option value="2">Low Risk</option>
-                  <option value="1">Medium Risk</option>
-                  <option value="0">High Risk</option>
+                  <option value="">All Early Attrition Risks</option>
+                  <option value="2">Low Early Attrition Risk</option>
+                  <option value="1">Moderate Early Attrition Risk</option>
+                  <option value="0">High Early Attrition Risk</option>
                 </select>
               </div>
 

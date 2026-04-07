@@ -8,8 +8,8 @@ export interface TurnoverPredictionResponse {
   status: string;
   cv_id: string;
   cv_name: string;
-  job_description?: string; 
-  job_location?: string;  
+  job_description?: string;
+  job_location?: string;
   prediction: {
     risk_level: number; // 0 = High, 1 = Medium, 2 = Low
     risk_label: string;
@@ -31,7 +31,7 @@ export interface TurnoverPredictionResponse {
     total_experience: number;
     avg_tenure_months: number;
   };
-  shap_explanation: SHAPExplanation | null; 
+  shap_explanation: SHAPExplanation | null;
   risk_factors: RiskFactor[];
   counterfactuals: Counterfactual[];
 }

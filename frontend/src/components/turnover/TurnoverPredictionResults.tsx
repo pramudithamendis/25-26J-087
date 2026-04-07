@@ -42,7 +42,7 @@ const getRecommendation = (riskLevel: number) => {
     description: "This candidate has some concerns but could be a good fit. Consider discussing career goals, work environment expectations, and long-term plans during interview.",
   };
   return {
-    title: "High Risk - Careful Evaluation Needed",
+    title: "High Early Attrition Risk - Careful Evaluation Needed",
     description: "This candidate shows warning signs for early departure. If proceeding, have frank discussions about expectations, provide strong onboarding support, and ensure competitive compensation.",
   };
 };
@@ -103,9 +103,6 @@ const TurnoverPredictionResults: React.FC<TurnoverPredictionResultsProps> = ({ p
             <p>{recommendation.description}</p>
           </div>
         </div>
-
-        {/* Probability Breakdown */}
-        
       </div>
 
       {/* Strengths & Concerns */}

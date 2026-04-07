@@ -27,7 +27,7 @@ type TabState =
   | 'predicting'
   | 'error';
 
-const TEST_CV_ID_OVERRIDE: string | null = null;
+const DISQUALIFIED_DECISIONS = ['Not Selected', 'Do Not Proceed'];
 
 const isRemoteJob = (title: string) => title.toLowerCase().includes('remote');
 
@@ -36,7 +36,7 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
   jobId,
   jobDescription,
   jobTitle,
-  jobLocation, 
+  jobLocation,
   evaluationDecision,
 }) => {
   const [tabState, setTabState] = useState<TabState>('loading');
@@ -48,7 +48,6 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
 
   const remote = isRemoteJob(jobTitle);
 
-  // Auto-fill location if remote
   useEffect(() => {
     if (remote) setSelectedLocation('Remote');
     else if (jobLocation) setSelectedLocation(jobLocation);
@@ -74,22 +73,8 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       setTabState('loading');
       setError(null);
 
-      if (evaluationDecision === 'Not Selected' || evaluationDecision === 'Do Not Proceed') {
+      if (DISQUALIFIED_DECISIONS.includes(evaluationDecision ?? '')) {
         setTabState('not_proceeded');
-        return;
-      }
-
-      if (TEST_CV_ID_OVERRIDE) {
-        setCvId(TEST_CV_ID_OVERRIDE);
-        const resultRes = await apiClient.get(
-          `/turnover/result-by-job?cv_id=${TEST_CV_ID_OVERRIDE}&job_id=${jobId}`
-        );
-        if (resultRes.data.status === 'found' && resultRes.data.result) {
-          setPrediction(resultRes.data.result);
-          setTabState('has_prediction');
-        } else {
-          setTabState('no_prediction');
-        }
         return;
       }
 
@@ -152,8 +137,6 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
       setTabState('no_prediction');
     }
   };
-
-  // ── Render states ──
 
   if (tabState === 'loading') {
     return (
@@ -300,7 +283,6 @@ const TurnoverRiskTab: React.FC<TurnoverRiskTabProps> = ({
   return null;
 };
 
-// ── Error Boundary ──
 class TurnoverRiskTabErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; errorMsg: string }

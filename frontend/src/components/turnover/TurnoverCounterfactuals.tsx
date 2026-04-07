@@ -24,7 +24,7 @@ const TurnoverCounterfactuals: React.FC<TurnoverCounterfactualsProps> = ({
           
         <p>
           These scenarios show how specific improvements in the candidate's profile 
-          could change the turnover risk.
+          could change the early attrition risk.
         </p>
         </div>
       </div>
@@ -63,8 +63,6 @@ const TurnoverCounterfactuals: React.FC<TurnoverCounterfactualsProps> = ({
           </div>
         ))}
       </div>
-
-      
     </div>
   );
 };

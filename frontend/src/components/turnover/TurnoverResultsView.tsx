@@ -41,9 +41,9 @@ const TurnoverResultsView: React.FC = () => {
       setPrediction(response.data);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
-        setError('No turnover assessment found for this candidate. Please make a new assessment.');
+        setError('No early attrition risk assessment found for this candidate. Please make a new assessment.');
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to load turnover assessment');
+        setError(err instanceof Error ? err.message : 'Failed to load early attrition risk assessment');
       }
     } finally {
       setLoading(false);
@@ -65,7 +65,7 @@ const TurnoverResultsView: React.FC = () => {
           <div className="loading-container">
             <div className="loading-card">
               <div className="loading-spinner"></div>
-              <h2>Loading turnover assessment...</h2>
+              <h2>Loading early attrition risk assessment...</h2>
               <p>Retrieving stored results</p>
             </div>
           </div>
@@ -97,20 +97,17 @@ const TurnoverResultsView: React.FC = () => {
   return (
     <div className="turnover-dashboard">
       <div className="dashboard-header">
-      <Button variant="outline" onClick={handleBackToHistory}>
-        <ArrowLeft size={16} />
-        Back to History
-      </Button>
-      
-      <Button variant="primary" onClick={handleNewPrediction}>
-        New Assessment
-      </Button>
-      
-    </div>
+        <Button variant="outline" onClick={handleBackToHistory}>
+          <ArrowLeft size={16} />
+          Back to History
+        </Button>
+        <Button variant="primary" onClick={handleNewPrediction}>
+          New Assessment
+        </Button>
+      </div>
 
       <div className="dashboard-content">
-      <h1>Early Attrition Risk Assessment</h1>
-        {/* Job Details Section */}
+        <h1>Early Attrition Risk Assessment</h1>
         {(prediction.job_description || prediction.job_location) && (
           <div className="shap-explanation-card" style={{ marginBottom: '1rem' }}>
             <div
@@ -162,7 +159,6 @@ const TurnoverResultsView: React.FC = () => {
         <TurnoverSHAPExplanation shapExplanation={prediction.shap_explanation} />
         <TurnoverRiskFactors riskFactors={prediction.risk_factors} />
         <TurnoverCounterfactuals counterfactuals={prediction.counterfactuals} />
-
       </div>
     </div>
   );

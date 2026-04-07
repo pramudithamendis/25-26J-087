@@ -36,7 +36,6 @@
   font-size: 1.25rem;
   color: #111827;
   font-weight: 600;
-  /* flex: 1; */
 }
 
 .candidate-name {
@@ -46,7 +45,7 @@
 }
 
 .candidate-details {
-  flex: 1;  /* ← pushes badge to far right */
+  flex: 1;
 }
 
 /* Risk badge in header */

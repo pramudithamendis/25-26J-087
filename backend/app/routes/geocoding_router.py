@@ -17,7 +17,7 @@ async def test_geocoding_api():
             "message": "GEOCODING_API_KEY not set in .env file",
             "instructions": [
                 "1. Get API key from: https://geocode.maps.co/",
-                "2. Add to .env: GEOCODING_API_KEY=your_key_here",
+                "2. Add to .env: GEOCODING_API_KEY=key",
                 "3. Restart server"
             ]
         }

@@ -23,10 +23,9 @@ interface TurnoverSHAPExplanationProps {
   shapExplanation: SHAPExplanation | null;
 }
 
-// Human-readable feature names and explanations
-const FEATURE_EXPLANATIONS: Record<string, { 
-  label: string; 
-  increasesRisk: string; 
+const FEATURE_EXPLANATIONS: Record<string, {
+  label: string;
+  increasesRisk: string;
   decreasesRisk: string;
 }> = {
   'job_hopping_rate': {
@@ -108,11 +107,11 @@ const FEATURE_EXPLANATIONS: Record<string, {
 
 const getFeatureExplanation = (feature: SHAPFeature): { label: string; explanation: string } => {
   const config = FEATURE_EXPLANATIONS[feature.feature];
-  
+
   if (!config) {
     return {
       label: feature.feature.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-      explanation: feature.impact === 'increases_risk' 
+      explanation: feature.impact === 'increases_risk'
         ? 'This factor increases the risk'
         : 'This factor decreases the risk'
     };
@@ -120,8 +119,8 @@ const getFeatureExplanation = (feature: SHAPFeature): { label: string; explanati
 
   return {
     label: config.label,
-    explanation: feature.impact === 'increases_risk' 
-      ? config.increasesRisk 
+    explanation: feature.impact === 'increases_risk'
+      ? config.increasesRisk
       : config.decreasesRisk
   };
 };
@@ -130,20 +129,20 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
   shapExplanation
 }) => {
   if (!shapExplanation || !shapExplanation.top_features || shapExplanation.top_features.length === 0) {
-    return ( 
-    <div className="shap-explanation hr-friendly" style={{ padding: '2rem', textAlign: 'center' }}>
-      <Lightbulb size={48} style={{ color: '#f59e0b', marginBottom: '1rem' }} />
-      <h3>Explanation Unavailable</h3>
-      <p style={{ color: '#6b7280' }}>
-        {shapExplanation?.explanation || "SHAP analysis could not be generated. Using rule-based risk factors instead."}
-      </p>
-    </div>
+    return (
+      <div className="shap-explanation hr-friendly" style={{ padding: '2rem', textAlign: 'center' }}>
+        <Lightbulb size={48} style={{ color: '#f59e0b', marginBottom: '1rem' }} />
+        <h3>Explanation Unavailable</h3>
+        <p style={{ color: '#6b7280' }}>
+          {shapExplanation?.explanation || "SHAP analysis could not be generated. Using rule-based risk factors instead."}
+        </p>
+      </div>
     );
   }
 
   const { top_features } = shapExplanation;
+  const maxShap = Math.max(...top_features.map(f => f.abs_shap_value));
 
-  // Separate positive and negative contributors
   const increasesRisk = top_features.filter(f => f.impact === 'increases_risk').slice(0, 5);
   const decreasesRisk = top_features.filter(f => f.impact === 'decreases_risk').slice(0, 5);
 
@@ -157,7 +156,6 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
         </div>
       </div>
 
-      {/* Warning Factors */}
       {increasesRisk.length > 0 && (
         <div className="factors-section risk-section">
           <div className="section-header">
@@ -171,15 +169,12 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
                 <div key={idx} className="factor-card warning">
                   <div className="factor-header">
                     <span className="factor-label">{label}</span>
-                   
                   </div>
                   <p className="factor-explanation">{explanation}</p>
                   <div className="importance-bar">
-                    <div 
+                    <div
                       className="importance-fill warning"
-                      style={{
-                        width: `${Math.min((feature.abs_shap_value / Math.max(...top_features.map(f => f.abs_shap_value))) * 100, 100)}%`
-                      }}
+                      style={{ width: `${Math.min((feature.abs_shap_value / maxShap) * 100, 100)}%` }}
                     />
                   </div>
                 </div>
@@ -189,7 +184,6 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
         </div>
       )}
 
-      {/* Positive Factors */}
       {decreasesRisk.length > 0 && (
         <div className="factors-section positive-section">
           <div className="section-header">
@@ -203,15 +197,12 @@ const TurnoverSHAPExplanation: React.FC<TurnoverSHAPExplanationProps> = ({
                 <div key={idx} className="factor-card positive">
                   <div className="factor-header">
                     <span className="factor-label">{label}</span>
-                    {/* <span className="factor-value">{feature.value_display}</span> */}
                   </div>
                   <p className="factor-explanation">{explanation}</p>
                   <div className="importance-bar">
-                    <div 
+                    <div
                       className="importance-fill positive"
-                      style={{
-                        width: `${Math.min((feature.abs_shap_value / Math.max(...top_features.map(f => f.abs_shap_value))) * 100, 100)}%`
-                      }}
+                      style={{ width: `${Math.min((feature.abs_shap_value / maxShap) * 100, 100)}%` }}
                     />
                   </div>
                 </div>

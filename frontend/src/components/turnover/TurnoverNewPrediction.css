@@ -1,10 +1,9 @@
 .tnp-container {
   max-width: 800px;
   margin: 0 auto;
-  /* padding: 1.5rem 1rem; */
 }
 
-/* Header - stacked vertically, left aligned */
+/* Header */
 .tnp-header {
   display: flex;
   flex-direction: column;
