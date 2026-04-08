@@ -3,7 +3,7 @@ from app.auth.dependencies import get_current_user
 from app.services.turnover_service import predict_turnover_from_cv_id
 import httpx
 
-ML_SERVICE_URL = "http://ml-service:8001"
+ML_SERVICE_URL = "http://localhost:8001"
 
 router = APIRouter(prefix="/turnover", tags=["Turnover Prediction"])
 

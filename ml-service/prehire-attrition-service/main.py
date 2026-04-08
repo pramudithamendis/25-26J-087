@@ -130,4 +130,16 @@ def shap_explain(data: ShapRequest):
 
 @app.get("/health")
 def health():
-    return model_health_check()
+    try:
+        # Force load model & preprocessor
+        from loader import get_model, get_preprocessor
+
+        get_model()
+        get_preprocessor()
+
+        return model_health_check()
+    except Exception as e:
+        return {
+            "model_loaded": False,
+            "error": str(e)
+        }
