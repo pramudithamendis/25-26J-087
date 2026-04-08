@@ -13,7 +13,7 @@ skill-ner-bert-service/
 ```
 ```bash
 # Build 
-docker build -t ner-service .
+docker build -t ner-service . # Also use this to modify the container
 
 # Run
 docker run -it --rm -p 8000:8000 ner-service
@@ -34,7 +34,7 @@ prehire-attrition-service/
 
  ```bash
  # Build
- docker build -t attrition-service .
+ docker build -t attrition-service . # Also use this to modify the container
 
  # Run
  docker run -it --rm -p 8001:8001 attrition-service
