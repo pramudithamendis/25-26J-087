@@ -73,6 +73,7 @@ pytest-asyncio>=0.21.0
 GitPython==3.1.45
 ollama==0.6.1
 PyPDF2==3.0.1
+
 # Article parsing
 newspaper3k==0.2.8
 feedparser==6.0.12
