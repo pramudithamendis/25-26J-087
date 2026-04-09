@@ -2,8 +2,12 @@ from fastapi import APIRouter, Form, Depends, HTTPException
 from app.auth.dependencies import get_current_user
 from app.services.turnover_service import predict_turnover_from_cv_id
 import httpx
+from dotenv import load_dotenv
+import os
 
-ML_SERVICE_URL = "http://localhost:8001"
+load_dotenv()
+
+ATTRITION_SERVICE_URL = os.getenv("ATTRITION_SERVICE_URL")
 
 router = APIRouter(prefix="/turnover", tags=["Turnover Prediction"])
 
@@ -39,7 +43,7 @@ async def health_check():
     """Check if model is loaded"""
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{ML_SERVICE_URL}/health")
+            response = await client.get(f"{ATTRITION_SERVICE_URL}/health")
             response.raise_for_status()
             ml_status = response.json()
             return {

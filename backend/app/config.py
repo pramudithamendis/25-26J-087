@@ -2,6 +2,11 @@ from pydantic_settings import BaseSettings
 from pathlib import Path
 
 class Settings(BaseSettings):
+
+    # ML Serives
+    NER_SERVICE_URL: str 
+    ATTRITION_SERVICE_URL: str 
+    
     # Existing auth settings
     MONGO_URI: str
     MONGO_DB: str

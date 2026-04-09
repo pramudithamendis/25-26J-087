@@ -3,8 +3,12 @@
 from typing import Dict, Set
 from app.models.article_model import articles_collection
 import requests
+from dotenv import load_dotenv
+import os
 
-NER_SERVICE_URL = "http://localhost:8000/extract"
+load_dotenv()
+
+NER_SERVICE_URL = os.getenv("NER_SERVICE_URL")
 
 def extract_skills_from_articles() -> Dict:
     """
@@ -25,7 +29,7 @@ def extract_skills_from_articles() -> Dict:
         # Run hybrid skill extraction
         try:
             response = requests.post(
-                NER_SERVICE_URL,
+                f"{NER_SERVICE_URL}/extract",
                 json={"text": text_to_analyze},
                 timeout=10
             )

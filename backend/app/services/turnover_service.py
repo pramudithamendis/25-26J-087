@@ -9,13 +9,17 @@ from app.services.feature_engineering import create_feature_vector_from_mongo
 from app.services.fairness_utils import extract_fairness_metadata, get_fairness_context
 import time
 from app.services.feature_engineering import extract_location_from_jd_enhanced
+from dotenv import load_dotenv
+import os
 import httpx
+
+load_dotenv()
 
 # Modified
 # ML Microservice connection
-ML_SERVICE_URL = "http://localhost:8001"
-ML_PREDICT_URL = f"{ML_SERVICE_URL}/predict"
-ML_SHAP_URL    = f"{ML_SERVICE_URL}/shap"
+ATTRITION_SERVICE_URL = os.getenv("ATTRITION_SERVICE_URL")
+ATTRITION_PREDICT_URL = f"{ATTRITION_SERVICE_URL}/predict"
+ATTRITION_SHAP_URL = f"{ATTRITION_SERVICE_URL}/shap"
 
 # Modified
 def _sync_predict(features: Dict[str, float]) -> tuple:
@@ -26,7 +30,7 @@ def _sync_predict(features: Dict[str, float]) -> tuple:
     """
     try:
         with httpx.Client(timeout=30.0) as client:
-            response = client.post(ML_PREDICT_URL, json={"features": features})
+            response = client.post(ATTRITION_PREDICT_URL, json={"features": features})
             response.raise_for_status()
             data = response.json()
         if data.get("status") == "error":
@@ -34,7 +38,7 @@ def _sync_predict(features: Dict[str, float]) -> tuple:
         return int(data["prediction"]), np.array(data["probability"], dtype=float)
     except httpx.ConnectError:
         raise RuntimeError(
-            f"Prehire-attrition ML service unreachable at {ML_SERVICE_URL}. "
+            f"Prehire-attrition ML service unreachable at {ATTRITION_SERVICE_URL}. "
             "Make sure it is running: uvicorn main:app --port 8001"
         )
         
@@ -47,7 +51,7 @@ async def _async_predict(features: Dict[str, float]) -> tuple:
     """
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(ML_PREDICT_URL, json={"features": features})
+            response = await client.post(ATTRITION_PREDICT_URL, json={"features": features})
             response.raise_for_status()
             data = response.json()
         if data.get("status") == "error":
@@ -57,7 +61,7 @@ async def _async_predict(features: Dict[str, float]) -> tuple:
         raise HTTPException(
             status_code=503,
             detail=(
-                f"Prehire-attrition ML service is unreachable at {ML_SERVICE_URL}. "
+                f"Prehire-attrition ML service is unreachable at {ATTRITION_SERVICE_URL}. "
                 "Make sure it is running: uvicorn main:app --port 8001"
             ),
         )
@@ -284,7 +288,7 @@ async def generate_shap_explanation_safe(
     try:
         async with httpx.AsyncClient(timeout=float(timeout_seconds)) as client:
             response = await client.post(
-                ML_SHAP_URL,
+                ATTRITION_SHAP_URL,
                 json={"features": features, "predicted_class": predicted_class},
             )
             response.raise_for_status()
