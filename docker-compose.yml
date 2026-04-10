@@ -28,7 +28,7 @@ services:
 
   attrition-service:
     image: attrition-service:latest
-    build: ./ml-services/prehire-attrition-service
+    build: ./ml-service/prehire-attrition-service
     container_name: ml-attrition
     ports:
       - "8001:8001"
