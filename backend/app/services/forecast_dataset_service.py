@@ -78,7 +78,7 @@ def fetch_cold_start_data(month_limit: int = 3, batch_size: int = 5):
                     }
 
                     skill_trend_collection.update_one(
-                        {"skill": skill, "week_id": week_id, "month_id": month_id},
+                        {"skill": skill, "week_id": week_id},
                         {"$set": doc},
                         upsert=True
                     )

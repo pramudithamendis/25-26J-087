@@ -38,6 +38,7 @@ import LocationSettings from './components/locations/LocationSettings';
 import { CVEvaluatorPage } from "./pages/cv-evaluator/CVEvaluatorPage";
 import { AdminScoreViewPage } from "./pages/admin/AdminScoreViewPage";
 import { AdminDecisionsPage } from "./pages/admin/AdminDecisionsPage";
+import { AdminSkillTrendPage } from "./pages/admin/AdminSkillTrendPage";
 
 
 function App() {
@@ -204,6 +205,16 @@ function App() {
               <AdminRoute>
                 <DashboardLayout>
                   <AdminTrendScorePage />
+                </DashboardLayout>
+              </AdminRoute>
+            }
+          />
+           <Route
+            path="/dashboard/admin/skilltrend"
+            element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminSkillTrendPage/>
                 </DashboardLayout>
               </AdminRoute>
             }

@@ -14,12 +14,10 @@ def count_hirebase_skills()-> Dict:
     Also stores a weekly snapshot in `hirebase_skill_stats_collection`.
     """
     week_id = current_week_id()
-    month_id = current_month_id()
 
     # Fetch jobs for the current week/month
     jobs = hirebase_jobs_collection.find({
-        "week_id": week_id,
-        "month_id": month_id
+        "week_id": week_id
     })
 
     skill_counts = defaultdict(int)
@@ -27,34 +25,37 @@ def count_hirebase_skills()-> Dict:
 
     for job in jobs:
         total_jobs += 1
-
-        # Merge all skill sources
         raw_skills = set()
 
-        for field in ["skills","technologies"]:
-            for s in job.get(field, []):
+        for field in ["skills", "technologies"]:
+            for s in job.get(field) or []:  
                 if isinstance(s, str):
                     raw_skills.add(s.lower().strip())
 
-        # Count each skill ONCE per job
         for skill in raw_skills:
             skill_counts[skill] += 1
 
-    # Prepare snapshot
+    # ✅ FIXED STRUCTURE
     snapshot = {
-       "sourece":"hirebase",
-       "week_id": week_id,
-       "month_id": month_id,
-       "total_jobs": total_jobs,
-       "skill_counts": dict(skill_counts),
-       "created_at": datetime.utcnow()
+        "source": "hirebase",
+        "week_id": week_id,
+        "total_jobs": total_jobs,
+        "skills": [
+            {"skill": k, "count": v}
+            for k, v in skill_counts.items()
+        ],
+        "created_at": datetime.utcnow()
     }
 
     # Upsert the snapshot to avoid duplicates for the same week
     hirebase_skill_stats_collection.update_one(
-        {"source": "hirebase", "week_id": week_id, "month_id": month_id},
+        {"source": "hirebase", "week_id": week_id},
         {"$set": snapshot},
         upsert=True
     )
 
     return snapshot
+
+
+
+    

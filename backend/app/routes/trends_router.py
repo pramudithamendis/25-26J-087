@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.auth.dependencies import get_admin_user, get_current_user
 from app.services.goolge_trends_service import fetch_google_trends
-from app.services.trend_calculation_service import calculate_skill_trends
+from app.services.trend_calculation_service import calculate_skill_trends, get_skill_history, get_top_skills_history
 from app.services.cv_trend_score_service import calculate_all_cv_trend_score, calculate_single_cv_trend_score, get_job_applicants_scores
 from app.utils.date_utils import current_week_id
 from app.models.cv_trend_score_model import cv_trend_scores_collection
@@ -105,3 +105,31 @@ def calculate_single_cv_trend_score_endpoint(
 def job_evaluation(job_id: str, user=Depends(get_current_user)):
     week_id = current_week_id()
     return get_job_applicants_scores(job_id, week_id)
+
+
+@router.get("/skill/{skill_name}")
+def get_skill_history_endpoint(
+    skill_name: str,
+    num_weeks: int = 16,
+    user=Depends(get_current_user)
+):
+    result = get_skill_history(skill=skill_name, num_weeks=num_weeks)
+    return {
+        "success": True,
+        "skill": result.get("skill"),
+        "history": result.get("history")
+    }
+
+@router.get("/top-skills")
+def get_top_skills_endpoint(
+    num_skills: int = 10,
+    num_weeks: int = 16,
+    user=Depends(get_current_user)
+):
+    result = get_top_skills_history(limit=num_skills, num_weeks=num_weeks)
+    return {
+        "success": True,
+        "week_id": result.get("week_id"),
+        "top_skills": result.get("top_skills"),
+        "history": result.get("history")
+    }

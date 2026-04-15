@@ -10,7 +10,9 @@ import type {
   ApiError,
   JobApplicantListItem,
   JobApplicantListResponse,
-  CVTrendScoreListResponse
+  CVTrendScoreListResponse,
+  TopSkillTrendScoreListResponse,
+  SkillHistoryResponse
 } from '../types/adminTypes';
 
 /**
@@ -489,6 +491,59 @@ export const listAllCVTrendScores = async (weekId?: string): Promise<CVTrendScor
     throw apiError;
   }
 };
+
+/**
+ * Get top skills with historical trend data (admin only)
+ * @param limit - Number of top skills to return (default: 5)
+ * @param num_weeks - Number of historical weeks to include (default: 8)
+ */
+export const getTopSkillsHistory = async (
+  limit: number = 10, 
+  num_weeks: number = 16
+): Promise<TopSkillTrendScoreListResponse> => {
+  try {
+    const response = await apiClient.get<TopSkillTrendScoreListResponse>(
+      `/api/trends/top-skills`,
+      {
+        params: {
+          limit,
+          num_weeks
+        }
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    const apiError: ApiError = {
+      detail: error.response?.data?.detail || 'Failed to fetch top skills history.',
+      statusCode: error.response?.status,
+    };
+    throw apiError;
+  }
+};
+
+
+export const getSkillHistory = async (
+  skillName: string,
+  numWeeks: number = 16
+): Promise<SkillHistoryResponse> => {
+  try {
+    const response = await apiClient.get<SkillHistoryResponse>(
+      `/api/trends/skill/${encodeURIComponent(skillName)}`,
+      {
+        params: { num_weeks: numWeeks }
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    const apiError: ApiError = {
+      detail: error.response?.data?.detail || 'Failed to fetch skill history.',
+      statusCode: error.response?.status,
+    };
+    throw apiError;
+  }
+};
+
+
 
 /**
  * Send application email (accept/reject) to an applicant (admin only)

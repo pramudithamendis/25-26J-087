@@ -27,7 +27,10 @@ def fetch_google_trends():
     }
 
     hirebase_doc = hirebase_skill_stats_collection.find_one({"week_id": week_id, "month_id": month_id})
-    hirebase_skills = set(hirebase_doc.get("skill_counts", {}).keys()) if hirebase_doc else set()
+    hirebase_skills = {
+        item["skill"]
+        for item in hirebase_doc.get("skills", [])
+    } if hirebase_doc else set()
 
     skills = article_skills.union(hirebase_skills)
 
