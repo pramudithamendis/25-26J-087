@@ -35,7 +35,13 @@ def fetch_google_trends():
     skills = article_skills.union(hirebase_skills)
 
     if not skills:
-        return {"message": "No skills found for the current week/month."}
+        return {
+            "week_id": week_id,
+            "month_id": month_id,
+            "skills_processed": 0,
+            "results": [],
+            "message": "No skills found for the current week/month."
+        }
     
     skills = list(skills)
     batch_size = 5
