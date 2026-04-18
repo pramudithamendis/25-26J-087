@@ -164,5 +164,37 @@ export interface SkillMatch {
   score: number;
 }
 
+export interface CVTrendScoreHistory {
+  cv_id: string;
+  week_id: string;
+  skill: string;
+  trend_score: number;
+  job_count: number;
+  google_interest: number;
+  forecast_score: number;
+}
+
+export interface TopSkill {
+  skill: string;
+  trend_score: number;
+  job_count: number;
+  google_interest: number;
+  forecast_score: number;
+}
+
+export interface TopSkillTrendScoreListResponse {
+  week_id: string;
+  top_skills: TopSkill[];
+  history: CVTrendScoreHistory[];
+}
+
+export interface SkillHistoryResponse {
+  success: boolean;
+  skill: string;
+  history: CVTrendScoreHistory[];
+}
+
+
+
 
 

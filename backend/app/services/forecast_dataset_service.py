@@ -35,11 +35,6 @@ def fetch_cold_start_data(month_limit: int = 3, batch_size: int = 5):
     skills = [clean_skill_name(s) for s in raw_skills if s]
     print(f"[INFO] Total skills after cleaning: {len(skills)}")
 
-    # Find max google_interest from last N months for normalization
-    recent_records = list(skill_trend_collection.find()
-                          .sort("google_interest", -1)
-                          .limit(100))  # adjust limit if needed
-    max_google = max((r.get("google_interest", 0) for r in recent_records), default=1)
 
     stored = []
 
@@ -70,7 +65,7 @@ def fetch_cold_start_data(month_limit: int = 3, batch_size: int = 5):
                     google_interest = int(row.get(skill, 0)) # TODO: make this google interest per week
                     
                     # Normalized trend score (job_count=0 for cold start)
-                    trend_score = round((google_interest / max_google) * 0.5, 4)
+                    trend_score = round((google_interest / 100) * 0.5, 4)
 
                     doc = {
                         "month_id": month_id,
@@ -83,7 +78,7 @@ def fetch_cold_start_data(month_limit: int = 3, batch_size: int = 5):
                     }
 
                     skill_trend_collection.update_one(
-                        {"skill": skill, "week_id": week_id, "month_id": month_id},
+                        {"skill": skill, "week_id": week_id},
                         {"$set": doc},
                         upsert=True
                     )
