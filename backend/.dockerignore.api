@@ -1,0 +1,22 @@
+# .dockerignore for Dockerfile.api — keep the image lean
+# Exclude ML model artifacts (downloaded from GCS at runtime on the ml service)
+app/ml_models/skill_ner_bert/
+app/ml_models/*.pkl
+app/ml_models/*.joblib
+
+# Local dev / test artifacts
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+tests/
+.env
+.env.*
+*.egg-info/
+dist/
+build/
+.git/
+notebooks/
+dataset/
+uploads/

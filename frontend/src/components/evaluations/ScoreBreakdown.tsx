@@ -1,13 +1,13 @@
-import type { ScoreBreakdown } from '../../types/evaluationTypes';
+import type { ScoreBreakdown as ScoreBreakdownData } from '../../types/evaluationTypes';
 
 interface ScoreBreakdownProps {
-  breakdown: ScoreBreakdown;
+  breakdown: ScoreBreakdownData;
 }
 
 export const ScoreBreakdown = ({ breakdown }: ScoreBreakdownProps) => {
   const entries = Object.entries(breakdown).filter(
     ([_, value]) => typeof value === 'number' && value > 0
-  );
+  ) as [string, number][];
 
   if (entries.length === 0) {
     return (
@@ -49,4 +49,3 @@ export const ScoreBreakdown = ({ breakdown }: ScoreBreakdownProps) => {
     </div>
   );
 };
-

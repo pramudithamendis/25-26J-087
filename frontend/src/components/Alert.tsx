@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface AlertProps {
   type?: 'error' | 'success' | 'warning' | 'info';
@@ -93,4 +93,3 @@ export const Alert = ({
     </div>
   );
 };
-

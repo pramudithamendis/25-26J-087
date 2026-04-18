@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface StatsCardProps {
   title: string;
@@ -49,4 +49,3 @@ export const StatsCard = ({
     </div>
   );
 };
-
