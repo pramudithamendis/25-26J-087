@@ -116,7 +116,7 @@ export const AdminTrendScorePage = () => {
       header: 'Skills',
       render: (item: CVTrendScore) => {
         const skills = item.skills_matched || [];
-        const sortedSkills = [...skills].sort((a, b) => b.score - a.score);
+        const sortedSkills = [...skills].sort((a, b) => b.trend_score - a.trend_score);
         const isExpanded = expandedSkills[item.cv_id || ''] || false;
         const displaySkills = isExpanded ? sortedSkills : sortedSkills.slice(0, 5);
         
@@ -127,9 +127,9 @@ export const AdminTrendScorePage = () => {
                 <div 
                   key={index}
                   className="inline-flex items-center gap-1 group relative"
-                  title={`${skillMatch.skill}: ${(skillMatch.score * 100).toFixed(1)}% match`}
+                  title={`${skillMatch.skill}: ${(skillMatch.trend_score * 100).toFixed(1)}% `}
                 >
-                  <span className={`px-2 py-1 rounded text-xs transition-all duration-200 ${getSkillScoreColor(skillMatch.score)}`}>
+                  <span className={`px-2 py-1 rounded text-xs transition-all duration-200 ${getSkillScoreColor(skillMatch.trend_score)}`}>
                     {skillMatch.skill}
                   </span>
                  

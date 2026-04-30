@@ -1,6 +1,8 @@
 # backend/app/services/trend_calculation_service.py
 
 from datetime import datetime
+
+from sklearn.preprocessing import normalize
 from app.models.hirebase_skill_stats_model import hirebase_skill_stats_collection
 from app.models.google_trends_model import google_trends_collection
 from app.services.monthly_retrain_service import predict_future_skills
@@ -26,6 +28,18 @@ def get_previous_week_ids(week_id: str, num_weeks: int) -> list[str]:
 
     return weeks
 
+def safe_min_max(values: dict):
+    if not values:
+        return 0.0, 1.0
+    vmin = min(values.values())
+    vmax = max(values.values())
+    if vmin == vmax:
+        return vmin, vmin + 1  # avoid division by zero
+    return vmin, vmax
+
+def normalize(x, xmin, xmax):
+    return (x - xmin) / (xmax - xmin)
+
 
 # =========================================================
 # MAIN TREND CALCULATION
@@ -49,6 +63,9 @@ def calculate_skill_trends():
     # Error handling 
     if not job_docs or not trend_docs:
         return {"message": "Missing job or trend data"}
+    
+    # Create week index map for easy access
+    week_index_map = {week: idx for idx, week in enumerate(previous_weeks)}
 
     # =====================================================
     # JOB AGGREGATION
@@ -57,21 +74,31 @@ def calculate_skill_trends():
 
     # Add job counts from previous 4 weeks
     for doc in job_docs:
+        week_id_doc = doc.get("week_id")
+        if week_id_doc not in week_index_map:
+            continue  # skip if week_id is not in the expected list
+
+        idx = week_index_map[week_id_doc]
+        
         for item in doc.get("skills", []):
             skill = item.get("skill")
             count = item.get("count", 0)
-            if skill:
-                if skill not in job_map:
-                    job_map[skill] = []
-                job_map[skill].append(count)
+
+            if not skill:
+                continue
+
+            if skill not in job_map:
+                job_map[skill] = [0] * MAX_WEEKS  # initialize with zeros
+
+            job_map[skill][idx] = count  # place count in correct week index
 
     # get the rolling avg
     job_avg_map = {
-        skill: (sum(values) / len(values))
+        skill: sum(values) / MAX_WEEKS
         for skill, values in job_map.items()
         if values
     }
-
+ 
     # =====================================================
     # TREND AGGREGATION (list-based)
     # =====================================================
@@ -79,6 +106,12 @@ def calculate_skill_trends():
 
     # Add google interest from previous 4 weeks
     for doc in trend_docs:
+        week_id_doc = doc.get("week_id")
+        if week_id_doc not in week_index_map:
+            continue  # skip if week_id is not in the expected list
+
+        idx = week_index_map[week_id_doc]
+
         skill = doc.get("skill")
         score = (
             doc.get("interest_score")
@@ -87,25 +120,27 @@ def calculate_skill_trends():
             or 0
         )
 
-        if skill:
-            if skill not in trend_map:
-                trend_map[skill] = []
-            trend_map[skill].append(score)
+        if not skill:
+            continue
+
+        if skill not in trend_map:
+            trend_map[skill] = [0] * MAX_WEEKS  # initialize with zeros
+
+        trend_map[skill][idx] = score  # place score in correct week index
+
 
     # get the rolling avg
     trend_avg_map = {
-        skill: (sum(values) / len(values))
+        skill: sum(values) / MAX_WEEKS
         for skill, values in trend_map.items()
         if values
     }
 
     # Safe normalization denominators
-    J_min = min(job_avg_map.values(), default=0)
-    J_max = max(job_avg_map.values(), default=1)
+    J_min, J_max = safe_min_max(job_avg_map)
+    G_min, G_max = safe_min_max(trend_avg_map)
 
-    G_min = min(trend_avg_map.values(), default=0)
-    G_max = max(trend_avg_map.values(), default=1)
-
+ 
     stored = []
     # get the full skill list from both ways 
     all_skills = set(job_avg_map.keys()) | set(trend_avg_map.keys())
@@ -115,8 +150,8 @@ def calculate_skill_trends():
     # =====================================================
     for skill in all_skills:
 
-        job_count = job_avg_map.get(skill, 0)
-        interest = trend_avg_map.get(skill, 0)
+        job_count = job_avg_map.get(skill)
+        interest = trend_avg_map.get(skill)
 
         # Forecast (safe fallback)
         forecast_score = predict_future_skills(skill, job_count, interest)
@@ -124,16 +159,10 @@ def calculate_skill_trends():
         if forecast_score is None:
             forecast_score = 0.0
 
-        # Normalize
-        if J_max == J_min:
-            job_norm = 0.0
-        else:
-            job_norm = (job_count - J_min) / (J_max - J_min)
 
-        if G_max == G_min:
-            trend_norm = 0.0
-        else:
-            trend_norm = (interest - G_min) / (G_max - G_min)
+        # Normalize safely
+        job_norm = normalize(job_count, J_min, J_max) if job_count is not None else 0.0
+        trend_norm = normalize(interest, G_min, G_max) if interest is not None else 0.0
 
         # Final score 
         trend_score = round((job_norm * 0.5 + trend_norm * 0.5), 4)

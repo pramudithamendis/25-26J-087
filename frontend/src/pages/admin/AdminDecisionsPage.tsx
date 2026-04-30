@@ -569,7 +569,7 @@ export const AdminDecisionsPage = () => {
                                                         {cv.skills_matched.slice(0, 2).map((skill, idx) => (
                                                             <span
                                                                 key={idx}
-                                                                className={`text-[10px] px-1 py-0.5 rounded ${getSkillScoreColor(skill.score)}`}
+                                                                className={`text-[10px] px-1 py-0.5 rounded ${getSkillScoreColor(skill.trend_score)}`}
                                                             >
                                                                 {skill.skill}
                                                             </span>

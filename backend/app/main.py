@@ -24,6 +24,8 @@ from app.routes.forecast_router import router as forecast_router
 import logging
 import time
 import asyncio
+from dotenv import load_dotenv
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
