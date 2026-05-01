@@ -8,71 +8,188 @@ from app.services.monthly_retrain_service import predict_future_skills
 from app.models.application_model import applications_collection
 from app.models.user_model import users_collection
 from bson import ObjectId
+from bson.errors import InvalidId
 import re
 
 # ------------------------------
-# Text normalization & skill matching
+# ALIASES 
 # ------------------------------
-def normalize_text(text: str) -> str:
-    if not isinstance(text, str):
-        text = "" if text is None else str(text)
-    text = text.lower()
-    text = re.sub(r"[^a-z0-9\s+.#-]", " ", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
+ALIASES = {
+    "sklearn": ["scikit learn", "scikit-learn"],
+    "nodejs": ["node js"],
+    "react": ["react js"],
+    "aws": ["aws ec2"]
+}
 
-def extract_matching_skills_from_text(cv_text: str, trending_skills: list[str]) -> list[str]:
-    normalized_cv_words = set(normalize_text(cv_text).split())
+# ------------------------------
+# Reverse alias map 
+# ------------------------------
+REVERSE_ALIASES = {}
+for k, v in ALIASES.items():
+    for alias in v:
+        REVERSE_ALIASES[alias] = k
+
+
+# ------------------------------
+# Text normalization
+# ------------------------------
+def normalize(skill: str) -> str:
+    skill = skill.lower()
+    skill = skill.replace("-", " ")
+    skill = re.sub(r"[^a-z0-9\s]", " ", skill)
+    skill = re.sub(r"\s+", " ", skill)
+    return skill.strip()
+
+
+# ------------------------------
+# Canonical mapping 
+# ------------------------------
+def canonical(skill: str) -> str:
+    """
+    Converts any variant → single canonical key space
+    """
+    s = normalize(skill)
+
+    # direct alias match
+    if s in REVERSE_ALIASES:
+        return REVERSE_ALIASES[s]
+
+    return s
+
+
+# ------------------------------
+# Compact matching
+# ------------------------------
+def generate_compact_forms(skill: str) -> list[str]:
+    words = skill.split()
+
+    if len(words) < 2:
+        return []
+
+    compact_forms = []
+
+    # 1. full join: "ms sql server" -> "mssqlserver"
+    compact_forms.append("".join(words))
+
+    # 2. progressive joins:
+    # "ms sql server" -> ["mssql", "sqlserver"]
+    for i in range(len(words) - 1):
+        compact_forms.append(words[i] + words[i + 1])
+
+    return compact_forms
+
+
+# ------------------------------
+# Skill Matching Engine 
+# ------------------------------
+def extract_matching_skills_from_text(cv_skills: set, trend_skills: list):
+    print("cv_skills", cv_skills)
+    print("trend_skills", trend_skills)
+
+    normalized_cv = set(canonical(s) for s in cv_skills)
+    cv_no_space = set(s.replace(" ", "") for s in normalized_cv)
+
     matched = []
-    for skill in trending_skills:
-        skill_words = set(normalize_text(skill).split())
-        if skill_words <= normalized_cv_words:  # all words in CV must exist
+
+    for skill in trend_skills:
+        s_raw = normalize(skill)
+        s = canonical(skill)
+
+        # 1. exact canonical match
+        if s in normalized_cv:
             matched.append(skill)
-    return matched
+            continue
+
+        # 2. alias match 
+        aliases = ALIASES.get(s, [])
+        for alias in aliases:
+            a = normalize(alias)
+            a_canonical = canonical(alias)
+
+            if a_canonical in normalized_cv:
+                matched.append(skill)
+                break
+
+            if a.replace(" ", "") in cv_no_space:
+                matched.append(skill)
+                break
+        else:
+            # 3. no-space match
+            if s_raw.replace(" ", "") in cv_no_space:
+                matched.append(skill)
+                continue
+
+            # 4. compact match
+            for form in generate_compact_forms(s_raw):
+                if form in cv_no_space:
+                    matched.append(skill)
+                    break
+
+    print("matched", matched)
+    return list(set(matched))
+
 
 # ------------------------------
 # CV Trend Score Calculation
 # ------------------------------
 def calculate_single_cv_trend_score(cv_id: str) -> dict:
     week_id = current_week_id()
-    cv = cv_collection.find_one({"_id": ObjectId(cv_id)})
+    try:
+        obj_id = ObjectId(cv_id)
+    except InvalidId:
+        raise ValueError(f"Invalid CV ID format: {cv_id}")
+
+    cv = cv_collection.find_one({"_id": obj_id})
     if not cv:
         raise ValueError(f"CV not found: {cv_id}")
 
     trend_docs = list(skill_trend_collection.find({"week_id": week_id}))
-    trend_map = {d["skill"]: d for d in trend_docs}  # full doc to get forecast
+    if not trend_docs:
+        raise ValueError("No trend data")
 
-    # Extract keywords from CV
-    skills_list = cv.get("skills", [])
-    keywords = []
-    for skill_item in skills_list:
-        if isinstance(skill_item, dict):
-            skill_keywords = skill_item.get("keywords", [])
-            if isinstance(skill_keywords, list):
-                keywords.extend(skill_keywords)
-    cv_text = " ".join(keywords)
+    trend_map = {canonical(d["skill"]): d for d in trend_docs}
 
-    # Match trending skills
-    matched_skills = extract_matching_skills_from_text(cv_text, [d["skill"] for d in trend_docs])
+    cv_keywords = []
+    for item in cv.get("skills", []):
+        if isinstance(item, dict):
+            cv_keywords.extend(item.get("keywords", []))
+
+    cv_skills = set(normalize(k) for k in cv_keywords)
+
+    matched_skills = extract_matching_skills_from_text(
+        cv_skills,
+        [d["skill"] for d in trend_docs]
+    )
 
     # Calculate combined score per skill
     matched = []
     for s in matched_skills:
-        skill_doc = trend_map[s]
+        key = canonical(s)
+        skill_doc = trend_map.get(key)
+
+        if not skill_doc:
+            continue
+
         trend_score = skill_doc.get("trend_score", 0)
         forecast_score = skill_doc.get("forecast_score", 0) or predict_future_skills(
-            s, skill_doc.get("job_count", 0), skill_doc.get("google_interest", 0)
+            key,
+            skill_doc.get("job_count", 0),
+            skill_doc.get("google_interest", 0)
         ) or 0.0
+
         combined_score = round(0.7 * trend_score + 0.3 * forecast_score, 4)
+
         matched.append({
-            "skill": s,
+            "skill": key,
             "trend_score": trend_score,
             "forecast_score": forecast_score,
             "combined_score": combined_score
         })
 
-    # Final CV trend score = average of combined scores
-    cv_score = round(sum([m["combined_score"] for m in matched]) / len(matched), 4) if matched else 0.0
+    cv_score = round(
+        sum(m["combined_score"] for m in matched) / len(matched),
+        4
+    ) if matched else 0.0
 
     doc = {
         "cv_id": cv["_id"],
@@ -91,42 +208,51 @@ def calculate_single_cv_trend_score(cv_id: str) -> dict:
 
     return serialize_doc(doc)
 
+# ------------------------------
+# ALL CV SCORE (same fix applied)
+# ------------------------------
 def calculate_all_cv_trend_score() -> dict:
     week_id = current_week_id()
     trend_docs = list(skill_trend_collection.find({"week_id": week_id}))
-    trend_map = {d["skill"]: d for d in trend_docs}
 
-    cvs = cv_collection.find({})
+    trend_map = {canonical(d["skill"]): d for d in trend_docs}
+
     results = []
 
-    for cv in cvs:
-        skills_list = cv.get("skills", [])
-        keywords = []
-        for skill_item in skills_list:
-            if isinstance(skill_item, dict):
-                skill_keywords = skill_item.get("keywords", [])
-                if isinstance(skill_keywords, list):
-                    keywords.extend(skill_keywords)
-        cv_text = " ".join(keywords)
+    for cv in cv_collection.find({}):
 
-        matched_skills = extract_matching_skills_from_text(cv_text, [d["skill"] for d in trend_docs])
+        cv_keywords = []
+        for item in cv.get("skills", []):
+            if isinstance(item, dict):
+                cv_keywords.extend(item.get("keywords", []))
+
+        cv_skills = set(normalize(k) for k in cv_keywords)
+
+        matched_skills = extract_matching_skills_from_text(
+            cv_skills,
+            [d["skill"] for d in trend_docs]
+        )
 
         matched = []
         for s in matched_skills:
-            skill_doc = trend_map[s]
-            trend_score = skill_doc.get("trend_score", 0)
-            forecast_score = skill_doc.get("forecast_score", 0) or predict_future_skills(
-                s, skill_doc.get("job_count", 0), skill_doc.get("google_interest", 0)
-            ) or 0.0
+            key = canonical(s)
+            skill_doc = trend_map.get(key)
+            if not skill_doc:
+                continue
+
+            trend_score = skill_doc["trend_score"]
+            forecast_score = skill_doc.get("forecast_score", 0)
+
             combined_score = round(0.7 * trend_score + 0.3 * forecast_score, 4)
+
             matched.append({
-                "skill": s,
+                "skill": key,
                 "trend_score": trend_score,
                 "forecast_score": forecast_score,
                 "combined_score": combined_score
             })
 
-        cv_score = round(sum([m["combined_score"] for m in matched]) / len(matched), 4) if matched else 0.0
+        cv_score = round(sum(m["combined_score"] for m in matched) / len(matched), 4) if matched else 0.0
 
         doc = {
             "cv_id": cv["_id"],
@@ -150,6 +276,7 @@ def calculate_all_cv_trend_score() -> dict:
         "resumes_processed": len(results),
         "cv_processed": [serialize_doc(d) for d in results],
     }
+
 
 # ------------------------------
 # Helper to serialize ObjectId and datetime
