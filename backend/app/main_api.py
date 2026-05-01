@@ -8,6 +8,7 @@ forecasts, admin, HireBase, questions, candidates.
 ML-heavy routes (/turnover/*, /api/evaluate/*) live in main_ml.py.
 """
 import logging
+import os
 import time
 import asyncio
 from contextlib import asynccontextmanager
@@ -95,7 +96,7 @@ app = FastAPI(
 app.add_middleware(LoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
