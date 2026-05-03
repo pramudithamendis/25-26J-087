@@ -160,8 +160,10 @@ export interface CVTrendScoreListResponse {
 }
 
 export interface SkillMatch {
-  skill: string;
-  score: number;
+  "skill": string,
+  "trend_score": number,
+  "forecast_score": number,
+  "combined_score": number
 }
 
 export interface CVTrendScoreHistory {

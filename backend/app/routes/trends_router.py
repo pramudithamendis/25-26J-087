@@ -40,10 +40,18 @@ def calculate_all_cv_trend_scores_endpoint(
     user=Depends(get_admin_user)
 ):
     """
-    Compute trend scores for ALL resumes
-    for the current week.
+    Compute trend scores for ALL resumes for the current week.
+    Returns an error if no skill trend data exists for the week.
     """
     result = calculate_all_cv_trend_score()
+
+    # Propagate failure when no trend data is available
+    if not result.get("success", True):
+        raise HTTPException(
+            status_code=422,
+            detail=result.get("error", "Skill trend data unavailable for this week."),
+        )
+
     return {
         "success": True,
         "week_id": result.get("week_id"),

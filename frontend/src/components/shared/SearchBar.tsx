@@ -1,4 +1,4 @@
-import { InputHTMLAttributes } from 'react';
+import type { InputHTMLAttributes } from 'react';
 
 interface SearchBarProps extends InputHTMLAttributes<HTMLInputElement> {
   onSearch: (value: string) => void;
@@ -31,4 +31,3 @@ export const SearchBar = ({ onSearch, ...props }: SearchBarProps) => {
     </div>
   );
 };
-

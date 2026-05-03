@@ -8,7 +8,7 @@ import { Button } from '../../components/Button';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { listJobs, createJob } from '../../services/jobService';
 import { deleteJob } from '../../services/adminService';
-import type { Job, JobCreate } from '../../types/jobTypes';
+import type { Job, JobCreate, JobUpdate } from '../../types/jobTypes';
 
 export const AdminJobsPage = () => {
   const navigate = useNavigate();
@@ -54,11 +54,11 @@ export const AdminJobsPage = () => {
     setFilteredJobs(filtered);
   };
 
-  const handleCreate = async (data: JobCreate) => {
+  const handleCreate = async (data: JobCreate | JobUpdate) => {
     try {
       setIsCreating(true);
       setError(null);
-      const newJob = await createJob(data);
+      const newJob = await createJob(data as JobCreate);
       setJobs([...jobs, newJob]);
       setFilteredJobs([...filteredJobs, newJob]);
       setIsCreateModalOpen(false);
@@ -191,4 +191,3 @@ export const AdminJobsPage = () => {
     </div>
   );
 };
-

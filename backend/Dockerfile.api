@@ -1,0 +1,24 @@
+# Dockerfile.api — lightweight API service (no ML models, ~400MB image)
+# Used by Cloud Run "api" service.
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System deps for PDF parsing and image processing (no GPU/ML toolchain needed)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    poppler-utils \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.api.txt .
+RUN pip install --no-cache-dir -r requirements.api.txt
+
+# Copy application code — exclude ML model files via .dockerignore
+COPY app ./app
+
+EXPOSE 8080
+ENV SERVICE_TYPE=api
+
+CMD ["uvicorn", "app.main_api:app", "--host", "0.0.0.0", "--port", "8080"]

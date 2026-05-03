@@ -1,0 +1,16 @@
+# Default .dockerignore (applies to Dockerfile.ml and Dockerfile.worker)
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+tests/
+.env
+.env.*
+*.egg-info/
+dist/
+build/
+.git/
+notebooks/
+dataset/
+uploads/

@@ -28,5 +28,8 @@ def trend_agent():
     print(f"[AGENT] {trend_result.get('skills_processed', 0)} skills processed")
 
     results = calculate_all_cv_trend_score()
+    if not results.get("success", True):
+        print(f"[AGENT] WARNING: CV scoring skipped — {results.get('error')}")
+        return
     print(f"[AGENT] CV trend scores updated")
-    print(f"[AGENT] {results.get('applicant_count',0)} applicants processed")
+    print(f"[AGENT] {results.get('resumes_processed', 0)} resumes processed")

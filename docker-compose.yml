@@ -1,5 +1,13 @@
 version: '3.8'
 
+# Local development compose — runs all services in one stack.
+#
+# For local dev the backend uses main.py (monolith mode) so you don't need
+# to split API/ML services. Set SERVICE_TYPE=full or omit it.
+#
+# Production uses separate Cloud Run services (main_api.py / main_ml.py).
+# See backend/Dockerfile.api, Dockerfile.ml, Dockerfile.worker for production images.
+
 services:
   redis:
     image: redis:7-alpine
@@ -15,5 +23,65 @@ services:
       timeout: 3s
       retries: 5
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.ml
+    container_name: cv-eval-backend
+    ports:
+      - "8000:8080"
+    volumes:
+      # Hot-reload: mount source so code changes are reflected without rebuild
+      - ./backend/app:/app/app
+      - ./backend/worker.py:/app/worker.py
+      - uploads_data:/app/uploads
+    env_file:
+      - ./backend/.env
+    environment:
+      SERVICE_TYPE: full          # Load everything (local dev monolith mode)
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      GCS_BUCKET_NAME: ""         # Empty = use local disk models
+      ML_SERVICE_URL: ""          # Empty = ML runs in-process
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Use main.py for local dev (hot-reload friendly)
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: cv-eval-worker
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/worker.py:/app/worker.py
+      - uploads_data:/app/uploads
+    env_file:
+      - ./backend/.env
+    environment:
+      SERVICE_TYPE: worker
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      GCS_BUCKET_NAME: ""
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cv-eval-frontend
+    ports:
+      - "3000:8080"
+    environment:
+      # Vite bakes the API URL at build time — rebuild image if this changes
+      VITE_API_BASE_URL: http://localhost:8000
+    depends_on:
+      - backend
+
 volumes:
   redis_data:
+  uploads_data:

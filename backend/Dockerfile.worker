@@ -1,0 +1,26 @@
+# Dockerfile.worker — RQ worker + APScheduler (always-on, ~3.5GB image)
+# Used by the GCE e2-small VM (or Cloud Run with min-instances=1).
+# ML model files ARE baked in here — no cold-start penalty for background jobs.
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    poppler-utils \
+    libgomp1 \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code and bake in ML model files
+COPY app ./app
+COPY worker.py ./worker.py
+
+ENV SERVICE_TYPE=worker
+
+CMD ["python", "worker.py"]

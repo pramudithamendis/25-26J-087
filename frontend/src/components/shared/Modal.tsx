@@ -1,4 +1,5 @@
-import { ReactNode, useEffect } from 'react';
+import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 interface ModalProps {
@@ -114,4 +115,3 @@ export const Modal = ({
   // Render modal using portal to ensure it's at the root level
   return createPortal(modalContent, document.body);
 };
-

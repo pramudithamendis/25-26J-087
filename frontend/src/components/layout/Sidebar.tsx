@@ -134,7 +134,10 @@ export const Sidebar = () => {
       {/* Logo/Title */}
       <div className="p-6 border-b border-slate-100 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">CV Analysis</h1>
+          <h1 className="text-xl font-medium tracking-tight">
+            <span className="text-slate-700">TalentScan</span>{" "}
+            <span className="text-blue-500 font-semibold">AI</span>
+          </h1>
           <p className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">Dashboard</p>
         </div>
         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm shadow-blue-600/30">

@@ -8,9 +8,7 @@ import re
 import PyPDF2
 import requests
 
-from sentence_transformers import SentenceTransformer, util
 import numpy as np
-import ollama
 
 from app.models.questions_model import questions_collection
 from app.models.questions_readme_model import questions_readme_collection
@@ -196,7 +194,7 @@ async def extract_github_and_store(user=Depends(get_current_user), file: UploadF
         repo_links = [repo["url"] for repo in repos]
 
         print("repo_links", repo_links[:6])
-        
+
         for link in repo_links[:3]:
             parts = link.replace("https://github.com/", "").split("/")
             if len(parts) < 2:
@@ -213,8 +211,8 @@ async def extract_github_and_store(user=Depends(get_current_user), file: UploadF
                     "readme": readme_content
                 }
                 questions_readme_collection.insert_one(doc)
-                stored_repos.append(link)        
-            
+                stored_repos.append(link)
+
         return {
             "message": f"Stored README content for {len(stored_repos)} repositories",
             "repos_stored": stored_repos
@@ -226,7 +224,7 @@ async def extract_github_and_store(user=Depends(get_current_user), file: UploadF
             detail=f"Error extracting GitHub links or storing README: {str(e)}"
         )
 
-                
+
 GITHUB_API = "https://api.github.com/repos"
 
 
@@ -248,9 +246,18 @@ GITHUB_API = "https://api.github.com/repos"
 
 #     return response.text
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+_sentence_model = None
+
+def _get_sentence_model():
+    global _sentence_model
+    if _sentence_model is None:
+        from sentence_transformers import SentenceTransformer
+        _sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
+    return _sentence_model
 
 def find_best_matching_project(job_description, projects):
+    from sentence_transformers import util
+    model = _get_sentence_model()
     job_embedding = model.encode(job_description, convert_to_tensor=True)
     project_texts = [p["readme"] for p in projects]
     project_embeddings = model.encode(project_texts, convert_to_tensor=True)
@@ -348,7 +355,7 @@ def clone_repo(payload: CloneRequest,user=Depends(get_current_user)):
     dest = os.path.abspath(payload.dest)
 
     try:
-        
+
         if os.path.exists(dest):
             raise HTTPException(
                 status_code=400,
@@ -362,13 +369,10 @@ def clone_repo(payload: CloneRequest,user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-client = ollama.Client()
-MODEL_NAME = "gameAssistantGeneral"
-
 @router.post("/ask")
 async def generate_questions(payload: dict, user=Depends(get_current_user)):
     folder = payload.get("folder")
-    filenames = payload.get("filenames")  # <-- now expecting list
+    filenames = payload.get("filenames")
 
     if not folder or not filenames:
         raise HTTPException(status_code=400, detail="Missing 'folder' or 'filenames'.")
@@ -378,7 +382,6 @@ async def generate_questions(payload: dict, user=Depends(get_current_user)):
 
     combined_content = ""
 
-    # 🔁 Loop through all selected files
     for filename in filenames:
         filepath = os.path.join(folder, filename)
 
@@ -396,72 +399,60 @@ async def generate_questions(payload: dict, user=Depends(get_current_user)):
                 detail=f"Error reading file {filename}: {str(e)}"
             )
 
-    # # 🧠 Build prompt from ALL files
-    # prompt = (
-    #     "Read the following code/files and generate a list of clear, helpful questions "
-    #     "that someone might ask to better understand them. "
-    #     "Note that the user has done this project 1 year ago so sometimes the user might have forgotten some details."
-    #     "Avoid preamble\n\n"
-    #     f"--- TEXT START ---\n{combined_content}\n--- TEXT END ---\n\n"
-    #     "Questions:"
-    # )
+    from openai import OpenAI
+    openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-    # response = client.generate(model=MODEL_NAME, prompt=prompt)
-
-    # return {"questions": response.response}
-
- # -------------------------
     # STEP 1: Generate Questions
-    # -------------------------
-    generation_prompt = f"""
-    Read the following code/files and generate 20  questions.
-    The user built this project 1 year ago and may have forgotten details.
-    Avoid preamble.
-
-    --- TEXT START ---
-    {combined_content}
-    --- TEXT END ---
-
-    Questions:
-    """
-
-    first_response = client.generate(
-        model=MODEL_NAME,
-        prompt=generation_prompt
+    generation_response = openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a senior software engineer helping someone prepare for interviews about their own projects. "
+                    "Generate clear, technical questions about the code provided."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Read the following code/files and generate 20 questions.\n"
+                    f"The user built this project 1 year ago and may have forgotten details.\n"
+                    f"Avoid preamble. Only return the numbered list of questions.\n\n"
+                    f"--- TEXT START ---\n{combined_content}\n--- TEXT END ---"
+                ),
+            },
+        ],
+        temperature=0.7,
     )
+    raw_questions = generation_response.choices[0].message.content
 
-    raw_questions = first_response.response
-
-    # -------------------------
     # STEP 2: Improve Questions
-    # -------------------------
-    improve_prompt = f"""
-    You are a senior software engineer.
-
-    Improve the following questions:
-    - Remove duplicates
-    - Make them more technical and structured
-    - Make them suitable for interview preparation
-    - Keep them concise
-
-    Only return the improved list. No preamble.
-
-    Questions:
-    {raw_questions}
-    """
-
-    improved_response = client.generate(
-        model=MODEL_NAME,
-        prompt=improve_prompt
+    improve_response = openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a senior software engineer improving interview questions.",
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Improve the following questions:\n"
+                    f"- Remove duplicates\n"
+                    f"- Make them more technical and structured\n"
+                    f"- Make them suitable for interview preparation\n"
+                    f"- Keep them concise\n\n"
+                    f"Only return the improved numbered list. No preamble.\n\n"
+                    f"Questions:\n{raw_questions}"
+                ),
+            },
+        ],
+        temperature=0.3,
     )
+    improved_questions = improve_response.choices[0].message.content
 
-    improved_questions = improved_response.response
-
-    return {
-        # "raw_questions": raw_questions,
-        # "improved_questions": improved_questions,
-        "questions": improved_questions,
-    }
+    return {"questions": improved_questions}
 
 @router.get("/files/{username}/{reponame}")
 async def list_files(username: str, reponame: str):
@@ -470,7 +461,7 @@ async def list_files(username: str, reponame: str):
     try:
         return [
             str(f.relative_to(FILES_DIR))   # keeps folder structure
-            for f in FILES_DIR.rglob("*") 
+            for f in FILES_DIR.rglob("*")
             if f.is_file()
         ]
     except Exception:
@@ -488,9 +479,6 @@ async def get_file(username: str,reponame: str,filename: str):
 import joblib
 from app.services.hiring_duration.stage_tracker import StageTracker   # REQUIRED
 
-import os
-import joblib
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 MODEL_PATH = os.path.join(
@@ -501,29 +489,26 @@ MODEL_PATH = os.path.join(
     "stage_tracker_model.pkl"
 )
 
-model_bundle = joblib.load(MODEL_PATH)
+_tracker = None
 
-tracker = StageTracker(model_bundle["df"])
-
-tracker.models = model_bundle["models"]
-tracker.jobtitle_encoding = model_bundle["jobtitle_encoding"]
+def _get_tracker():
+    global _tracker
+    if _tracker is None:
+        model_bundle = joblib.load(MODEL_PATH)
+        t = StageTracker(model_bundle["df"])
+        t.models = model_bundle["models"]
+        t.jobtitle_encoding = model_bundle["jobtitle_encoding"]
+        _tracker = t
+    return _tracker
 
 
 @router.post("/predict-hiring-timeline")
 async def predict_timeline(payload: dict, user=Depends(get_current_user)):
-
     try:
-        prediction = tracker.predict_remaining_stages(payload)
-
-        return {
-            "timeline_predictions": prediction
-        }
-
+        prediction = _get_tracker().predict_remaining_stages(payload)
+        return {"timeline_predictions": prediction}
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/cvs/email/{email}")
 async def get_cv_by_email(email: str, user=Depends(get_current_user)):

@@ -120,8 +120,10 @@ def get_model_directory() -> Path:
     """
     Resolve and cache the absolute path to the ml_models directory.
 
-    The path is derived relative to this source file:
-    ``backend/app/services/model_loader.py → backend/app/ml_models/``
+    Resolution order:
+    1. ``ML_MODELS_DIR`` environment variable (set by GCS loader at runtime)
+    2. Path derived relative to this source file:
+       ``backend/app/services/model_loader.py → backend/app/ml_models/``
 
     Returns:
         A ``Path`` pointing to the ml_models directory.
@@ -129,10 +131,15 @@ def get_model_directory() -> Path:
     global _model_dir
 
     if _model_dir is None:
-        current_file = Path(__file__).resolve()
-        app_dir = current_file.parents[APP_DIR_DEPTH - 1]
-        _model_dir = app_dir / ML_MODELS_SUBDIR
-        logger.debug("Model directory resolved to: %s", _model_dir)
+        env_override = os.environ.get("ML_MODELS_DIR", "").strip()
+        if env_override:
+            _model_dir = Path(env_override)
+            logger.debug("Model directory from ML_MODELS_DIR env var: %s", _model_dir)
+        else:
+            current_file = Path(__file__).resolve()
+            app_dir = current_file.parents[APP_DIR_DEPTH - 1]
+            _model_dir = app_dir / ML_MODELS_SUBDIR
+            logger.debug("Model directory resolved to: %s", _model_dir)
 
     return _model_dir
 

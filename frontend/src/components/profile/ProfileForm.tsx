@@ -1,4 +1,5 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { Input } from '../Input';
 import { Button } from '../Button';
 import type { User } from '../../types/auth';
@@ -100,7 +101,7 @@ export const ProfileForm = ({
         <h3 className="text-sm font-medium text-gray-700 mb-4">
           Professional Profiles
         </h3>
-        
+
         <div className="space-y-4">
           <Input
             label="GitHub URL (optional)"
@@ -137,4 +138,3 @@ export const ProfileForm = ({
     </form>
   );
 };
-
