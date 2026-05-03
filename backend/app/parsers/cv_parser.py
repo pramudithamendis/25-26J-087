@@ -4,8 +4,13 @@ from pdf2image import convert_from_path
 import pytesseract
 from typing import Dict, Tuple, List, Optional
 from rapidfuzz import fuzz
-from sentence_transformers import SentenceTransformer, util
-import spacy
+
+try:
+    from sentence_transformers import SentenceTransformer, util as st_util
+    import spacy
+    _CV_ML_AVAILABLE = True
+except ImportError:
+    _CV_ML_AVAILABLE = False
 
 
 _nlp = None
@@ -13,12 +18,16 @@ _embed_model = None
 _prototype_embeddings = None
 
 def get_nlp():
+    if not _CV_ML_AVAILABLE:
+        raise RuntimeError("spacy is not installed in this environment")
     global _nlp
     if _nlp is None:
         _nlp = spacy.load("en_core_web_sm")
     return _nlp
 
 def get_embed_model():
+    if not _CV_ML_AVAILABLE:
+        raise RuntimeError("sentence_transformers is not installed in this environment")
     global _embed_model, _prototype_embeddings
     if _embed_model is None:
         _embed_model = SentenceTransformer("all-mpnet-base-v2")
@@ -141,7 +150,7 @@ def semantic_classify_paragraph(paragraph: str) -> Tuple[str, float]:
     boost = 0.2 if any(k in paragraph.lower() for k in project_keywords) else 0.0
 
     for sec, proto_emb in _prototype_embeddings.items():
-        sim = util.cos_sim(emb, proto_emb).item()
+        sim = st_util.cos_sim(emb, proto_emb).item()
         if sec == "projects":
             sim += boost
         if sim > best_score:

@@ -1,8 +1,6 @@
 import pandas as pd
 from datetime import datetime
-from sklearn.ensemble import RandomForestRegressor
 import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
 class StageTracker:
@@ -68,6 +66,7 @@ class StageTracker:
     # Train ML models for each stage
     # --------------------------
     def train_models(self):
+        from sklearn.ensemble import RandomForestRegressor
         print("training happening")
         for dur in self.durations:
             valid_rows = self.df[self.df[dur].notna()]
@@ -181,6 +180,8 @@ class StageTracker:
             
             # Train-test split
             from sklearn.model_selection import train_test_split
+            from sklearn.ensemble import RandomForestRegressor
+            from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
             X = valid_data[self.features]
             y = valid_data[dur]
             
@@ -227,17 +228,18 @@ class StageTracker:
         Perform cross-validation for more robust evaluation
         """
         from sklearn.model_selection import cross_val_score, KFold
-        
+        from sklearn.ensemble import RandomForestRegressor
+
         cv_results = {}
-        
+
         for dur in self.durations:
             valid_data = self.df[self.df[dur].notna()]
             if len(valid_data) < n_splits * 2:  # Need enough data
                 continue
-            
+
             X = valid_data[self.features]
             y = valid_data[dur]
-            
+
             model = RandomForestRegressor(n_estimators=100, random_state=42)
             
             # Cross-validation

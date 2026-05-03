@@ -3,8 +3,6 @@ import os
 import pickle
 import pandas as pd
 from pathlib import Path
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import LabelEncoder
 from app.services.forecast_dataset_service import build_forecast_dataset, get_article_skills
 
 # Paths
@@ -23,6 +21,9 @@ def monthly_retrain(forecast_weeks: int = 12):
     Retrain the Random Forest model on the latest forecast dataset.
     Updates the global model and encoder for immediate use.
     """
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.preprocessing import LabelEncoder
+
     global model, encoder
 
     # 1. Build combined forecast dataset
@@ -61,6 +62,8 @@ def predict_future_skills(skill: str, job_count: int, google_interest: int, fore
     Predict the future trend score for a single skill.
     Loads the model and encoder if not already cached.
     """
+    from sklearn.preprocessing import LabelEncoder
+
     global model, encoder
 
     # Ensure model exists

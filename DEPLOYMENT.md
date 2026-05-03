@@ -84,7 +84,7 @@ Browser
 |---|---|---|---|
 | Frontend | React SPA + nginx | Cloud Run | Yes |
 | API Service | FastAPI (no ML) | Cloud Run | Yes |
-| ML Service | FastAPI (BERT + ensemble) | Cloud Run | Yes (cold start ~60s) |
+| ML Service | FastAPI (BERT + ensemble) | Cloud Run | Yes (cold start ~90s) |
 | Worker | RQ + APScheduler | GCE e2-small VM | No (always on) |
 | Database | MongoDB Atlas | Atlas (GCP region) | N/A |
 | Cache/Queue | Redis | Redis Cloud (free) | N/A |
@@ -274,6 +274,11 @@ brew install google-cloud-sdk
 gcloud version
 ```
 
+**Windows:** Download and run the installer from **cloud.google.com/sdk/docs/install** (choose the Windows installer). After installation, restart your terminal, then verify:
+```powershell
+gcloud version
+```
+
 **Verify Docker is running:**
 ```bash
 docker ps
@@ -384,6 +389,26 @@ gsutil -m cp backend/app/ml_models/*.pkl \
 
 gsutil -m cp backend/app/ml_models/*.joblib \
   gs://chanmi-ml-models-YOUR_PROJECT_ID/models/
+
+gsutil -m cp -r backend/app/ml_models/hiring_duration \
+  gs://chanmi-ml-models-YOUR_PROJECT_ID/models/hiring_duration
+```
+**Windows**
+```bash
+# UPLOAD BERT MODEL (folder)
+gsutil -m cp -r backend/app/ml_models/skill_ner_bert gs://ml-models-talent-scan-ai/models/skill_ner_bert
+
+# UPLOAD HIRING DURATION MODEL (folder)
+gsutil -m cp -r backend/app/ml_models/hiring_duration gs://ml-models-talent-scan-ai/models/hiring_duration
+
+# UPLOAD ALL .pkl MODELS
+gsutil -m cp backend/app/ml_models/*.pkl gs://ml-models-talent-scan-ai/models/
+
+# UPLOAD ALL .joblib MODELS
+gsutil -m cp backend/app/ml_models/*.joblib gs://ml-models-talent-scan-ai/models/
+
+# VERIFY UPLOAD (use -r to confirm files inside subdirectories)
+gsutil ls -r gs://ml-models-talent-scan-ai/models/
 ```
 
 **Verify the upload:**
@@ -397,8 +422,11 @@ gs://chanmi-ml-models-YOUR_PROJECT_ID/models/skill_ner_bert/
 gs://chanmi-ml-models-YOUR_PROJECT_ID/models/rf.pkl
 gs://chanmi-ml-models-YOUR_PROJECT_ID/models/xgb.pkl
 gs://chanmi-ml-models-YOUR_PROJECT_ID/models/cat.pkl
-gs://chanmi-ml-models-YOUR_PROJECT_ID/models/ensemble_soft_weighted_calibrated.joblib
+gs://chanmi-ml-models-YOUR_PROJECT_ID/models/random_forest_model.pkl
 gs://chanmi-ml-models-YOUR_PROJECT_ID/models/label_encoder.pkl
+gs://chanmi-ml-models-YOUR_PROJECT_ID/models/ensemble_soft_weighted_calibrated.joblib
+gs://chanmi-ml-models-YOUR_PROJECT_ID/models/hiring_duration/
+gs://chanmi-ml-models-YOUR_PROJECT_ID/models/hiring_duration/stage_tracker_model.pkl
 ```
 
 ---
@@ -454,6 +482,47 @@ echo -n "YOUR_REDIS_PORT" | \
 
 echo -n "YOUR_REDIS_PASSWORD" | \
   gcloud secrets create redis-password --data-file=-
+```
+**Windows (PowerShell)**
+
+> PowerShell's `echo` adds a trailing newline (`\r\n`) to piped values, which gets stored in Secret Manager and injected into your env vars — silently breaking MongoDB URIs, JWT signing, and Redis auth. Use this helper instead:
+
+```powershell
+# Paste this helper function once at the top of your session
+function New-Secret($name, $value) {
+    $tmp = [IO.Path]::GetTempFileName()
+    [IO.File]::WriteAllText($tmp, $value)
+    gcloud secrets create $name --data-file=$tmp
+    Remove-Item $tmp
+}
+
+# DATABASE
+New-Secret "mongo-uri" "YOUR_MONGO_CONNECTION_STRING"
+New-Secret "mongo-db"  "cv_db"
+
+# AUTH (generate secure random secrets)
+$jwt      = -join ((48..57 + 65..90 + 97..122) | Get-Random -Count 64 | % {[char]$_})
+$internal = -join ((48..57 + 65..90 + 97..122) | Get-Random -Count 64 | % {[char]$_})
+New-Secret "jwt-secret"      $jwt
+New-Secret "internal-secret" $internal
+
+# OPENAI
+New-Secret "openai-key" "sk-YOUR_OPENAI_KEY"
+
+# OPTIONAL APIs
+New-Secret "gnews-key"     "YOUR_GNEWS_KEY"
+New-Secret "hirebase-key"  "YOUR_HIREBASE_KEY"
+New-Secret "geocoding-key" "YOUR_GEOCODING_KEY"
+New-Secret "github-token"  "YOUR_GITHUB_TOKEN"
+New-Secret "brevo-key"     "YOUR_BREVO_KEY"
+
+# REDIS
+New-Secret "redis-host"     "YOUR_REDIS_HOST"
+New-Secret "redis-port"     "YOUR_REDIS_PORT"
+New-Secret "redis-password" "YOUR_REDIS_PASSWORD"
+
+# VERIFY
+gcloud secrets list
 ```
 
 **Verify secrets were created:**
@@ -518,24 +587,69 @@ docker build \
 
 docker push $REGISTRY/cv-worker:latest
 ```
+  > The frontend image is built last because it needs the API URL baked in — see Step 13.
 
-> The frontend image is built last because it needs the API URL baked in — see Step 13.
+**Windows (PowerShell):**
+```powershell
+$PROJECT_ID = gcloud config get-value project
+$REGION = "us-central1"
+$REGISTRY = "$REGION-docker.pkg.dev/$PROJECT_ID/talent-scan-ai"  
+
+# Build and push the API image
+docker build `
+  -f backend/Dockerfile.api `
+  -t "$REGISTRY/cv-api:latest" `
+  ./backend
+
+docker push $REGISTRY/cv-api:latest
+
+# Build and push the ML image
+docker build `
+  -f backend/Dockerfile.ml `
+  -t $REGISTRY/cv-ml:latest `
+  ./backend
+
+docker push $REGISTRY/cv-ml:latest
+
+# Build and push the Worker image
+docker build `
+  -f backend/Dockerfile.worker `
+  -t $REGISTRY/cv-worker:latest `
+  ./backend
+
+docker push $REGISTRY/cv-worker:latest
+```
+
+
 
 ---
 
 ### Step 10 — Deploy ML Service
 
-Deploy the ML service first — the API service needs its URL.
+> **Important:** Grant GCS bucket access **before** deploying. The ML service downloads models from GCS the moment it starts — if the service account lacks access, the container crashes before it can bind to port 8080 and the deployment fails.
+
+**Grant GCS read access first:**
+```bash
+# Get the default Compute service account Cloud Run uses
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+SA=$PROJECT_NUMBER-compute@developer.gserviceaccount.com
+
+gsutil iam ch serviceAccount:$SA:roles/storage.objectViewer \
+  gs://chanmi-ml-models-$PROJECT_ID
+```
+
+Then deploy:
 
 ```bash
 gcloud run deploy cv-ml \
   --image $REGISTRY/cv-ml:latest \
   --region $REGION \
-  --memory 4Gi \
+  --memory 8Gi \
   --cpu 2 \
   --min-instances 0 \
   --max-instances 2 \
   --no-allow-unauthenticated \
+  --startup-cpu-boost \
   --set-env-vars "SERVICE_TYPE=ml,GCS_BUCKET_NAME=chanmi-ml-models-$PROJECT_ID,GCS_MODEL_PREFIX=models/" \
   --set-secrets "MONGO_URI=mongo-uri:latest" \
   --set-secrets "MONGO_DB=mongo-db:latest" \
@@ -559,6 +673,34 @@ curl https://cv-ml-xxxxxxxxxx-uc.a.run.app/health
 # Expected: {"status":"ok","service":"ml","mongodb":"connected","models":{...}}
 ```
 
+**Windows (PowerShell):**
+```powershell
+$BUCKET = "ml-models-talent-scan-ai"
+
+# secret key access
+gcloud secrets add-iam-policy-binding mongo-uri \
+  --member="serviceAccount:781946113522-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+
+# bucket access
+$PROJECT_NUMBER = gcloud projects describe $PROJECT_ID --format="value(projectNumber)"
+$SA = "$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+gsutil iam ch "serviceAccount:${SA}:roles/storage.objectViewer" gs://ml-models-talent-scan-ai
+
+# deploy
+gcloud run deploy cv-ml `
+  --image "$REGISTRY/cv-ml:latest" `
+  --region $REGION `
+  --memory 8Gi `
+  --cpu 2 `
+  --min-instances 0 `
+  --max-instances 2 `
+  --no-allow-unauthenticated `
+  --cpu-boost `
+  --set-env-vars "SERVICE_TYPE=ml,GCS_BUCKET_NAME=$BUCKET,GCS_MODEL_PREFIX=models/" `
+  --set-secrets "MONGO_URI=mongo-uri:latest,MONGO_DB=mongo-db:latest,JWT_SECRET=jwt-secret:latest,OPENAI_API_KEY=openai-key:latest,INTERNAL_SERVICE_SECRET=internal-secret:latest"
+```
+
 ---
 
 ### Step 11 — Deploy API Service
@@ -567,7 +709,15 @@ Replace `YOUR_ML_URL` with the URL from Step 10:
 
 ```bash
 ML_URL=https://cv-ml-xxxxxxxxxx-uc.a.run.app
+```
 
+**Windows (PowerShell):**
+```powershell
+$ML_URL = "https://cv-ml-xxxxxxxxxx-uc.a.run.app"
+```
+
+Then run the deploy (same on both platforms):
+```bash
 gcloud run deploy cv-api \
   --image $REGISTRY/cv-api:latest \
   --region $REGION \
@@ -576,7 +726,7 @@ gcloud run deploy cv-api \
   --min-instances 0 \
   --max-instances 3 \
   --allow-unauthenticated \
-  --set-env-vars "SERVICE_TYPE=api,ML_SERVICE_URL=$ML_URL" \
+  --set-env-vars "SERVICE_TYPE=api,ML_SERVICE_URL=$ML_URL,BREVO_SENDER_EMAIL=your@email.com,BREVO_SENDER_NAME=TalentScan AI" \
   --set-secrets "MONGO_URI=mongo-uri:latest" \
   --set-secrets "MONGO_DB=mongo-db:latest" \
   --set-secrets "JWT_SECRET=jwt-secret:latest" \
@@ -584,6 +734,9 @@ gcloud run deploy cv-api \
   --set-secrets "INTERNAL_SERVICE_SECRET=internal-secret:latest" \
   --set-secrets "GNEWS_API_KEY=gnews-key:latest" \
   --set-secrets "GITHUB_TOKEN=github-token:latest" \
+  --set-secrets "BREVO_API_KEY=brevo-key:latest" \
+  --set-secrets "HIREBASE_API_KEY=hirebase-key:latest" \
+  --set-secrets "GEOCODING_API_KEY=geocoding-key:latest" \
   --set-secrets "REDIS_HOST=redis-host:latest" \
   --set-secrets "REDIS_PORT=redis-port:latest" \
   --set-secrets "REDIS_PASSWORD=redis-password:latest"
@@ -668,7 +821,14 @@ The frontend React app has the API URL baked in at build time (Vite replaces `im
 **Build with your real API URL:**
 ```bash
 API_URL=https://cv-api-xxxxxxxxxx-uc.a.run.app
+```
 
+**Windows (PowerShell):**
+```powershell
+$API_URL = "https://cv-api-xxxxxxxxxx-uc.a.run.app"
+```
+
+```bash
 docker build \
   --build-arg VITE_API_BASE_URL=$API_URL \
   -f frontend/Dockerfile \
@@ -701,14 +861,27 @@ Service URL: https://cv-frontend-xxxxxxxxxx-uc.a.run.app
 
 **Allow the ML service to read models from GCS:**
 
+> GCS bucket access was already granted in Step 10 (required before the first deploy). This is noted here for completeness — skip if you followed Step 10.
+
 ```bash
 # Get the ML service's service account
 ML_SA=$(gcloud run services describe cv-ml \
   --region $REGION \
   --format="value(spec.template.spec.serviceAccountName)")
 
-# Grant GCS read access
+# Grant GCS read access (already done in Step 10 — skip if so)
 gsutil iam ch serviceAccount:$ML_SA:roles/storage.objectViewer \
+  gs://chanmi-ml-models-$PROJECT_ID
+```
+
+**Windows (PowerShell):**
+```powershell
+$ML_SA = gcloud run services describe cv-ml `
+  --region $REGION `
+  --format="value(spec.template.spec.serviceAccountName)"
+
+# Already done in Step 10 — skip if so
+gsutil iam ch "serviceAccount:${ML_SA}:roles/storage.objectViewer" `
   gs://chanmi-ml-models-$PROJECT_ID
 ```
 
@@ -727,6 +900,18 @@ gcloud run services add-iam-policy-binding cv-ml \
   --role="roles/run.invoker"
 ```
 
+**Windows (PowerShell):**
+```powershell
+$API_SA = gcloud run services describe cv-api `
+  --region $REGION `
+  --format="value(spec.template.spec.serviceAccountName)"
+
+gcloud run services add-iam-policy-binding cv-ml `
+  --region $REGION `
+  --member="serviceAccount:$API_SA" `
+  --role="roles/run.invoker"
+```
+
 **Allow both services to access Secret Manager:**
 
 ```bash
@@ -735,6 +920,15 @@ for SA in $API_SA $ML_SA; do
     --member="serviceAccount:$SA" \
     --role="roles/secretmanager.secretAccessor"
 done
+```
+
+**Windows (PowerShell):**
+```powershell
+foreach ($SA in @($API_SA, $ML_SA)) {
+    gcloud projects add-iam-policy-binding $PROJECT_ID `
+      --member="serviceAccount:$SA" `
+      --role="roles/secretmanager.secretAccessor"
+}
 ```
 
 ---
@@ -753,6 +947,14 @@ Your services:
 ---
 
 ## Updating after code changes
+
+> **Windows (PowerShell):** Re-set your variables at the start of each new terminal session before running these commands:
+> ```powershell
+> $PROJECT_ID = gcloud config get-value project
+> $REGION = "us-central1"
+> $REGISTRY = "$REGION-docker.pkg.dev/$PROJECT_ID/chanmi-repo"
+> $API_URL = "https://cv-api-xxxxxxxxxx-uc.a.run.app"  # your actual API URL
+> ```
 
 When you change backend code:
 
@@ -836,6 +1038,14 @@ gcloud run services logs read cv-api --region $REGION --tail=50
 
 ```bash
 echo -n "NEW_VALUE" | gcloud secrets versions add SECRET_NAME --data-file=-
+```
+
+**Windows (PowerShell):**
+```powershell
+$tmp = [IO.Path]::GetTempFileName()
+[IO.File]::WriteAllText($tmp, "NEW_VALUE")
+gcloud secrets versions add SECRET_NAME --data-file=$tmp
+Remove-Item $tmp
 ```
 
 Cloud Run picks up the new version on the next request (no redeploy needed).
