@@ -71,3 +71,12 @@ Datasetmy/.cache/
 
 notebooks/fair-prehire-attrition-prediction/models/*.joblib
 notebooks/fair-prehire-attrition-prediction/models/*.pkl
+
+.claude
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars

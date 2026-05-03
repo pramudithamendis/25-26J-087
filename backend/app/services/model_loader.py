@@ -24,10 +24,14 @@ MODEL_CANDIDATES = [
     "rf.pkl",
 ]
 
-# Ordered list of candidate tree-model filenames for SHAP (most preferred first)
+# Ordered list of candidate tree-model filenames for SHAP (most preferred first).
+# XGBoost is listed first — shap.TreeExplainer(xgb_model) is the SHAP reference
+# implementation and doesn't conflict with PyTorch's native libraries.
+# CatBoost is second because shap.TreeExplainer(catboost_model) causes a SIGSEGV
+# when PyTorch is loaded in the same process (C-level OpenMP conflict).
 SHAP_MODEL_CANDIDATES = [
-    ("cat.pkl", "CatBoost"),
     ("xgb.pkl", "XGBoost"),
+    ("cat.pkl", "CatBoost"),
     ("rf.pkl", "Random Forest"),
 ]
 

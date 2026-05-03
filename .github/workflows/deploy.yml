@@ -1,0 +1,167 @@
+name: Build & Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      skip_ml_build:
+        description: "Skip rebuilding the ML image (use when only API/frontend changed)"
+        type: boolean
+        default: false
+      skip_worker_build:
+        description: "Skip rebuilding the Worker image"
+        type: boolean
+        default: false
+
+env:
+  PROJECT_ID: talent-scan-ai
+  REGION: us-central1
+  REGISTRY: us-central1-docker.pkg.dev/talent-scan-ai/talent-scan-ai
+  TF_VERSION: "1.8.0"
+
+jobs:
+  deploy:
+    name: Build, Push & Deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write   # Required for Workload Identity Federation
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Authenticate to GCP ───────────────────────────────────────────────
+      # Option A (recommended): Workload Identity Federation — no JSON key stored.
+      # Requires one-time setup: see DEPLOY_TERRAFORM.md § "GitHub Actions Setup".
+      - name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      # Option B (alternative): Uncomment below and comment out Option A above.
+      # Store the sa-cicd JSON key as secret GCP_SA_KEY in GitHub.
+      # - name: Authenticate to Google Cloud (SA key)
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #     credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # ── 3. Configure Docker for Artifact Registry ─────────────────────────────
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # ── 4. Determine image tag ────────────────────────────────────────────────
+      - name: Set image tag
+        id: tag
+        run: echo "tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # ── 5. Build & push API image ─────────────────────────────────────────────
+      - name: Build & push API image
+        run: |
+          docker build \
+            -f backend/Dockerfile.api \
+            -t ${{ env.REGISTRY }}/cv-api:${{ steps.tag.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/cv-api:latest \
+            ./backend
+          docker push ${{ env.REGISTRY }}/cv-api:${{ steps.tag.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/cv-api:latest
+
+      # ── 6. Build & push ML image (skippable) ──────────────────────────────────
+      - name: Build & push ML image
+        if: ${{ inputs.skip_ml_build != true }}
+        run: |
+          docker build \
+            -f backend/Dockerfile.ml \
+            -t ${{ env.REGISTRY }}/cv-ml:${{ steps.tag.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/cv-ml:latest \
+            ./backend
+          docker push ${{ env.REGISTRY }}/cv-ml:${{ steps.tag.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/cv-ml:latest
+
+      # ── 7. Build & push Worker image (skippable) ──────────────────────────────
+      - name: Build & push Worker image
+        if: ${{ inputs.skip_worker_build != true }}
+        run: |
+          docker build \
+            -f backend/Dockerfile.worker \
+            -t ${{ env.REGISTRY }}/cv-worker:${{ steps.tag.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/cv-worker:latest \
+            ./backend
+          docker push ${{ env.REGISTRY }}/cv-worker:${{ steps.tag.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/cv-worker:latest
+
+      # ── 8. Setup Terraform ────────────────────────────────────────────────────
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      # ── 9. Terraform init ─────────────────────────────────────────────────────
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      # ── 10. Deploy ML, API, and Worker (backend pass) ─────────────────────────
+      - name: Terraform apply — backend services
+        working-directory: terraform
+        run: |
+          terraform apply \
+            -var="api_image_tag=${{ steps.tag.outputs.tag }}" \
+            -var="ml_image_tag=${{ steps.tag.outputs.tag }}" \
+            -var="worker_image_tag=${{ steps.tag.outputs.tag }}" \
+            -target=google_cloud_run_v2_service.ml \
+            -target=google_cloud_run_v2_service.api \
+            -target=google_compute_instance.worker \
+            -auto-approve \
+            -input=false
+
+      # ── 11. Read API URL for frontend build ───────────────────────────────────
+      - name: Get API URL
+        id: api_url
+        working-directory: terraform
+        run: echo "url=$(terraform output -raw api_url)" >> "$GITHUB_OUTPUT"
+
+      # ── 12. Build & push frontend with API URL baked in ───────────────────────
+      - name: Build & push Frontend image
+        run: |
+          docker build \
+            --build-arg VITE_API_BASE_URL=${{ steps.api_url.outputs.url }} \
+            -f frontend/Dockerfile \
+            -t ${{ env.REGISTRY }}/cv-frontend:${{ steps.tag.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/cv-frontend:latest \
+            ./frontend
+          docker push ${{ env.REGISTRY }}/cv-frontend:${{ steps.tag.outputs.tag }}
+          docker push ${{ env.REGISTRY }}/cv-frontend:latest
+
+      # ── 13. Deploy frontend ───────────────────────────────────────────────────
+      - name: Terraform apply — frontend service
+        working-directory: terraform
+        run: |
+          terraform apply \
+            -var="api_image_tag=${{ steps.tag.outputs.tag }}" \
+            -var="ml_image_tag=${{ steps.tag.outputs.tag }}" \
+            -var="worker_image_tag=${{ steps.tag.outputs.tag }}" \
+            -var="frontend_image_tag=${{ steps.tag.outputs.tag }}" \
+            -auto-approve \
+            -input=false
+
+      # ── 14. Print deployment summary ──────────────────────────────────────────
+      - name: Deployment summary
+        working-directory: terraform
+        run: |
+          FRONTEND_URL=$(terraform output -raw frontend_url)
+          API_URL=$(terraform output -raw api_url)
+          echo "## Deployment complete" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Service  | URL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|----------|-----|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Frontend | $FRONTEND_URL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| API      | $API_URL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| API Docs | $API_URL/docs |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Image tag | \`${{ steps.tag.outputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"

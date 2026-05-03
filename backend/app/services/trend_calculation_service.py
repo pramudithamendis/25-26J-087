@@ -2,7 +2,6 @@
 
 from datetime import datetime
 
-from sklearn.preprocessing import normalize
 from app.models.hirebase_skill_stats_model import hirebase_skill_stats_collection
 from app.models.google_trends_model import google_trends_collection
 from app.services.monthly_retrain_service import predict_future_skills

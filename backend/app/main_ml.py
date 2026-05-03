@@ -31,13 +31,27 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Download models from GCS if configured (no-op in local dev)
-    try:
-        from app.utils.gcs_loader import download_models_if_gcs
-        download_models_if_gcs()
-    except Exception as e:
-        logger.error("GCS model download failed: %s", e)
-        raise
+    # 1. Download models from GCS (retry to survive IAM propagation delay on Cloud Run)
+    import time as _time
+    from app.utils.gcs_loader import download_models_if_gcs
+    for _attempt in range(1, 4):
+        try:
+            download_models_if_gcs()
+            break
+        except Exception as _e:
+            if _attempt < 3:
+                _wait = 30 * _attempt
+                logger.warning(
+                    "GCS download attempt %d/3 failed: %s — retrying in %ds",
+                    _attempt, _e, _wait,
+                )
+                _time.sleep(_wait)
+            else:
+                logger.error(
+                    "GCS download failed after 3 attempts: %s — "
+                    "container starting without models; ML endpoints will return errors",
+                    _e,
+                )
 
     # 2. Connect to MongoDB
     try:
@@ -57,12 +71,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("Ensemble model pre-load failed: %s", e)
 
-    try:
-        from app.services.turnover_service import get_shap_explainer
-        get_shap_explainer()
-        logger.info("SHAP explainer pre-loaded")
-    except Exception as e:
-        logger.warning("SHAP pre-load failed: %s", e)
+    # SHAP explainer is NOT pre-loaded at startup — shap.TreeExplainer causes a
+    # C-level SIGSEGV (OpenMP conflict with PyTorch) that bypasses try/except and
+    # kills the process. It is initialised lazily on the first prediction request.
 
     yield
 
