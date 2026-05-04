@@ -61,8 +61,12 @@ def predict_future_skills(skill: str, job_count: int, google_interest: int, fore
     """
     Predict the future trend score for a single skill.
     Loads the model and encoder if not already cached.
+    Returns None when sklearn is not installed (API container) — callers treat as 0.0.
     """
-    from sklearn.preprocessing import LabelEncoder
+    try:
+        from sklearn.preprocessing import LabelEncoder
+    except ImportError:
+        return None
 
     global model, encoder
 

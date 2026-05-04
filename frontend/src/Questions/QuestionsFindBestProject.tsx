@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from '../config/api';
 
 interface Project {
   repo: string;
@@ -37,7 +38,7 @@ const QuestionsFindBestProject: React.FC = () => {
         }
 
         console.log("email", email);
-        const res = await fetch(`http://127.0.0.1:8000/api/items/cvs/email/${encodeURIComponent(email)}`, {
+        const res = await fetch(`${API_BASE_URL}/api/items/cvs/email/${encodeURIComponent(email)}`, {
           headers,
         });
 
@@ -73,7 +74,7 @@ const QuestionsFindBestProject: React.FC = () => {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const res = await fetch("http://127.0.0.1:8000/api/items/match-project", {
+      const res = await fetch(`${API_BASE_URL}/api/items/match-project`, {
         method: "POST",
         headers,
         body: JSON.stringify({

@@ -31,6 +31,7 @@ from app.routes.esco_router import router as esco_router
 from app.routes.locations_router import router as locations_router
 from app.routes.forecast_router import router as forecast_router
 from app.routes.candidate_router import router as candidate_router
+from app.routes.turnover_proxy_router import router as turnover_proxy_router
 from app.scheduler import start_scheduler
 
 logging.basicConfig(
@@ -116,6 +117,7 @@ app.include_router(esco_router)
 app.include_router(locations_router)
 app.include_router(forecast_router)
 app.include_router(candidate_router)
+app.include_router(turnover_proxy_router)
 
 
 @app.get("/")

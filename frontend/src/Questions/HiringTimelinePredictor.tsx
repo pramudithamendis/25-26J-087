@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE = "http://127.0.0.1:8000/api/items";
+const API_BASE = `${API_BASE_URL}/api/items`;
 
 function formatDate(dateString: string) {
   return new Date(dateString).toISOString().replace("T", " ").substring(0, 19);

@@ -1,4 +1,5 @@
 import React, { useState, type ChangeEvent, type FormEvent } from "react";
+import { API_BASE_URL } from '../config/api';
 
 const QuestionsCVUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -42,7 +43,7 @@ const QuestionsCVUpload: React.FC = () => {
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      const response = await fetch("http://127.0.0.1:8000/api/items/extract-github-readme", {
+      const response = await fetch(`${API_BASE_URL}/api/items/extract-github-readme`, {
         method: "POST",
         headers,
         body: formData,

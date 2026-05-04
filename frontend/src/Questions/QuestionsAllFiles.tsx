@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE = "http://127.0.0.1:8000/api/items"; // e.g. "http://localhost:8000"
+const API_BASE = `${API_BASE_URL}/api/items`;
 
 export default function QuestionsAllFiles() {
   // const [username, setUsername] = useState("pramudithamendis");

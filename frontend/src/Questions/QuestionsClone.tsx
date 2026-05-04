@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE_URL } from '../config/api';
 
 type CloneRequest = {
   repo_url: string;
@@ -44,7 +45,7 @@ const QuestionsClone: React.FC = () => {
       const repoUrl = getRepoUrl();
       const destPath = getDestinationPath();
 
-      const res = await fetch("http://127.0.0.1:8000/api/items/clone", {
+      const res = await fetch(`${API_BASE_URL}/api/items/clone`, {
         method: "POST",
         headers,
         body: JSON.stringify({ repo_url: repoUrl, dest: destPath } as CloneRequest),

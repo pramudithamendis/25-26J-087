@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE = "http://127.0.0.1:8000/api/items";
+const API_BASE = `${API_BASE_URL}/api/items`;
 
 interface AskResponse {
   questions: string;
