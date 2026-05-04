@@ -37,19 +37,10 @@ jobs:
 
       # ── 2. Authenticate to GCP ───────────────────────────────────────────────
       # Option A (recommended): Workload Identity Federation — no JSON key stored.
-      # Requires one-time setup: see DEPLOY_TERRAFORM.md § "GitHub Actions Setup".
-      - name: Authenticate to Google Cloud (WIF)
+      - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      # Option B (alternative): Uncomment below and comment out Option A above.
-      # Store the sa-cicd JSON key as secret GCP_SA_KEY in GitHub.
-      # - name: Authenticate to Google Cloud (SA key)
-      #   uses: google-github-actions/auth@v2
-      #   with:
-      #     credentials_json: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       # ── 3. Configure Docker for Artifact Registry ─────────────────────────────
       - name: Configure Docker
