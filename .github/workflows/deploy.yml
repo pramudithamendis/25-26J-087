@@ -14,6 +14,10 @@ on:
         description: "Skip rebuilding the Worker image"
         type: boolean
         default: false
+      skip_api_build:
+        description: "Skip rebuilding the API image"
+        type: boolean
+        default: false
 
 env:
   PROJECT_ID: talent-scan-ai
@@ -58,6 +62,7 @@ jobs:
 
       # ── 5. Build & push API image ─────────────────────────────────────────────
       - name: Build & push API image
+        if: ${{ inputs.skip_api_build != true }}
         run: |
           docker build \
             -f backend/Dockerfile.api \
