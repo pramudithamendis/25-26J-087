@@ -108,27 +108,38 @@ jobs:
         working-directory: terraform
         run: terraform init -input=false
 
-      # ── 10. Deploy ML, API, and Worker (backend pass) ─────────────────────────
+      # ── 10. Resolve image tags (use 'latest' for skipped builds) ─────────────────
+      - name: Resolve deploy tags
+        id: deploy_tags
+        run: |
+          API_TAG=${{ inputs.skip_api_build == true && 'latest' || steps.tag.outputs.tag }}
+          ML_TAG=${{ inputs.skip_ml_build == true && 'latest' || steps.tag.outputs.tag }}
+          WORKER_TAG=${{ inputs.skip_worker_build == true && 'latest' || steps.tag.outputs.tag }}
+          echo "api=$API_TAG" >> "$GITHUB_OUTPUT"
+          echo "ml=$ML_TAG" >> "$GITHUB_OUTPUT"
+          echo "worker=$WORKER_TAG" >> "$GITHUB_OUTPUT"
+
+      # ── 11. Deploy ML, API, and Worker (backend pass) ─────────────────────────
       - name: Terraform apply — backend services
         working-directory: terraform
         run: |
           terraform apply \
-            -var="api_image_tag=${{ steps.tag.outputs.tag }}" \
-            -var="ml_image_tag=${{ steps.tag.outputs.tag }}" \
-            -var="worker_image_tag=${{ steps.tag.outputs.tag }}" \
+            -var="api_image_tag=${{ steps.deploy_tags.outputs.api }}" \
+            -var="ml_image_tag=${{ steps.deploy_tags.outputs.ml }}" \
+            -var="worker_image_tag=${{ steps.deploy_tags.outputs.worker }}" \
             -target=google_cloud_run_v2_service.ml \
             -target=google_cloud_run_v2_service.api \
             -target=google_compute_instance.worker \
             -auto-approve \
             -input=false
 
-      # ── 11. Read API URL for frontend build ───────────────────────────────────
+      # ── 12. Read API URL for frontend build ───────────────────────────────────
       - name: Get API URL
         id: api_url
         working-directory: terraform
         run: echo "url=$(terraform output -raw api_url)" >> "$GITHUB_OUTPUT"
 
-      # ── 12. Build & push frontend with API URL baked in ───────────────────────
+      # ── 13. Build & push frontend with API URL baked in ───────────────────────
       - name: Build & push Frontend image
         run: |
           docker build \
@@ -140,14 +151,14 @@ jobs:
           docker push ${{ env.REGISTRY }}/cv-frontend:${{ steps.tag.outputs.tag }}
           docker push ${{ env.REGISTRY }}/cv-frontend:latest
 
-      # ── 13. Deploy frontend ───────────────────────────────────────────────────
+      # ── 14. Deploy frontend ───────────────────────────────────────────────────
       - name: Terraform apply — frontend service
         working-directory: terraform
         run: |
           terraform apply \
-            -var="api_image_tag=${{ steps.tag.outputs.tag }}" \
-            -var="ml_image_tag=${{ steps.tag.outputs.tag }}" \
-            -var="worker_image_tag=${{ steps.tag.outputs.tag }}" \
+            -var="api_image_tag=${{ steps.deploy_tags.outputs.api }}" \
+            -var="ml_image_tag=${{ steps.deploy_tags.outputs.ml }}" \
+            -var="worker_image_tag=${{ steps.deploy_tags.outputs.worker }}" \
             -var="frontend_image_tag=${{ steps.tag.outputs.tag }}" \
             -auto-approve \
             -input=false
